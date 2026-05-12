@@ -13,7 +13,6 @@ import frappe
 from frappe.utils import formatdate
 from frappe.model.document import Document
 from microsynth.qms.doctype.qm_instrument.qm_instrument import get_due_qualifications
-from microsynth.microsynth.labels import print_instrument_certification_label
 
 
 SITE_COMPANY_MAP = {
@@ -121,6 +120,90 @@ def print_instrument_certification_label(qm_log_book_entry_id):
         }
 
 
+def safe_join_path(base, *paths):
+    base = os.path.abspath(base)
+    final = os.path.abspath(os.path.join(base, *paths))
+    if os.path.commonpath([base, final]) != base:
+        raise frappe.PermissionError("Invalid file path detected")
+    return final
+
+
+def import_log_book_entries_from_file(path, BASE_PATH=None, verbose=False, print_label=False):
+    """
+    bench execute microsynth.qms.doctype.qm_log_book.qm_log_book.import_log_book_entries_from_file --kwargs "{'path': '/mnt/erp_share/JPe/260505_QM_Log_Book_Testimport.csv', 'verbose': True, 'print_label': False}"
+    """
+
+    def _attach_file(doc, path):
+        with open(path, "rb") as f:
+            frappe.get_doc({
+                "doctype": "File",
+                "file_name": os.path.basename(path),
+                "attached_to_doctype": doc.doctype,
+                "attached_to_name": doc.name,
+                "content": f.read(),
+                "is_private": 1
+            }).insert(ignore_permissions=True)
+
+    def _parse_date(val):
+        return datetime.strptime(val.strip(), "%d.%m.%Y").date()
+
+    with open(path, "r", encoding="utf-8") as f:
+        lines = [l.strip() for l in f if l.strip()]
+
+    if len(lines) < 2:
+        raise Exception("No data rows")
+
+    for line in lines[1:]:
+        parts = line.split("\t")
+        if len(parts) < 7:
+            raise Exception(f"Invalid row: {line}")
+
+        instrument_id, date_str, entry_type, description, target_status_logbook_entry, target_status_instrument, pdf_name = parts
+
+        if not frappe.db.exists("QM Instrument", instrument_id):
+            raise Exception(f"Instrument '{instrument_id}' not found")
+
+        if target_status_logbook_entry not in ["Closed", "To Review", "Draft"]:
+            raise Exception(f"Invalid Target Status for Log Book Entry: '{target_status_logbook_entry}'")
+
+        date = _parse_date(date_str)
+
+        # Create log book entry
+        log_book_doc = frappe.get_doc({
+            "doctype": "QM Log Book",
+            "status": target_status_logbook_entry,
+            "entry_type": entry_type,
+            "date": date,
+            "description": description,
+            "document_type": "QM Instrument",
+            "document_name": instrument_id
+        }).insert()
+        if target_status_logbook_entry in ["Closed", "To Review"]:
+            log_book_doc.submit()
+
+        if verbose:
+            print(f"Created {log_book_doc.name}")
+
+        # Attach PDF
+        if pdf_name and pdf_name.lower() != "na" and BASE_PATH:
+            pdf_path = safe_join_path(BASE_PATH, pdf_name)
+            if not os.path.isfile(pdf_path):
+                raise Exception(f"Missing PDF: {pdf_name}")
+            _attach_file(log_book_doc, pdf_path)
+
+        # Update QM Instrument status
+        if target_status_instrument and target_status_instrument.lower() != "na":
+            instrument_doc = frappe.get_doc("QM Instrument", instrument_id)
+            instrument_doc.status = target_status_instrument
+            instrument_doc.save()
+
+        # Print label
+        if print_label:
+            print_instrument_certification_label(log_book_doc.name)
+
+    return lines
+
+
 @frappe.whitelist()
 def import_log_book_entries(verbose=False):
     """
@@ -143,40 +226,19 @@ def import_log_book_entries(verbose=False):
     ARCHIVE_FOLDER = "Archive"
     ERROR_FOLDER = "Errors"
 
-    def _safe_join(base, *paths):
-        base = os.path.abspath(base)
-        final = os.path.abspath(os.path.join(base, *paths))
-        if os.path.commonpath([base, final]) != base:
-            raise frappe.PermissionError("Invalid file path detected")
-        return final
-
     def _move_to_error_folder(filename, msg):
-        error_root = _safe_join(BASE_PATH, ERROR_FOLDER)
+        error_root = safe_join_path(BASE_PATH, ERROR_FOLDER)
         os.makedirs(error_root, exist_ok=True)
         base = os.path.splitext(filename)[0]
-        error_dir = _safe_join(error_root, base)
+        error_dir = safe_join_path(error_root, base)
         os.makedirs(error_dir, exist_ok=True)
 
-        src = _safe_join(BASE_PATH, filename)
+        src = safe_join_path(BASE_PATH, filename)
         if os.path.exists(src):
-            shutil.move(src, _safe_join(error_dir, filename))
+            shutil.move(src, safe_join_path(error_dir, filename))
 
-        with open(_safe_join(error_dir, "error.txt"), "w", encoding="utf-8") as f:
+        with open(safe_join_path(error_dir, "error.txt"), "w", encoding="utf-8") as f:
             f.write(msg)
-
-    def _attach_file(doc, path):
-        with open(path, "rb") as f:
-            frappe.get_doc({
-                "doctype": "File",
-                "file_name": os.path.basename(path),
-                "attached_to_doctype": doc.doctype,
-                "attached_to_name": doc.name,
-                "content": f.read(),
-                "is_private": 1
-            }).insert(ignore_permissions=True)
-
-    def _parse_date(val):
-        return datetime.strptime(val.strip(), "%d.%m.%Y").date()
 
     if not os.path.isdir(BASE_PATH):
         frappe.throw(_("Base path does not exist: {0}").format(BASE_PATH))
@@ -185,79 +247,28 @@ def import_log_book_entries(verbose=False):
         if not fname.lower().endswith(".txt"):
             continue
 
-        path = _safe_join(BASE_PATH, fname)
+        path = "/mnt/erp_share/JPe/260505_QM_Log_Book_Testimport.csv"
         if verbose:
             print(f"\nProcessing {fname}")
 
         try:
-            with open(path, "r", encoding="utf-8") as f:
-                lines = [l.strip() for l in f if l.strip()]
-
-            if len(lines) < 2:
-                raise Exception("No data rows")
-
-            for line in lines[1:]:
-                parts = line.split("\t")
-                if len(parts) < 7:
-                    raise Exception(f"Invalid row: {line}")
-
-                instrument_id, date_str, entry_type, description, target_status_logbook_entry, target_status_instrument, pdf_name = parts
-
-                if not frappe.db.exists("QM Instrument", instrument_id):
-                    raise Exception(f"Instrument '{instrument_id}' not found")
-
-                if target_status_logbook_entry not in ["Closed", "To Review", "Draft"]:
-                    raise Exception(f"Invalid Target Status for Log Book Entry: '{target_status_logbook_entry}'")
-
-                date = _parse_date(date_str)
-
-                # Create log book entry
-                log_book_doc = frappe.get_doc({
-                    "doctype": "QM Log Book",
-                    "status": target_status_logbook_entry,
-                    "entry_type": entry_type,
-                    "date": date,
-                    "description": description,
-                    "document_type": "QM Instrument",
-                    "document_name": instrument_id
-                }).insert()
-                if target_status_logbook_entry in ["Closed", "To Review"]:
-                    log_book_doc.submit()
-
-                if verbose:
-                    print(f"Created {log_book_doc.name}")
-
-                # Attach PDF
-                if pdf_name:
-                    pdf_path = _safe_join(BASE_PATH, pdf_name)
-                    if not os.path.isfile(pdf_path):
-                        raise Exception(f"Missing PDF: {pdf_name}")
-                    _attach_file(log_book_doc, pdf_path)
-
-                # Update QM Instrument status
-                if target_status_instrument and target_status_instrument.lower() != "na":
-                    instrument_doc = frappe.get_doc("QM Instrument", instrument_id)
-                    instrument_doc.status = target_status_instrument
-                    instrument_doc.save()
-
-                # Print label
-                print_instrument_certification_label(log_book_doc.name)
+            lines = import_log_book_entries_from_file(path, verbose=verbose, print_label=True)
 
             # Archive
-            archive_root = _safe_join(BASE_PATH, ARCHIVE_FOLDER)
+            archive_root = safe_join_path(BASE_PATH, ARCHIVE_FOLDER)
             os.makedirs(archive_root, exist_ok=True)
-            archive_dir = _safe_join(archive_root, os.path.splitext(fname)[0])
+            archive_dir = safe_join_path(archive_root, os.path.splitext(fname)[0])
             os.makedirs(archive_dir, exist_ok=True)
 
-            shutil.move(path, _safe_join(archive_dir, fname))
+            shutil.move(path, safe_join_path(archive_dir, fname))
 
             for line in lines[1:]:
                 parts = line.split("\t")
                 if len(parts) >= 7:
                     pdf_name = parts[6].strip()
-                    pdf_path = _safe_join(BASE_PATH, pdf_name)
+                    pdf_path = safe_join_path(BASE_PATH, pdf_name)
                     if os.path.isfile(pdf_path):
-                        shutil.move(pdf_path, _safe_join(archive_dir, pdf_name))
+                        shutil.move(pdf_path, safe_join_path(archive_dir, pdf_name))
 
             if verbose:
                 print(f"Imported {fname}")
