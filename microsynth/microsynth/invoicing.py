@@ -2060,7 +2060,7 @@ Your administration team<br><br>{footer}"
                 so_rows = frappe.get_all(
                     "Sales Order",
                     filters={"name": ["in", list(po_nos)]},
-                    fields=["name", "docstatus", "status", "hold_invoice", "customer"]
+                    fields=["name", "docstatus", "status", "hold_invoice", "customer", "credit_accounts"]
                 )
                 sales_orders = {so["name"]: so for so in so_rows}
 
@@ -2109,6 +2109,10 @@ Your administration team<br><br>{footer}"
                     customer_collective_billing[customer] = customer_data.get(customer, {}).get("collective_billing")
                 has_collective_billing = customer_collective_billing.get(customer)
                 if has_collective_billing:
+                    # check if there are any Credit Accounts on the Sales Order. If yes, add to single_invoicing_so_ids because there should be no credits on collective invoices.
+                    if so_data.get("credit_accounts"):
+                        single_invoicing_so_ids.add(so_id)
+                        continue
                     if customer not in customer_so_ids:
                         customer_so_ids[customer] = []
                     customer_so_ids[customer].append(so_id)
