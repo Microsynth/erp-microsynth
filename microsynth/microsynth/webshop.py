@@ -1119,6 +1119,7 @@ def get_quotation_dto(quotation):
 
     quotation_dto = {
         'name': quotation.name,
+        'company': quotation.company,
         'customer': quotation.party_name,
         'contact': quotation.contact_person,
         'shipping_contact': shipping_contact,
