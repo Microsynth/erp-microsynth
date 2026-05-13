@@ -307,7 +307,7 @@ def create_logbook_entry(qm_instrument, entry_type, description, date):
 
 def import_qm_instruments(input_filepath, expected_line_length=23):
     """
-    bench execute microsynth.qms.doctype.qm_instrument.qm_instrument.import_qm_instruments --kwargs "{'input_filepath': '/mnt/erp_share/JPe/20260416_TestImport_Pipetten_v01.csv'}"
+    bench execute microsynth.qms.doctype.qm_instrument.qm_instrument.import_qm_instruments --kwargs "{'input_filepath': '/mnt/erp_share/JPe/260505_QM_Instruments_Testimport.csv'}"
     """
     def parse_date(value):
         try:
