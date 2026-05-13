@@ -2060,9 +2060,37 @@ Your administration team<br><br>{footer}"
                 so_rows = frappe.get_all(
                     "Sales Order",
                     filters={"name": ["in", list(po_nos)]},
-                    fields=["name", "docstatus", "status", "hold_invoice", "customer", "credit_accounts"]
+                    fields=[
+                        "name",
+                        "docstatus",
+                        "status",
+                        "hold_invoice",
+                        "customer"
+                    ]
                 )
                 sales_orders = {so["name"]: so for so in so_rows}
+                # batch fetch Credit Account child rows
+                credit_account_rows = frappe.get_all(
+                    "Credit Account Link",
+                    filters={
+                        "parent": ["in", list(po_nos)],
+                        "parenttype": "Sales Order"
+                    },
+                    fields=[
+                        "parent",
+                        "name"
+                    ]
+                )
+                # group child rows by Sales Order
+                for row in credit_account_rows:
+                    parent = row["parent"]
+                    if "credit_accounts" not in sales_orders[parent]:
+                        sales_orders[parent]["credit_accounts"] = []
+                    sales_orders[parent]["credit_accounts"].append(row)
+                # ensure every SO has key
+                for so in sales_orders.values():
+                    if "credit_accounts" not in so:
+                        so["credit_accounts"] = []
 
             # collect customers for batch fetch
             customers = {so["customer"] for so in sales_orders.values()}
