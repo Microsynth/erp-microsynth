@@ -613,6 +613,9 @@ function open_correct_stock_dialog(frm) {
         ],
         'primary_action_label': "Submit",
         'primary_action': function(values) {
+            d.disable_primary_action();
+            d.fields_dict.batch_table.grid.refresh();
+            values = d.get_values();
             frappe.call({
                 'method': "microsynth.microsynth.stock.correct_stock",
                 'args': {
@@ -624,11 +627,42 @@ function open_correct_stock_dialog(frm) {
                 'freeze_message': "Correcting stock...",
                 'callback': function(r) {
                     if (r.exc) {
-                        frappe.msgprint(__("Error correcting stock: ") + r.exc);
-                    } else {
-                        frappe.msgprint(__("Stock corrected successfully."));
+                        d.enable_primary_action();
+                        frappe.msgprint({
+                            title: __("Error"),
+                            indicator: "red",
+                            message: __("Error correcting stock: ") + r.exc
+                        });
+                        return;
                     }
+                    if (!r.message) {
+                        d.enable_primary_action();
+                        frappe.msgprint({
+                            title: __("Error"),
+                            indicator: "red",
+                            message: __("No response from server.")
+                        });
+                        return;
+                    }
+                    if (!r.message.success) {
+                        d.enable_primary_action();
+                        frappe.msgprint({
+                            title: __("No Changes"),
+                            indicator: "orange",
+                            message: __(r.message.message || "No stock changes were applied.")
+                        });
+                        return;
+                    }
+                    // success
                     d.hide();
+                    frappe.msgprint({
+                        title: __("Success"),
+                        indicator: "green",
+                        message: __(
+                            "{0} batch(es) corrected.",
+                            [r.message.changed_batches]
+                        )
+                    });
                     frm.reload_doc();
                 }
             });

@@ -298,13 +298,15 @@ def correct_stock(item_code, warehouse, rows):
 
         current_qty = result[0].qty if result else 0
 
+        if row.get("new_qty") in [None, ""]:
+            frappe.throw(f"New quantity missing for batch {batch_no}")
         try:
-            new_qty = float(row.get("new_qty") or 0)
+            new_qty = flt(row.get("new_qty"))
         except Exception:
-            frappe.throw(f"Invalid quantity for batch {row.get('batch_no')}")
+            frappe.throw(f"Invalid quantity for batch {batch_no}")
         delta = new_qty - current_qty
 
-        delta = flt(new_qty - current_qty, precision=4)  # Round to 4 decimals to avoid issues with very small differences
+        delta = flt(new_qty - current_qty, precision=2)  # Round to 2 decimals to avoid issues with very small differences
 
         if not delta:
             continue
@@ -343,7 +345,11 @@ def correct_stock(item_code, warehouse, rows):
             })
 
     if not issue_rows and not receipt_rows:
-        return
+        return {
+            "success": False,
+            "changed_batches": 0,
+            "message": "No stock changes detected."
+        }
 
     issue_doc = None
     receipt_doc = None
@@ -358,4 +364,10 @@ def correct_stock(item_code, warehouse, rows):
     if receipt_doc and label_table:
         print_purchasing_labels(frappe.as_json(label_table), is_legacy=True)
 
-    return issue_doc.name if issue_doc else None, receipt_doc.name if receipt_doc else None
+    return {
+        "success": True,
+        "changed_batches": len(issue_rows) + len(receipt_rows),
+        "issue_stock_entry": issue_doc.name if issue_doc else None,
+        "receipt_stock_entry": receipt_doc.name if receipt_doc else None,
+        "message": "Stock corrected successfully."
+    }
