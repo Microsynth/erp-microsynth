@@ -379,9 +379,8 @@ def async_create_invoices(mode, company, customer, is_monthly_collective_run=Fal
 
                         if dn.get('product_type') and ca_product_types:
                             if dn.get('product_type') not in ca_product_types:
-                                msg = f"Delivery Note '{delivery_note_id}': Credit Account '{credit_account_id}' is not applicable for product type '{dn.get('product_type')}'. Skipping this Credit Account for credit calculation."
+                                msg = f"WARNING: Delivery Note '{delivery_note_id}': Credit Account '{credit_account_id}' is not applicable for product type '{dn.get('product_type')}'. Please check manually."
                                 frappe.log_error(msg, "invoicing.async_create_invoices")
-                                continue
                             credit += get_credit_account_balance(credit_account_id)
 
                     total = frappe.get_value("Delivery Note", delivery_note_id, "total")
