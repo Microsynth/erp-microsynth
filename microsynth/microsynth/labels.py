@@ -9,6 +9,7 @@ import unicodedata  # part of standard library, no installation required
 import socket
 from datetime import datetime
 import frappe
+from frappe.utils import formatdate
 from microsynth.microsynth.shipping import (
     get_shipping_service,
     get_shipping_item,
@@ -25,7 +26,7 @@ BRADY_PRINTER_TEMPLATE = "microsynth/templates/includes/address_label_brady.html
 def print_raw(ip, port, content):
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.connect((ip, port))
-    s.send(content.encode())
+    s.sendall((content + "\r\n").encode("utf-8"))
     s.close()  # TODO: Is this necessary? Remove to avoid connection refused errors?
 
 
@@ -409,7 +410,7 @@ def print_instrument_label(qm_instrument_id, acquisition_date):
 
         label_data = {
             'qm_instrument_id': qm_instrument_id,
-            'acquisition_date': acquisition_date.strftime("%d.%m.%Y") if acquisition_date else "",
+            'acquisition_date': formatdate(acquisition_date, "dd.mm.yyyy") if acquisition_date else "",
             'datamatrix_content': qm_instrument_id
         }
         content = frappe.render_template("microsynth/templates/includes/instrument_label_brady.html", label_data)
