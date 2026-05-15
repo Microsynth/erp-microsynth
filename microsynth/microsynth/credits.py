@@ -282,6 +282,9 @@ def book_credit(sales_invoice, credit_item=None, event=None):
 
 
 def book_promo_credit_sales_invoice(sales_invoice_id, company, promo_item_code="AC-6600"):
+    """
+    sudo bench execute microsynth.microsynth.credits.book_promo_credit_sales_invoice --kwargs "{'sales_invoice_id': 'SI-BAL-26012901', 'company': 'Microsynth Seqlab GmbH', 'promo_item_code': 'AC-6601'}"
+    """
     si_doc = frappe.get_doc("Sales Invoice", sales_invoice_id)
     # fetch Item used for advertising/promo/marketing
     promo_item = frappe.get_doc("Item", promo_item_code)
@@ -320,7 +323,7 @@ def book_promo_credit_sales_invoice(sales_invoice_id, company, promo_item_code="
             {
                 'account': expense_account,
                 'debit_in_account_currency': base_amount,
-                'exchange_rate': 1,
+                'exchange_rate': si_doc.conversion_rate,
                 'debit': base_amount,
                 'cost_center': si_doc.items[0].cost_center
             }
