@@ -8,7 +8,7 @@ frappe.query_reports["Instrument Compliance Due"] = {
             "fieldname": "requirement_type",
             "label": "Requirement Type",
             "fieldtype": "Select",
-            "options": "\nRequalification in next 6 weeks\nVerification in next 24 weeks\nCalibration in next 24 weeks\nOverdue"
+            "options": "\nRequalification in next 6 weeks\nVerification in next 24 weeks\nCalibration due end of the year\nOverdue"
         }
     ],
 	"onload": (report) => {
