@@ -4125,7 +4125,7 @@ def create_deposit_invoice(webshop_account, account_id, amount, currency, descri
         account_doc = frappe.get_doc("Credit Account", account_id)
         if not account_doc.has_transactions:
             account_doc.has_transactions = True
-            account_doc.save()
+            account_doc.save(ignore_permissions=ignore_permissions)
         return {
             "success": True,
             "message": "OK",
