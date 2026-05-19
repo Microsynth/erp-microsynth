@@ -6957,3 +6957,85 @@ def change_purchase_uom_box():
         updated_count += 1
 
     print(f"\nDONE: Updated {updated_count} Items.")
+
+
+def set_preferred_express_shipping_items(dry_run=False):
+    """
+    For every active Customer:
+      - if they have Shipping Items
+      - and none is marked preferred_express
+      - and exactly one Shipping Item contains "Express"
+
+    then set preferred_express = 1 on that Shipping Item.
+
+    Otherwise print a verbose warning and skip the Customer.
+
+    Args:
+        dry_run (bool): If True, only print what would be changed.
+
+    bench execute microsynth.microsynth.migration.set_preferred_express_shipping_items --kwargs "{'dry_run': True}"
+    """
+    customers = frappe.get_all(
+        "Customer",
+        filters={"disabled": 0},
+        fields=["name", "customer_name"],
+    )
+    updated = 0
+    skipped = 0
+
+    for cust in customers:
+        customer = frappe.get_doc("Customer", cust.name)
+        shipping_items = customer.get("shipping_items") or []
+
+        # Only interested in customers having at least one Shipping Item
+        if not shipping_items:
+            continue
+
+        preferred_items = [
+            row for row in shipping_items
+            if cint(row.preferred_express)
+        ]
+        # Skip if already configured
+        if preferred_items:
+            continue
+
+        express_items = [
+            row for row in shipping_items
+            if row.item_name
+            and "express" in row.item_name.lower()
+        ]
+        if len(express_items) == 1:
+            target = express_items[0]
+            msg = (
+                f"[UPDATE] Customer {customer.name} "
+                f"({customer.customer_name}): "
+                f"setting preferred_express on "
+                f"Shipping Item '{target.item_name}' (ID: {target.name})"
+            )
+            print(msg)
+            if not dry_run:
+                target.preferred_express = 1
+                # Save via ORM to trigger validations/hooks
+                customer.save()
+            updated += 1
+        else:
+            shipping_names = [
+                row.item_name or "<empty>"
+                for row in shipping_items
+            ]
+            express_names = [
+                row.item_name or "<empty>"
+                for row in express_items
+            ]
+            print(
+                f"[WARNING] Skipping Customer {customer.name} ({customer.customer_name})\n"
+                f"  Shipping Items: {shipping_names}\n"
+                f"  Matching 'Express': {express_names}\n"
+                f"  Reason: expected exactly one Shipping Item containing 'Express', found {len(express_items)}"
+            )
+            skipped += 1
+
+    if not dry_run:
+        frappe.db.commit()
+
+    print(f"\nDone. Updated: {updated}, Skipped with warnings: {skipped}")
