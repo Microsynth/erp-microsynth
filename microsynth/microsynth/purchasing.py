@@ -2776,7 +2776,7 @@ def change_item_uom_and_has_batch_no(item_code, expected_current_stock_uom=None,
         - Placeholder batches ([NA]-<item_code>) may group stock artificially
         - Only supports single-company items (based on warehouses)
 
-    sudo bench execute microsynth.microsynth.purchasing.change_item_uom_and_has_batch_no --kwargs "{'item_code': 'P014125', 'new_stock_uom': 'Kit', 'dry_run': False, 'verbose': True}"
+    sudo bench execute microsynth.microsynth.purchasing.change_item_uom_and_has_batch_no --kwargs "{'item_code': 'P012544', 'new_stock_uom': 'Box', 'dry_run': False, 'verbose': True}"
     """
     def log(msg):
         if verbose:
@@ -2788,7 +2788,8 @@ def change_item_uom_and_has_batch_no(item_code, expected_current_stock_uom=None,
         frappe.throw("item_code is required.")
 
     if frappe.db.exists("Item", f"x{item_code}"):
-        frappe.throw("Migration already (partially) executed. Please fix manually if still needed.")
+        print(f"ERROR: Migration for Item {item_code} already (partially) executed. Please fix manually if still needed.")
+        return
 
     posting_dt = now_datetime()
 
@@ -2895,6 +2896,7 @@ def change_item_uom_and_has_batch_no(item_code, expected_current_stock_uom=None,
     log("Preparing Material Issue")
 
     companies = set()
+    company_issue_map = {}
 
     for r in stock_rows:
         company = frappe.db.get_value("Warehouse", r["warehouse"], "company")
@@ -2903,7 +2905,8 @@ def change_item_uom_and_has_batch_no(item_code, expected_current_stock_uom=None,
         companies.add(company)
 
     if not dry_run:
-        for company in companies:
+        for company in companies:  # TODO: create a mapping of companies to issues to use it in the receipt step
+            frappe.flags.warehouse_account_map = None  # avoid cache issues with multiple companies and warehouses
             issue = frappe.new_doc("Stock Entry")
             issue.stock_entry_type = "Material Issue"
             issue.company = company
@@ -2930,6 +2933,7 @@ def change_item_uom_and_has_batch_no(item_code, expected_current_stock_uom=None,
                 })
             issue.insert()
             issue.submit()
+            company_issue_map[company] = issue
 
     # 4. Rename & disable old item
     old_item_code = item_code
@@ -2984,12 +2988,14 @@ def change_item_uom_and_has_batch_no(item_code, expected_current_stock_uom=None,
     log("Preparing Material Receipt")
     if not dry_run:
         for company in companies:
+            frappe.flags.warehouse_account_map = None  # avoid cache issues with multiple companies and warehouses
             receipt = frappe.new_doc("Stock Entry")
             receipt.stock_entry_type = "Material Receipt"
             receipt.company = company
             receipt.posting_date = posting_dt.date()
             receipt.posting_time = posting_dt.time()
             receipt.remarks = f"UOM migration receipt for {old_item_code}"
+            issue = company_issue_map[company]
 
             for r in issue.items:  # base this on the issued material according to Lars
                 row_company = frappe.db.get_value("Warehouse", r.s_warehouse, "company")
@@ -3043,7 +3049,7 @@ def change_item_uom_and_has_batch_no(item_code, expected_current_stock_uom=None,
 
     if not dry_run:
         frappe.db.commit()
-        log("UOM/Batch migration completed successfully")
+        print(f"Item {old_item_code}: UOM/Batch migration completed successfully")
 
 
 def change_item_uoms_and_has_batch_nos(input_filepath, expected_line_length=11, dry_run=True, verbose=True):
@@ -3052,6 +3058,7 @@ def change_item_uoms_and_has_batch_nos(input_filepath, expected_line_length=11, 
     item_code	item_name	 purchase_uom 	 conversion_factor 	stock_uom	new_stock_uom	 pack_size    	 pack_uom       	has_batch_no	new_has_batch_no	batch_type
 
     sudo bench execute microsynth.microsynth.purchasing.change_item_uoms_and_has_batch_nos --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2026-05-07_Sanger_items_to_change.csv', 'dry_run': True, 'verbose': True}"
+    sudo bench execute microsynth.microsynth.purchasing.change_item_uoms_and_has_batch_nos --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2026-05-07_Genetic_Analysis_items_to_change.csv', 'dry_run': True, 'verbose': True}"
     """
     with open(input_filepath, newline='', encoding='utf-8') as file:
         print(f"INFO: Update Items from '{input_filepath}' ...")
