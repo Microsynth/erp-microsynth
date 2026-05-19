@@ -937,7 +937,11 @@ def request_quote(content, client="webshop"):
     express_shipping = get_express_shipping_item(content['customer'], shipping_address.country)
     if not express_shipping:
         frappe.log_error(f"Found no express shipping item for Customer {content['customer']} and Country {shipping_address.country} in currency {customer_doc.default_currency}.", "webshop.request_quote")
-        shipping_items = get_contact_shipping_items(content['shipping_contact'] or content['contact'])
+        if 'shipping_contact' in content and content['shipping_contact']:
+            shipping_contact = content['shipping_contact']
+        else:
+            shipping_contact = content['contact']
+        shipping_items = get_contact_shipping_items(shipping_contact)
         for item in shipping_items:
             if item.get('preferred_express'):
                 express_shipping = item
