@@ -153,10 +153,7 @@ def get_data(filters):
                 END AS `due_date`
             FROM `instrument_base`
             WHERE NOT (
-                `class_letter` = 'P' AND (
-                    `acquisition_date` > CONCAT(YEAR(CURDATE()), '-05-01')
-                    OR `last_verification_or_calibration_date` > CONCAT(YEAR(CURDATE()), '-05-01')
-                )
+                `class_letter` = 'P'
             )
         )
         SELECT *
