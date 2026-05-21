@@ -309,12 +309,24 @@ def async_create_invoices(mode, company, customer, is_monthly_collective_run=Fal
                                     opened_sales_order = so_doc.name
                                     break
                                 else:
-                                    frappe.log_error(f"Either Delivery Note {dn_doc.name} contains more than one Item that allows to invoice despite Sales Order {so_id} is Closed "
-                                                     f"(Item {', '.join(allowed_items)} in another order than on the SO) or "
-                                                     f"the quantity of Item {so_item.item_code} was not decreased on {dn_doc.name} compared to {so_id}.")
+                                    reason = (
+                                        f"Sales Order {so_id} is Closed and contains one of the items allowing invoicing anyway ({', '.join(allowed_items)}), "
+                                        f"but invoicing is not permitted because the quantity of Item {so_item.item_code} in Delivery Note {dn_doc.name} "
+                                        f"was not reduced compared to Sales Order {so_id} and it is therefore not clear why Sales Order {so_id} was Closed."
+                                    )
+                                    email_template = frappe.get_doc("Email Template", "Unable to invoice Delivery Note")
+                                    rendered_subject = frappe.render_template(email_template.subject, {'delivery_note_id': dn_doc.name})
+                                    rendered_message = frappe.render_template(email_template.response, {'delivery_note_id': dn_doc.name, 'reason': reason})
+                                    send_email_from_template(email_template, rendered_message, rendered_subject)
+                                    frappe.log_error(f"{reason} Going to skip invoicing. Send an automatic email.", "invoicing.async_create_invoices")
                     else:
-                        # log an error and skip invoicing
-                        frappe.log_error(f"Sales Order {so_id} of Delivery Note {dn_doc.name} is Closed and the Delivery Note does not contain Item {' or '.join(allowed_items)}. Going to skip invoicing.", "invoicing.async_create_invoices")
+                        # send and log an error and skip invoicing
+                        reason = f"Sales Order {so_id} of Delivery Note {dn_doc.name} is Closed and the Delivery Note does not contain Item {' or '.join(allowed_items)} that would allow invoicing anyway."
+                        email_template = frappe.get_doc("Email Template", "Unable to invoice Delivery Note")
+                        rendered_subject = frappe.render_template(email_template.subject, {'delivery_note_id': dn_doc.name})
+                        rendered_message = frappe.render_template(email_template.response, {'delivery_note_id': dn_doc.name, 'reason': reason})
+                        send_email_from_template(email_template, rendered_message, rendered_subject)
+                        frappe.log_error(f"{reason} Going to skip invoicing. Send an automatic email.", "invoicing.async_create_invoices")
                         continue
 
                 # # TODO: implement for other export categories
@@ -355,8 +367,12 @@ def async_create_invoices(mode, company, customer, is_monthly_collective_run=Fal
                         credit_account_doc = credit_account_cache[account['name']]
                         acc_ptypes = [pt.product_type for pt in credit_account_doc.product_types if getattr(pt, 'product_type', None)]
                         if 'Project' in acc_ptypes and account['name'] not in sales_order_credit_accounts:
-                            msg = f"Delivery Note '{delivery_note_id}': Customer {dn.get('customer')} has an active Project Credit Account {account['name']} which is not included in the Sales Order credit accounts. Not going to invoice automatically."
-                            frappe.log_error(msg, "invoicing.async_create_invoices")
+                            reason = f"Delivery Note '{delivery_note_id}': Customer {dn.get('customer')} has an active Project Credit Account {account['name']} which is not included in the Sales Order credit accounts."
+                            email_template = frappe.get_doc("Email Template", "Unable to invoice Delivery Note")
+                            rendered_subject = frappe.render_template(email_template.subject, {'delivery_note_id': delivery_note_id})
+                            rendered_message = frappe.render_template(email_template.response, {'delivery_note_id': delivery_note_id, 'reason': reason})
+                            send_email_from_template(email_template, rendered_message, rendered_subject)
+                            frappe.log_error(f"{reason} Going to skip invoicing. Send an automatic email.", "invoicing.async_create_invoices")
                             skip_dn = True
                             break
                     if skip_dn:
