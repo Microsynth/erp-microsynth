@@ -69,7 +69,12 @@ frappe.query_reports["Material Request Overview"] = {
                 let row = target.getAttribute("data-row-index");
                 let column = target.getAttribute("data-col-index");
                 if (row == null || column == null) return;
-                if (parseInt(column) === 11) {
+                let target_column_number = 14;
+                let my_filters = frappe.query_report.get_filter_values();
+                if (my_filters.mode === "To Order") {
+                    target_column_number = 11;
+                }
+                if (parseInt(column) === target_column_number) {
                     let rowData = frappe.query_report.data[row];
                     if (!rowData || !rowData.material_request) return;
                     if (rowData.request_type === "Item Request") {
