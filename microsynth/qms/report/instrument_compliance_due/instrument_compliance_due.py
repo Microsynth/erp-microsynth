@@ -62,6 +62,16 @@ def get_data(filters):
                 MAX(CASE WHEN `tabQM Log Book`.`entry_type` = 'Verification' THEN `tabQM Log Book`.`date` END) AS `last_verification`,
                 MAX(CASE WHEN `tabQM Log Book`.`entry_type` = 'Calibration' THEN `tabQM Log Book`.`date` END) AS `last_calibration`,
                 MAX(CASE WHEN `tabQM Log Book`.`entry_type` IN ('Verification','Calibration') THEN `tabQM Log Book`.`date` END) AS `last_verification_or_calibration`,
+                SUBSTRING_INDEX(
+                    GROUP_CONCAT(
+                        CASE
+                            WHEN `tabQM Log Book`.`entry_type` IN ('Verification','Calibration') THEN `tabQM Log Book`.`entry_type`
+                        END
+                        ORDER BY `tabQM Log Book`.`date` DESC
+                    ),
+                    ',',
+                    1
+                ) AS `last_verification_or_calibration_type`,
                 MAX(`tabQM Log Book`.`date`) AS `last_logbook_date`,
                 SUBSTRING_INDEX(GROUP_CONCAT(`tabQM Log Book`.`entry_type` ORDER BY `tabQM Log Book`.`date` DESC), ',', 1) AS `last_logbook_type`,
                 MIN(CASE WHEN `tabQM Log Book`.`entry_type` = 'Verification' THEN `tabQM Log Book`.`date` END) AS `oldest_verification_date`
@@ -87,7 +97,9 @@ def get_data(filters):
                 COALESCE(`logbook_agg`.`last_requalification`, `tabQM Instrument`.`acquisition_date`) AS `last_requalification_date`,
                 COALESCE(`logbook_agg`.`last_verification`, `tabQM Instrument`.`acquisition_date`) AS `last_verification_date`,
                 `logbook_agg`.`last_calibration` AS `last_calibration_date`,
+                `logbook_agg`.`last_verification_or_calibration` AS `last_verification_or_calibration`,
                 COALESCE(`logbook_agg`.`last_verification_or_calibration`, `tabQM Instrument`.`acquisition_date`) AS `last_verification_or_calibration_date`,
+                `logbook_agg`.`last_verification_or_calibration_type`,
                 `logbook_agg`.`last_logbook_date`,
                 `logbook_agg`.`last_logbook_type`,
                 `logbook_agg`.`oldest_verification_date`
@@ -97,64 +109,41 @@ def get_data(filters):
                 AND LEFT(`tabQM Instrument`.`instrument_class`, 1) IN ('A','P','T','W')
         ),
         `instrument_eval` AS (
-            SELECT
-                *,
+            SELECT *,
                 CASE
                     WHEN `class_letter` = 'A' THEN 'Requalification'
                     WHEN `class_letter` IN ('T','W') THEN 'Verification'
                     WHEN `class_letter` = 'P' AND (
-                        `last_logbook_date` IS NULL
-                        OR (`last_calibration_date` IS NOT NULL AND YEAR(CURDATE()) - YEAR(`last_calibration_date`) >= {CALIBRATION_INTERVAL_YEARS})
-                        OR (`last_calibration_date` IS NULL AND `oldest_verification_date` IS NOT NULL AND YEAR(CURDATE()) - YEAR(`oldest_verification_date`) >= {CALIBRATION_INTERVAL_YEARS})
+                        (`last_calibration_date` IS NOT NULL
+                            AND TIMESTAMPDIFF(YEAR, `last_calibration_date`, CURDATE()) >= {CALIBRATION_INTERVAL_YEARS})
+                        OR (`last_calibration_date` IS NULL
+                            AND `oldest_verification_date` IS NOT NULL
+                            AND TIMESTAMPDIFF(YEAR, `oldest_verification_date`, CURDATE()) >= {CALIBRATION_INTERVAL_YEARS})
+                        OR (`last_calibration_date` IS NULL
+                            AND `oldest_verification_date` IS NULL)
                     ) THEN 'Calibration'
-                    WHEN `class_letter` = 'P' THEN 'Verification'
                     ELSE 'Verification'
                 END AS `requirement_type`,
                 CASE
                     WHEN `class_letter` = 'A' THEN `last_requalification_date`
                     WHEN `class_letter` IN ('T','W') THEN `last_verification_date`
-                    WHEN `class_letter` = 'P' AND (
-                        `last_logbook_date` IS NULL
-                        OR (`last_calibration_date` IS NOT NULL AND YEAR(CURDATE()) - YEAR(`last_calibration_date`) >= {CALIBRATION_INTERVAL_YEARS})
-                        OR (`last_calibration_date` IS NULL AND `oldest_verification_date` IS NOT NULL AND YEAR(CURDATE()) - YEAR(`oldest_verification_date`) >= {CALIBRATION_INTERVAL_YEARS})
-                    ) THEN COALESCE(`last_calibration_date`, `oldest_verification_date`, `acquisition_date`)
-                    WHEN `class_letter` = 'P' THEN `last_verification_or_calibration_date`
+                    WHEN `class_letter` = 'P' THEN COALESCE(`last_verification_or_calibration`, `acquisition_date`)
                     ELSE `last_verification_or_calibration_date`
                 END AS `last_activity_date`,
                 CASE
                     WHEN `class_letter` = 'A' THEN '(Re-)Qualification'
                     WHEN `class_letter` IN ('T','W') THEN 'Verification'
-                    WHEN `class_letter` = 'P' AND (
-                        `last_logbook_date` IS NULL
-                        OR (`last_calibration_date` IS NOT NULL AND YEAR(CURDATE()) - YEAR(`last_calibration_date`) >= {CALIBRATION_INTERVAL_YEARS})
-                        OR (`last_calibration_date` IS NULL AND `oldest_verification_date` IS NOT NULL AND YEAR(CURDATE()) - YEAR(`oldest_verification_date`) >= {CALIBRATION_INTERVAL_YEARS})
-                    ) THEN (
-                        CASE
-                            WHEN `last_calibration_date` IS NOT NULL THEN 'Calibration'
-                            WHEN `oldest_verification_date` IS NOT NULL THEN 'Verification'
-                            ELSE 'Acquisition'
-                        END
-                    )
-                    WHEN `class_letter` = 'P' THEN (
-                        CASE WHEN `last_verification_or_calibration_date` = `last_verification_date` THEN 'Verification' ELSE 'Calibration' END
-                    )
+                    WHEN `class_letter` = 'P' THEN COALESCE(`last_verification_or_calibration_type`, 'Calibration')
                     ELSE 'Verification'
                 END AS `last_activity_type`,
                 CASE
                     WHEN `class_letter` = 'A' THEN DATE_ADD(`last_requalification_date`, INTERVAL {REQUALIFICATION_INTERVAL_MONTHS} MONTH)
                     WHEN `class_letter` IN ('T','W') THEN DATE_ADD(`last_verification_date`, INTERVAL {VERIFICATION_INTERVAL_MONTHS} MONTH)
-                    WHEN `class_letter` = 'P' AND (
-                        `last_logbook_date` IS NULL
-                        OR (`last_calibration_date` IS NOT NULL AND YEAR(CURDATE()) - YEAR(`last_calibration_date`) >= {CALIBRATION_INTERVAL_YEARS})
-                        OR (`last_calibration_date` IS NULL AND `oldest_verification_date` IS NOT NULL AND YEAR(CURDATE()) - YEAR(`oldest_verification_date`) >= {CALIBRATION_INTERVAL_YEARS})
-                    ) THEN DATE_ADD(COALESCE(`last_calibration_date`, `oldest_verification_date`, `acquisition_date`), INTERVAL {CALIBRATION_INTERVAL_YEARS} YEAR)
-                    WHEN `class_letter` = 'P' THEN DATE_ADD(`last_verification_or_calibration_date`, INTERVAL {VERIFICATION_INTERVAL_MONTHS} MONTH)
+                    WHEN `class_letter` = 'P' AND `last_verification_or_calibration` IS NULL THEN `acquisition_date`
+                    WHEN `class_letter` = 'P' THEN DATE_ADD(`last_verification_or_calibration`, INTERVAL {VERIFICATION_INTERVAL_MONTHS} MONTH)
                     ELSE DATE_ADD(`last_verification_or_calibration_date`, INTERVAL {VERIFICATION_INTERVAL_MONTHS} MONTH)
                 END AS `due_date`
             FROM `instrument_base`
-            WHERE NOT (
-                `class_letter` = 'P'
-            )
         )
         SELECT *
         FROM `instrument_eval`
