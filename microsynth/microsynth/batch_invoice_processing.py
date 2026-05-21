@@ -1,16 +1,17 @@
 # Copyright (c) 2024, libracore, Microsynth and contributors
 # License: GNU General Public License v3. See license.txt
 
+import os
+import re
+import traceback
+from datetime import datetime
 import frappe
 from frappe.utils import cint, flt, get_link_to_form, get_url_to_form, add_days
 from frappe.utils.file_manager import save_file
-import os
-import traceback
 from erpnextswiss.erpnextswiss.zugferd.zugferd import get_xml, get_content_from_zugferd
 from erpnextswiss.erpnextswiss.zugferd.qr_reader import find_qr_content_from_pdf, get_content_from_qr
 from erpnextswiss.erpnextswiss.zugferd.pdf_reader import find_supplier_from_pdf
 from microsynth.microsynth.utils import send_email_from_template
-from datetime import datetime
 
 
 @frappe.whitelist()
@@ -347,3 +348,264 @@ def process_file(file_path):
     except Exception as err:
         print(err)
         return None
+
+
+# Lightweight container (faster than dataclass in v12)
+class ParseAttempt(object):
+    def __init__(self, file_path, company):
+        self.file_path = file_path
+        self.company = company
+        self.ts = None
+        self.saw_zugferd = False
+        self.saw_qr = False
+        self.saw_pdf_extract = False
+        self.detected_supplier = None
+        self.supplier_method = "none"
+        self.purchase_invoice = None
+        self.pi_docstatus = None
+        self.pi_supplier = None
+        self.is_submitted = False
+        self.is_correct = None
+        self.had_error = False
+
+
+# Regex
+_PARSING_RE = re.compile(r"^INFO:\s+Parsing\s+(.+?)\s+for\s+(.+?)\.\.\.$")
+_TS_RE = re.compile(r"^INFO:\s+([\d-]+\s+[\d:.]+)")
+_PI_RE = re.compile(r"Purchase Invoice:\s+(PI-\d+)")
+_SUPPLIER_RE = re.compile(r"^INFO:\s+supplier\s+(.+?)$")
+_ERROR_RE = re.compile(r"^ERROR:")
+
+
+def _norm_supplier(val):
+    if not val:
+        return None
+    val = str(val).strip()
+    return None if val.lower() == "none" else val
+
+
+def parse_batch_log_output(log_text):
+    attempts = []
+    current = None
+    for raw in log_text.splitlines():
+        line = raw.strip()
+        m = _PARSING_RE.match(line)
+        if m:
+            if current:
+                attempts.append(current)
+            current = ParseAttempt(m.group(1), m.group(2))
+            continue
+        if not current:
+            continue
+        if _ERROR_RE.match(line):
+            current.had_error = True
+        if "electronic invoice detected" in line:
+            current.saw_zugferd = True
+        if "QR invoice detected" in line:
+            current.saw_qr = True
+        if "extract supplier from pdf" in line:
+            current.saw_pdf_extract = True
+        m = _SUPPLIER_RE.match(line)
+        if m:
+            current.detected_supplier = _norm_supplier(m.group(1))
+        m = _PI_RE.search(line)
+        if m:
+            current.purchase_invoice = m.group(1)
+        m = _TS_RE.match(line)
+        if m:
+            try:
+                current.ts = datetime.strptime(m.group(1), "%Y-%m-%d %H:%M:%S.%f")
+            except Exception:
+                pass
+    if current:
+        attempts.append(current)
+    # method assignment
+    for a in attempts:
+        if not a.detected_supplier:
+            continue
+        if a.saw_pdf_extract:
+            a.supplier_method = "pdf"
+        elif a.saw_zugferd:
+            a.supplier_method = "zugferd"
+        elif a.saw_qr:
+            a.supplier_method = "qr"
+    return attempts
+
+
+def bulk_resolve_pi(attempts):
+    """
+    Resolves PIs using bulk queries instead of per-attempt DB hits.
+    """
+    basenames = list(set(os.path.basename(a.file_path) for a in attempts))
+    # step 1: fetch File records in one query
+    files = frappe.get_all(
+        "File",
+        filters={
+            "file_name": ["in", basenames],
+            "attached_to_doctype": "Purchase Invoice"
+        },
+        fields=["file_name", "attached_to_name"],
+    )
+    file_map = {}
+    for f in files:
+        file_map.setdefault(f.file_name, []).append(f.attached_to_name)
+
+    # step 2: collect PI candidates
+    pi_names = set()
+    for lst in file_map.values():
+        pi_names.update(lst)
+
+    # step 3: fetch PI data in bulk
+    pi_data = {}
+    if pi_names:
+        rows = frappe.get_all(
+            "Purchase Invoice",
+            filters={"name": ["in", list(pi_names)]},
+            fields=["name", "supplier", "docstatus", "company"]
+        )
+        for r in rows:
+            pi_data[r.name] = r
+
+    # step 4: assign
+    for a in attempts:
+        basename = os.path.basename(a.file_path)
+        if not a.purchase_invoice:
+            candidates = file_map.get(basename)
+            if candidates:
+                a.purchase_invoice = candidates[0]
+        if not a.purchase_invoice:
+            continue
+        pi = pi_data.get(a.purchase_invoice)
+        if not pi:
+            continue
+        a.pi_docstatus = pi.docstatus
+        a.pi_supplier = pi.supplier
+        a.is_submitted = (pi.docstatus == 1)
+        if a.is_submitted:
+            if a.detected_supplier:
+                a.is_correct = (a.detected_supplier == a.pi_supplier)
+            else:
+                a.is_correct = False
+
+
+def build_supplier_detection_statistics(log_text, dedupe="file_latest"):
+    attempts = parse_batch_log_output(log_text)
+    if dedupe:
+        tmp = {}
+        for a in attempts:
+            key = a.file_path
+            if key not in tmp or (a.ts and a.ts > (tmp[key].ts or datetime.min)):
+                tmp[key] = a
+        attempts = list(tmp.values())
+    bulk_resolve_pi(attempts)
+    total = len(attempts)
+    submitted = [a for a in attempts if a.is_submitted]
+    correct = len([a for a in submitted if a.is_correct])
+    wrong = len([a for a in submitted if a.is_correct is False])
+    methods = {}
+    for a in attempts:
+        method = a.supplier_method or "none"
+        if method not in methods:
+            methods[method] = {
+                "total": 0,
+                "submitted": 0,
+                "correct": 0,
+                "wrong": 0,
+            }
+        methods[method]["total"] += 1
+        if a.is_submitted:
+            methods[method]["submitted"] += 1
+            if a.is_correct:
+                methods[method]["correct"] += 1
+            elif a.is_correct is False:
+                methods[method]["wrong"] += 1
+
+    # compute accuracy per method
+    for m in methods.values():
+        if m["submitted"]:
+            m["accuracy_pct"] = round(m["correct"] / m["submitted"] * 100, 2)
+        else:
+            m["accuracy_pct"] = 0
+
+    return {
+        "total": total,
+        "submitted": len(submitted),
+        "correct": correct,
+        "wrong": wrong,
+        "accuracy_pct": round((correct / len(submitted) * 100), 2) if submitted else 0,
+        "methods": methods
+    }
+
+
+def get_supplier_detection_cases(
+    log_file_path,
+    method=None,
+    is_correct=None,
+    submitted_only=True,
+    dedupe="file_latest"
+):
+    """
+    bench execute microsynth.microsynth.batch_invoice_processing.get_supplier_detection_cases --kwargs "{'log_file_path': '/mnt/erp_share/JPe/batch_invoice_processing.log', 'method': 'zugferd', 'is_correct': False, 'submitted_only': True, 'dedupe': 'file_latest'}"
+    """
+    with open(log_file_path, "r", encoding="utf-8") as f:
+        log_text = f.read()
+
+    attempts = parse_batch_log_output(log_text)
+
+    if dedupe:
+        tmp = {}
+        for a in attempts:
+            key = a.file_path
+            if key not in tmp or (a.ts and a.ts > (tmp[key].ts or datetime.min)):
+                tmp[key] = a
+        attempts = list(tmp.values())
+
+    bulk_resolve_pi(attempts)
+
+    def match(a):
+        if submitted_only and not a.is_submitted:
+            return False
+        if method is not None and a.supplier_method != method:
+            return False
+        if is_correct is not None and a.is_correct is not is_correct:
+            return False
+        return True
+
+    filtered = [a for a in attempts if match(a)]
+    rows = []
+    for a in filtered:
+        rows.append({
+            "purchase_invoice": a.purchase_invoice,
+            "file": a.file_path,
+            "method": a.supplier_method,
+            "detected_supplier": a.detected_supplier,
+            "actual_supplier": a.pi_supplier,
+            "correct": a.is_correct,
+            "timestamp": a.ts,
+        })
+    total = len(filtered)
+    correct = len([a for a in filtered if a.is_correct])
+    wrong = len([a for a in filtered if a.is_correct is False])
+
+    return {
+        "filters": {
+            "method": method,
+            "is_correct": is_correct,
+            "submitted_only": submitted_only,
+        },
+        "summary": {
+            "count": total,
+            "correct": correct,
+            "wrong": wrong,
+        },
+        "rows": rows
+    }
+
+
+def build_stats_from_log_file(log_file_path, **kwargs):
+    """
+    bench execute microsynth.microsynth.batch_invoice_processing.build_stats_from_log_file --kwargs "{'log_file_path': '/mnt/erp_share/JPe/batch_invoice_processing.log'}"
+    """
+    with open(log_file_path, "r", encoding="utf-8") as f:
+        log_text = f.read()
+    return build_supplier_detection_statistics(log_text, **kwargs)
