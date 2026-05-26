@@ -115,10 +115,10 @@ def get_data(filters):
                     WHEN `class_letter` IN ('T','W') THEN 'Verification'
                     WHEN `class_letter` = 'P' AND (
                         (`last_calibration_date` IS NOT NULL
-                            AND TIMESTAMPDIFF(YEAR, `last_calibration_date`, CURDATE()) >= {CALIBRATION_INTERVAL_YEARS})
+                            AND YEAR(CURDATE()) - YEAR(`last_calibration_date`) >= {CALIBRATION_INTERVAL_YEARS})
                         OR (`last_calibration_date` IS NULL
                             AND `oldest_verification_date` IS NOT NULL
-                            AND TIMESTAMPDIFF(YEAR, `oldest_verification_date`, CURDATE()) >= {CALIBRATION_INTERVAL_YEARS})
+                            AND YEAR(CURDATE()) - YEAR(`oldest_verification_date`) >= {CALIBRATION_INTERVAL_YEARS})
                         OR (`last_calibration_date` IS NULL
                             AND `oldest_verification_date` IS NULL)
                     ) THEN 'Calibration'
