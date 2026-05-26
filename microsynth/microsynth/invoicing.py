@@ -318,7 +318,7 @@ def async_create_invoices(mode, company, customer, is_monthly_collective_run=Fal
                                     rendered_subject = frappe.render_template(email_template.subject, {'delivery_note_id': dn_doc.name})
                                     rendered_message = frappe.render_template(email_template.response, {'delivery_note_id': dn_doc.name, 'reason': reason})
                                     send_email_from_template(email_template, rendered_message, rendered_subject)
-                                    frappe.log_error(f"{reason} Going to skip invoicing. Send an automatic email.", "invoicing.async_create_invoices")
+                                    #frappe.log_error(f"{reason} Going to skip invoicing. Send an automatic email.", "invoicing.async_create_invoices")
                     else:
                         # send and log an error and skip invoicing
                         reason = f"Sales Order {so_id} of Delivery Note {dn_doc.name} is Closed and the Delivery Note does not contain Item {' or '.join(allowed_items)} that would allow invoicing anyway."
@@ -326,7 +326,7 @@ def async_create_invoices(mode, company, customer, is_monthly_collective_run=Fal
                         rendered_subject = frappe.render_template(email_template.subject, {'delivery_note_id': dn_doc.name})
                         rendered_message = frappe.render_template(email_template.response, {'delivery_note_id': dn_doc.name, 'reason': reason})
                         send_email_from_template(email_template, rendered_message, rendered_subject)
-                        frappe.log_error(f"{reason} Going to skip invoicing. Send an automatic email.", "invoicing.async_create_invoices")
+                        #frappe.log_error(f"{reason} Going to skip invoicing. Send an automatic email.", "invoicing.async_create_invoices")
                         continue
 
                 # # TODO: implement for other export categories
@@ -372,7 +372,7 @@ def async_create_invoices(mode, company, customer, is_monthly_collective_run=Fal
                             rendered_subject = frappe.render_template(email_template.subject, {'delivery_note_id': delivery_note_id})
                             rendered_message = frappe.render_template(email_template.response, {'delivery_note_id': delivery_note_id, 'reason': reason})
                             send_email_from_template(email_template, rendered_message, rendered_subject)
-                            frappe.log_error(f"{reason} Going to skip invoicing. Send an automatic email.", "invoicing.async_create_invoices")
+                            #frappe.log_error(f"{reason} Going to skip invoicing. Send an automatic email.", "invoicing.async_create_invoices")
                             skip_dn = True
                             break
                     if skip_dn:
@@ -1847,7 +1847,7 @@ def transmit_sales_invoice(sales_invoice_id):
                 si_url_string = f"<a href={get_url_to_form('Sales Invoice', sales_invoice.name)}>{sales_invoice.name}</a>"
                 rendered_content = frappe.render_template(email_template.response, {'sales_invoice_id': si_url_string, 'contact_id': invoice_contact.name})
                 send_email_from_template(email_template, rendered_content, rendered_subject)
-                frappe.log_error(rendered_subject, "Sending invoice email failed")
+                #frappe.log_error(rendered_subject, "Sending invoice email failed")
                 return
 
             if sales_invoice.company == "Microsynth AG":
@@ -2142,7 +2142,7 @@ Your administration team<br><br>{footer}"
                     rendered_content = frappe.render_template(email_template.response, {'sales_invoice_id': sales_invoice.name, 'sales_order_id': so_id})
                     send_email_from_template(email_template, rendered_content, rendered_subject)
                     msg = f"Intercompany Sales Invoice {sales_invoice.name}: Sales Order {so_id} has status {so_data['status']}, docstatus {so_data['docstatus']} and hold_invoice = {so_data['hold_invoice']}. Unable to create a Sales Invoice.\n\nSend an email to {email_template.recipients}."
-                    frappe.log_error(msg, "invoicing.transmit_sales_invoice")
+                    #frappe.log_error(msg, "invoicing.transmit_sales_invoice")
                     continue
                 # Check if end customer of SO-LYO has collective billing.
                 # If yes, group by customer and create one SI-LYO per customer with multiple SO-LYOs if there are multiple SO-LYOs for the same customer
@@ -2200,8 +2200,8 @@ Your administration team<br><br>{footer}"
         rendered_subject = frappe.render_template(email_template.subject, {'sales_invoice_id': sales_invoice_id})
         rendered_content = frappe.render_template(email_template.response, {'sales_invoice_id': sales_invoice_id, 'err': err})
         send_email_from_template(email_template, rendered_content, rendered_subject)
-        frappe.log_error(f"Cannot transmit sales invoice {sales_invoice_id}:\n{err}\n{traceback.format_exc()}\n\n{rendered_content}",
-                         "invoicing.transmit_sales_invoice")
+        #frappe.log_error(f"Cannot transmit sales invoice {sales_invoice_id}:\n{err}\n{traceback.format_exc()}\n\n{rendered_content}",
+        #                 "invoicing.transmit_sales_invoice")
     return
 
 
