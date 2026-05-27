@@ -27,7 +27,6 @@ from microsynth.microsynth.utils import (
     get_alternative_account
 )
 from microsynth.microsynth.credits import get_credit_account_balance
-from microsynth.microsynth.seqblatt import process_label_status_change
 from microsynth.microsynth.taxes import find_dated_tax_template
 from microsynth.microsynth.marketing import lock_contact_by_name
 from microsynth.microsynth.naming_series import get_naming_series
@@ -2081,7 +2080,7 @@ def get_unused_labels(contacts, items):
     bench execute microsynth.microsynth.webshop.get_unused_labels --kwargs "{'contacts': ['215856', '237365'], 'items': ['6030', '6031', '3000', '3050'] }"
     """
     from microsynth.microsynth.api.webshop.label import get_unused_labels
-    #TODO: include a error log to notify about usage of this deprecated function once the webshop is updated
+    # TODO: include a error log to notify about usage of this deprecated function once the webshop is updated
     return get_unused_labels(contacts, items)
 
 
@@ -2093,7 +2092,7 @@ def get_label_status(labels):
     bench execute microsynth.microsynth.webshop.get_label_status --kwargs "{'labels': [{'item': '6030', 'barcode': 'MY00043'}, {'item': '6030', 'barcode': 'MY00047'}]}"
     """
     from microsynth.microsynth.api.webshop.label import get_label_status
-    #TODO: include a error log to notify about usage of this deprecated function once the webshop is updated
+    # TODO: include a error log to notify about usage of this deprecated function once the webshop is updated
     return get_label_status(labels)
 
 
@@ -2105,7 +2104,7 @@ def get_label_ranges():
     bench execute microsynth.microsynth.webshop.get_label_ranges
     """
     from microsynth.microsynth.api.webshop.label import get_label_ranges
-    #TODO: include a error log to notify about usage of this deprecated function once the webshop is updated
+    # TODO: include a error log to notify about usage of this deprecated function once the webshop is updated
     return get_label_ranges()
 
 
@@ -2151,11 +2150,9 @@ def set_label_submitted(labels):
 
     bench execute microsynth.microsynth.webshop.set_label_submitted --kwargs "{'labels': [{'item': '6030', 'barcode': 'MY004450', 'status': 'unused'}, {'item': '6030', 'barcode': 'MY004449', 'status': 'unused'}]}"
     """
-    return process_label_status_change(
-        labels=labels,
-        target_status="submitted",
-        required_current_statuses=["unused"]
-    )
+    from microsynth.microsynth.api.webshop.label import set_label_submitted
+    # TODO: include a error log to notify about usage of this deprecated function once the webshop is updated
+    return set_label_submitted(labels)
 
 
 @frappe.whitelist()
@@ -2165,13 +2162,9 @@ def set_label_unused(labels):
 
     bench execute microsynth.microsynth.webshop.set_label_unused --kwargs "{'labels': [{'item': '6030', 'barcode': 'MY004450', 'status': 'submitted'}, {'item': '6030', 'barcode': 'MY004449', 'status': 'submitted'}]}"
     """
-    return process_label_status_change(
-        labels=labels,
-        target_status="unused",
-        required_current_statuses=["submitted"],
-        check_not_used=True,
-        stop_on_first_failure=True
-    )
+    from microsynth.microsynth.api.webshop.label import set_label_unused
+    # TODO: include a error log to notify about usage of this deprecated function once the webshop is updated
+    return set_label_unused(labels)
 
 
 @frappe.whitelist()

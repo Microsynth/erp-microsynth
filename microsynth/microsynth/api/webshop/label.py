@@ -2,6 +2,8 @@ import frappe
 import traceback
 import re
 
+from microsynth.microsynth.seqblatt import process_label_status_change
+
 @frappe.whitelist()
 def get_unused_labels(contacts, items):
     """
@@ -391,3 +393,34 @@ def unregister_labels(registered_to, item, barcode_start_range, barcode_end_rang
         msg = f"Error unregistering labels for registered_to {registered_to}, item {item}, barcode_start_range {barcode_start_range}, barcode_end_range {barcode_end_range}: {err}. Check ERP Error Log for details."
         frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.unregister_labels")
         return {'success': False, 'message': "Failed to unregister labels.", 'internal_message': msg}
+
+
+@frappe.whitelist()
+def set_label_submitted(labels):
+    """
+    Set the Status of the given Labels to submitted if they are unused and pass further tests.
+    Try to submit as many labels as possible, return False if at least one given label could not be submitted
+
+    bench execute microsynth.microsynth.api.webshop.label.set_label_submitted --kwargs "{'labels': [{'item': '6030', 'barcode': 'MY004450', 'status': 'unused'}, {'item': '6030', 'barcode': 'MY004449', 'status': 'unused'}]}"
+    """
+    return process_label_status_change(
+        labels=labels,
+        target_status="submitted",
+        required_current_statuses=["unused"]
+    )
+
+
+@frappe.whitelist()
+def set_label_unused(labels):
+    """
+    Set the Status of the given Labels to unused if they are all submitted and pass further tests.
+
+    bench execute microsynth.microsynth.api.webshop.label.set_label_unused --kwargs "{'labels': [{'item': '6030', 'barcode': 'MY004450', 'status': 'submitted'}, {'item': '6030', 'barcode': 'MY004449', 'status': 'submitted'}]}"
+    """
+    return process_label_status_change(
+        labels=labels,
+        target_status="unused",
+        required_current_statuses=["submitted"],
+        check_not_used=True,
+        stop_on_first_failure=True
+    )
