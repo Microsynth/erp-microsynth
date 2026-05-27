@@ -232,3 +232,162 @@ def get_registered_label_ranges(contacts):
         msg = f"Error fetching registered label ranges for contacts {contacts}: {err}. Check ERP Error Log for details."
         frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.get_registered_label_ranges")
         return {'success': False, 'message': "Failed to get registered label ranges.", 'internal_message': msg, 'ranges': None}
+
+
+def check_label_range(item, prefix, first_int, second_int):
+    """
+    Check if the given integers are both in the range of the Label Range of the given Item.
+    """
+    if not frappe.db.exists("Label Range", item):
+        frappe.throw(f"There is no Label Range in the ERP for the given Item Code '{item}'.")
+    label_range = frappe.get_doc("Label Range", item)
+    if label_range.prefix and label_range.prefix != prefix:
+        frappe.throw(f"The Label Range of the given Item Code '{item}' has prefix '{label_range.prefix}' "
+                     f"but the given barcode_start_range and barcode_end_range have prefix '{prefix}'.")
+    start_is_in_range = False
+    end_is_in_range = False
+    ranges = label_range.range.split(',')
+    for r in ranges:
+        parts = r.split('-')
+        start = int(parts[0].strip())
+        end = int(parts[1].strip())
+        if start <= first_int <= end:
+            start_is_in_range = True
+        if start <= second_int <= end:
+            end_is_in_range = True
+    if not (start_is_in_range and end_is_in_range):
+        frappe.throw(f"Either {first_int} or {second_int} or both are out of range for the Label Range of the given Item '{item}'.")
+
+
+def check_and_unfold_label_range(barcode_start_range, barcode_end_range, item):
+    """
+    Returns a list of all barcode labels from barcode_start_range to barcode_end_range (including both)
+
+    bench execute microsynth.microsynth.webshop.check_and_unfold_label_range --kwargs "{'barcode_start_range': 'MY00001', 'barcode_end_range': 'MY00011', 'item': None}"
+    """
+    try:
+        number_length = len(barcode_start_range)
+        first_int = int(barcode_start_range)
+        second_int = int(barcode_end_range)
+        prefix = ""
+    except Exception:
+        # compile a regex
+        cre = re.compile("([a-zA-Z]+)([0-9]+)")
+        # match it to group text and numbers separately into a tuple
+        first_split = cre.match(barcode_start_range).groups()
+        second_split = cre.match(barcode_end_range).groups()
+        # check if label prefixes are identical
+        if first_split[0] != second_split[0]:
+            frappe.throw(f"The given barcodes have different prefixes ({first_split[0]} != {second_split[0]})")
+        prefix = first_split[0]
+        number_length = len(first_split[1])
+        first_int = int(first_split[1])
+        second_int = int(second_split[1])
+    if first_int > second_int:
+        frappe.throw(f"The given barcode_start_range must be smaller or equal than the given barcode_end_range.")
+    if item:
+        check_label_range(item, prefix, first_int, second_int)
+    barcodes = []
+    for n in range(first_int, second_int + 1):
+        barcodes.append(f"{prefix}{n:0{number_length}d}" if prefix else f"{n:0{number_length}d}")
+    return barcodes
+
+
+def check_and_get_sequencing_labels(registered_to, item, barcode_start_range, barcode_end_range):
+    """
+    Check the given parameters, check and unfold the given label range, return the Sequencing Labels as a list of dictionaries
+
+    bench execute microsynth.microsynth.webshop.check_and_get_sequencing_labels --kwargs "{'registered_to': '215856', 'item': '3000', 'barcode_start_range': '96858440', 'barcode_end_range': '96858444'}"
+    """
+    if not (registered_to and barcode_start_range and barcode_end_range):
+        return {'success': False, 'message': "Failed to get sequencing labels.", 'internal_message': "registered_to, barcode_start_range and barcode_end_range are mandatory parameters. Please provide all of them.", 'ranges': None}
+    if item:
+        if not frappe.db.exists("Item", item):
+            return {'success': False, 'message': "Failed to get sequencing labels.", 'internal_message': f"The given Item '{item}' does not exist in the ERP.", 'ranges': None}
+        item_condition = f"AND `item` = %s"
+    else:
+        item_condition = ""
+    # check given label range
+    barcodes = check_and_unfold_label_range(barcode_start_range, barcode_end_range, item)
+
+    sql_query = f"""
+        SELECT `name`,
+            `item`,
+            `label_id` AS `barcode`,
+            `status`,
+            `registered`,
+            `contact`,
+            `registered_to`
+        FROM `tabSequencing Label`
+        WHERE `label_id` IN ({','.join(['%s'] * len(barcodes))})
+            {item_condition}
+        ;"""
+    return frappe.db.sql(sql_query, barcodes + ([item] if item else []), as_dict=True)
+
+
+@frappe.whitelist()
+def register_labels(registered_to, item, barcode_start_range, barcode_end_range):
+    """
+    Register the given label range to the given Contact after doing several checks.
+
+    bench execute microsynth.microsynth.api.webshop.label.register_labels --kwargs "{'registered_to': '215856', 'item': '3000', 'barcode_start_range': '96858440', 'barcode_end_range': '96858444'}"
+    """
+    try:
+        sequencing_labels = check_and_get_sequencing_labels(registered_to, item, barcode_start_range, barcode_end_range)
+        registered_labels = []
+        messages = ''
+        for label in sequencing_labels:
+            # check label
+            if label['status'] != 'unused':
+                message = 'Some labels were not registered because they were already used. '
+                if not message in messages:
+                    messages += message
+                # do not change the affected Sequencing Label
+                continue
+            if label['registered'] or label['registered_to']:
+                message = 'Some labels were not registered because they were already registered. '
+                if not message in messages:
+                    messages += message
+                # do not change the affected Sequencing Label
+                continue
+            seq_label = frappe.get_doc("Sequencing Label", label['name'])
+            # register label
+            seq_label.registered = 1
+            seq_label.registered_to = registered_to
+            seq_label.save()
+            label['registered_to'] = registered_to
+            registered_labels.append(label)
+        if len(registered_labels) > 0:
+            return {'success': True, 'message': 'OK', 'internal_message': messages if messages else 'OK', 'ranges': partition_into_ranges(registered_labels)}
+        else:
+            return {'success': False, 'message': "Failed to register labels.", 'internal_message': 'Unable to register any labels. ' + messages, 'ranges': partition_into_ranges(registered_labels)}
+    except Exception as err:
+        msg = f"Error registering labels for registered_to {registered_to}, item {item}, barcode_start_range {barcode_start_range}, barcode_end_range {barcode_end_range}: {err}. Check ERP Error Log for details."
+        frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.register_labels")
+        return {'success': False, 'message': "Failed to register labels.", 'internal_message': msg, 'ranges': None}
+
+
+@frappe.whitelist()
+def unregister_labels(registered_to, item, barcode_start_range, barcode_end_range):
+    """
+    Unregister the given label range if it is registered to the given Contact
+
+    bench execute microsynth.microsynth.api.webshop.label.unregister_labels --kwargs "{'registered_to': '215856', 'item': '3000', 'barcode_start_range': '96858440', 'barcode_end_range': '96858444'}"
+    """
+    try:
+        sequencing_labels = check_and_get_sequencing_labels(registered_to, item, barcode_start_range, barcode_end_range)
+        for label in sequencing_labels:
+            # check label
+            if label['registered_to'] != registered_to:
+                return {'success': False, 'message': "Failed to unregister labels.", 'internal_message': f"Barcode {label['barcode']} is not registered to {registered_to}. Did not unregister any labels."}
+        for label in sequencing_labels:
+            # unregister label
+            seq_label = frappe.get_doc("Sequencing Label", label['name'])
+            seq_label.registered = 0
+            seq_label.registered_to = None
+            seq_label.save()
+        return {'success': True, 'message': 'OK', 'internal_message': 'OK'}
+    except Exception as err:
+        msg = f"Error unregistering labels for registered_to {registered_to}, item {item}, barcode_start_range {barcode_start_range}, barcode_end_range {barcode_end_range}: {err}. Check ERP Error Log for details."
+        frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.unregister_labels")
+        return {'success': False, 'message': "Failed to unregister labels.", 'internal_message': msg}
