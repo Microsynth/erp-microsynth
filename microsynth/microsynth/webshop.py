@@ -3426,73 +3426,9 @@ def update_credit_account(credit_account):
 
     bench execute microsynth.microsynth.webshop.update_credit_account --kwargs "{'credit_account': {'account_id': 'CA-000003', 'name': 'Changed Name', 'description': 'Changed Description', 'product_types': ['Oligos', 'Sequencing', 'NGS']}}"
     """
-    try:
-        credit_account_doc = frappe.get_doc('Credit Account', credit_account.get('account_id'))
-        if 'name' in credit_account and credit_account.get('name') != credit_account_doc.account_name:
-            credit_account_doc.account_name = credit_account.get('name')
-        if 'description' in credit_account and credit_account.get('description') != credit_account_doc.description:
-            credit_account_doc.description = credit_account.get('description')
-        if 'status' in credit_account and credit_account.get('status') != credit_account_doc.status:
-            if credit_account_doc.status == 'Disabled':
-                frappe.throw(f"Not allowed to change status of Credit Account '{credit_account.get('account_id')}' because it is Disabled.")
-            if credit_account.get('status') not in ['Active', 'Frozen', 'Disabled']:
-                frappe.throw(f"Not allowed to change status of Credit Account '{credit_account.get('account_id')}' to '{credit_account.get('status')}'. Allowed values are 'Active', 'Frozen' and 'Disabled'.")
-            if credit_account.get('status') == 'Disabled':
-                # Only allow to disable a Credit Account if its balance is zero
-                balance = get_credit_account_balance(credit_account.get('account_id'))
-                if balance >= 0.01 or balance <= -0.01:
-                    frappe.throw(f"Not allowed to change status of Credit Account '{credit_account.get('account_id')}' to 'Disabled' because its balance is not zero (balance: {balance}).")
-            credit_account_doc.status = credit_account.get('status')
-        if 'webshop_account' in credit_account and credit_account.get('webshop_account') != credit_account_doc.contact_person:
-            # Change the owner of the credit account
-            new_contact = credit_account.get('webshop_account')
-            if not new_contact:
-                frappe.throw(f"Not allowed to change owner of Credit Account '{credit_account.get('account_id')}' to empty value.")
-            if not frappe.db.exists('Contact', new_contact):
-                frappe.throw(f"Not allowed to change owner of Credit Account '{credit_account.get('account_id')}' to Contact '{new_contact}' that does not exist.")
-            old_customer = get_customer(credit_account_doc.contact_person)
-            new_customer = get_customer(new_contact)
-            if old_customer != new_customer:
-                frappe.throw(f"Not allowed to change owner of Credit Account '{credit_account.get('account_id')}' from Contact '{credit_account_doc.contact_person}' (Customer '{old_customer}') to Contact '{new_contact}' (Customer '{new_customer}') because they belong to different Customers.")
-            credit_account_doc.contact_person = new_contact
-        if 'product_types' in credit_account:
-            if not isinstance(credit_account.get('product_types'), list):
-                new_product_types = json.loads(credit_account.get('product_types'))
-            else:
-                new_product_types = credit_account.get('product_types')
-            if set(new_product_types) != set(get_product_types(credit_account.get('account_id'))):
-                if credit_account_doc.product_types_locked:
-                    frappe.throw(f"Not allowed to change product types of Credit Account '{credit_account.get('account_id')}' because it is locked for editing by the webshop.")
-                # Remove all existing product types
-                credit_account_doc.product_types = []
-                # Add new product types
-                for pt in new_product_types:
-                    credit_account_doc.append("product_types", {
-                        "product_type": pt
-                    })
-        if 'company' in credit_account and (credit_account.get('company') != credit_account_doc.company or credit_account_doc.has_transactions):
-            frappe.throw(f"Not allowed to change company of Credit Account '{credit_account.get('account_id')}'.")
-        if 'customer' in credit_account and (credit_account.get('customer') != get_customer(credit_account_doc.contact_person) or credit_account_doc.has_transactions):
-            frappe.throw(f"Not allowed to change customer of Credit Account '{credit_account.get('account_id')}'.")
-        if 'currency' in credit_account and (credit_account.get('currency') != credit_account_doc.currency or credit_account_doc.has_transactions):
-            frappe.throw(f"Not allowed to change currency of Credit Account '{credit_account.get('account_id')}'.")
-        credit_account_doc.save()
-        return {
-            "success": True,
-            "message": "OK",
-            "internal_message": f"Updated Credit Account '{credit_account.get('account_id')}'.",
-            "credit_account": get_credit_account_dto(credit_account_doc)
-        }
-    except Exception as err:
-        msg = f"Error updating Credit Account '{credit_account.get('account_id')}': {err}. Check ERP Error Log for details."
-        frappe.log_error(f"{msg}\n\n{traceback.format_exc()}", "webshop.update_credit_account")
-        return {
-            "success": False,
-            "message": "Error updating Credit Account",
-            "internal_message": msg,
-            "credit_accounts": []
-        }
-
+    from microsynth.microsynth.api.webshop.credit_account import update_credit_account
+    # TODO: include a error log to notify about usage of this deprecated function once the webshop is updated
+    return update_credit_account(credit_account)
 
 def get_default_shipping_address(webshop_address_id):
     """
