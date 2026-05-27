@@ -213,7 +213,7 @@
    "reqd": 1
   }
  ],
- "modified": "2026-04-22 17:07:01.468842",
+ "modified": "2026-05-27 14:59:41.646928",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Instrument",
@@ -248,6 +248,14 @@
    "read": 1,
    "report": 1,
    "role": "Microsynth User"
+  },
+  {
+   "create": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Purchase User",
+   "write": 1
   }
  ],
  "sort_field": "modified",
