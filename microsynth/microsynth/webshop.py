@@ -2104,26 +2104,9 @@ def get_label_ranges():
 
     bench execute microsynth.microsynth.webshop.get_label_ranges
     """
-    ranges_to_return = []
-    try:  # range is also a SQL key word and needs therefore to be surrounded by backticks:
-        label_ranges = frappe.get_all("Label Range", fields=['item_code', 'prefix', '`range`'])
-        for label_range in label_ranges:
-            ranges = label_range['range'].split(',')
-            for r in ranges:
-                parts = r.split('-')
-                start = int(parts[0].strip())
-                end = int(parts[1].strip())
-                ranges_to_return.append({
-                    "item": label_range['item_code'],
-                    "prefix": label_range['prefix'],
-                    "barcode_start_range": start,
-                    "barcode_end_range": end
-                })
-    except Exception as err:
-        msg = f"Error fetching label ranges: {err}. Check ERP Error Log for details."
-        frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.get_label_ranges")
-        return {'success': False, 'message': "Failed to get label ranges.", 'internal_message': msg, 'ranges': None}
-    return {'success': True, 'message': 'OK', 'internal_message': 'OK', 'ranges': ranges_to_return}
+    from microsynth.microsynth.api.webshop.label import get_label_ranges
+    #TODO: include a error log to notify about usage of this deprecated function once the webshop is updated
+    return get_label_ranges()
 
 
 def is_next_barcode(first_barcode, second_barcode):
