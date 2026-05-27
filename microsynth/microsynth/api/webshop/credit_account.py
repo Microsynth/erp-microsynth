@@ -1,4 +1,5 @@
 import frappe
+import traceback
 
 from microsynth.microsynth.utils import get_customer
 from microsynth.microsynth.credits import get_credit_account_balance
