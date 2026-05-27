@@ -2279,14 +2279,11 @@ def partition_into_ranges(sequencing_labels):
 @frappe.whitelist()
 def get_registered_label_ranges(contacts):
     """
-    bench execute microsynth.microsynth.webshop.get_registered_label_ranges --kwargs "{'contacts': ['215856', '237365']}"
+    bench execute microsynth.microsynth.webshop.get_registered_label_ranges --kwargs "{'contacts': ['215856', '237365', 'invalid_contact']}"
     """
     # Check parameter
     if not contacts or len(contacts) == 0:
         return {'success': False, 'message': "Failed to get registered label ranges.", 'internal_message': "Please provide at least one Contact", 'ranges': None}
-    for contact in contacts:
-        if not frappe.db.exists("Contact", contact):
-            return {'success': False, 'message': "Failed to get registered label ranges.", 'internal_message': f"The given Contact '{contact}' does not exist in the ERP.", 'ranges': None}
     try:
         sql_query = """
             SELECT `item`,
