@@ -2,8 +2,11 @@ import frappe
 import json
 import traceback
 
-from microsynth.microsynth.utils import get_customer
+from microsynth.microsynth.utils import get_customer, get_alternative_account
+from microsynth.microsynth.naming_series import get_naming_series
 from microsynth.microsynth.credits import get_credit_account_balance
+from microsynth.microsynth.invoicing import transmit_sales_invoice
+from microsynth.microsynth.taxes import find_dated_tax_template
 
 
 def get_product_types(account_id):
@@ -313,4 +316,130 @@ def update_credit_account(credit_account):
             "message": "Error updating Credit Account",
             "internal_message": msg,
             "credit_accounts": []
+        }
+
+
+# TODO: move this function to a more suitable place
+def get_default_shipping_address(webshop_address_id):
+    """
+    Get the default shipping address of the given Webshop Address.
+
+    bench execute microsynth.microsynth.api.webshop.credit_account.get_default_shipping_address --kwargs "{'webshop_address_id': '215856'}"
+    """
+    webshop_address_doc = frappe.get_doc("Webshop Address", webshop_address_id)
+    for a in webshop_address_doc.addresses:
+        if a.is_default_shipping and not a.disabled:
+            return frappe.get_value("Contact", a.contact, "address")
+    return None
+
+
+# TODO: move the core of this function to a more suitable place and split it into smaller functions if necessary
+@frappe.whitelist()
+def create_deposit_invoice(webshop_account, account_id, amount, currency, description, company, customer, customer_order_number, ignore_permissions=False, transmit_invoice=True, allow_recharge=False):
+    """
+    Create a Sales Invoice to deposit customer credits.
+
+    Request:
+    {
+        "webshop_account": "215856",
+        "account_id": "CA-000003",
+        "amount": "1000.00",
+        "currency": "CHF",
+        "description": "Cloning Primers",
+        "company": "Microsynth AG",
+        "customer": "801234",
+        "customer_order_number": "PO-12345"
+    }
+    * Company, Currency and Customer are pulled from the Credit Account and transmitted over the API for validation
+    * Credits will be available as soon as the payment of the Sales Invoice is received
+    * ERP validates that the company, customer and currency matches the account currency
+    * The description will be used to name the item. if not set (null) the standard text "Primers and Sequencing" will be shown on the Sales Invoice
+    * If allow_recharge is set to True, the deposit invoice can be created even if the Enforced or Legacy Credit Account already has transactions.
+
+    bench execute microsynth.microsynth.api.webshop.credit_account.create_deposit_invoice --kwargs "{'webshop_account': '215856', 'account_id': 'CA-000003', 'amount': 1000.00, 'currency': 'CHF', 'description': 'Primers', 'company': 'Microsynth AG', 'customer': '8003', 'customer_order_number': 'PO-12345'}"
+    """
+    try:
+        if ignore_permissions and frappe.get_user().name == 'webshop@microsynth.ch':
+            frappe.throw("Not allowed to use ignore_permissions.")
+        credit_account_doc = frappe.get_doc('Credit Account', account_id)
+        # Validate that the company, customer and currency matches the account currency
+        if credit_account_doc.company != company:
+            frappe.throw(f"The given Company '{company}' does not match the company '{credit_account_doc.company}' of Credit Account '{account_id}'.")
+        if credit_account_doc.customer != customer:
+            frappe.throw(f"The given Customer '{customer}' does not match the customer '{credit_account_doc.customer}' of Credit Account '{account_id}'.")
+        if credit_account_doc.currency != currency:
+            frappe.throw(f"The given Currency '{currency}' does not match the currency '{credit_account_doc.currency}' of Credit Account '{account_id}'.")
+        if credit_account_doc.has_transactions and credit_account_doc.account_type in ['Enforced Credit', 'Legacy'] and not allow_recharge:
+            frappe.throw(f"Not allowed to create a deposit invoice for a Credit Account of type 'Legacy' or 'Enforced Credit' that already has transactions.")
+
+        # Fetch credit item from Microsynth Settings
+        credit_item_code = frappe.get_value("Microsynth Settings", "Microsynth Settings", "credit_item")
+        credit_item = frappe.get_doc("Item", credit_item_code)
+
+        # Fetch shipping address of the webshop account
+        shipping_address = get_default_shipping_address(webshop_account)
+        if not shipping_address:
+            frappe.throw(f"Webshop Address '{webshop_account}' has no default shipping address. Unable to create deposit invoice.")
+        tax_template = find_dated_tax_template(company, customer, shipping_address, "Service", datetime.now().date())
+        customer_doc = frappe.get_doc("Customer", customer)
+
+        # define the income account for the credits
+        income_account = None
+        for d in credit_item.item_defaults:
+            if d.company == company:
+                income_account = get_alternative_account(d.income_account, currency)
+        if not income_account:
+            frappe.throw("Please define an income account for the credit item {0}".format(credit_item.name))
+
+        # Create the Sales Invoice
+        invoice = frappe.get_doc({
+            "doctype": "Sales Invoice",
+            "company": company,
+            "customer": customer,
+            "contact_person": webshop_account,
+            "contact_display": frappe.get_value("Contact", webshop_account, "full_name"),
+            "po_no": customer_order_number,
+            "product_type": "Service",
+            "territory": customer_doc.territory or "All Territories",
+            "currency": currency,
+            "selling_price_list": customer_doc.default_price_list or f"Sales Prices {currency}",
+            "items": [{
+                "item_code": credit_item.item_code,
+                "qty": 1,
+                "rate": amount,
+                "item_name": description if description else credit_item.item_name,
+                "cost_center": credit_item.get("selling_cost_center") or frappe.get_value("Company", company, "cost_center"),
+                "income_account": income_account
+            }],
+            "taxes_and_charges": tax_template,
+            "credit_account": account_id,
+            "remarks": f"Webshop deposit for Credit Account {account_id}"
+        })
+        invoice.naming_series = get_naming_series("Sales Invoice", company)
+        invoice.insert(ignore_permissions=ignore_permissions)
+        invoice.submit()
+        # Transmit the Sales Invoice
+        if isinstance(transmit_invoice, str):
+            transmit_invoice = transmit_invoice.strip().lower() in ("true", "1", "yes")
+        if transmit_invoice:
+            transmit_sales_invoice(invoice.name)
+        # Set has_transaction on the Credit Account
+        account_doc = frappe.get_doc("Credit Account", account_id)
+        if not account_doc.has_transactions:
+            account_doc.has_transactions = True
+            account_doc.save(ignore_permissions=ignore_permissions)
+        return {
+            "success": True,
+            "message": "OK",
+            "internal_message": f"Deposit invoice '{invoice.name}' created successfully for Credit Account '{account_id}'.",
+            "reference": invoice.name
+        }
+    except Exception as err:
+        msg = f"Error creating deposit invoice for Credit Account '{account_id}':\r\n{err}"
+        frappe.log_error(f"{msg}\n\n{traceback.format_exc()}", "webshop.create_deposit_invoice")
+        return {
+            "success": False,
+            "message": "Failed to create deposit invoice.",
+            "internal_message": msg,
+            "reference": None
         }
