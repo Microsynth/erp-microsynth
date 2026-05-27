@@ -1,5 +1,6 @@
 import frappe
 import json
+import base64
 import traceback
 
 from datetime import datetime
@@ -568,4 +569,36 @@ def get_transactions(account_id):
             "credit_account": None,
             "transactions": [],
             "reservations": None
+        }
+
+
+@frappe.whitelist()
+def get_balance_sheet_pdf(account_id):
+    """
+    Return a base64-encoded PDF and file name of the balance sheet for the given credit account
+
+    bench execute microsynth.microsynth.api.webshop.credit_account.get_balance_sheet_pdf --kwargs "{'account_id': 'CA-000002'}"
+    """
+    from erpnextswiss.erpnextswiss.attach_pdf import get_pdf_data
+    try:
+        pdf = get_pdf_data(doctype='Credit Account', name=account_id, print_format='Credit Account')
+        encoded_pdf = base64.b64encode(pdf).decode("utf-8")
+        file_name = f"Balance_Sheet_{account_id.replace(' ', '_')}.pdf"
+        return {
+            "success": True,
+            "file": {
+                "file_name": file_name,
+                "content_base64": encoded_pdf,
+                "mime_type": "application/pdf"
+            },
+            "internal_message": f"Generated balance sheet PDF for Credit Account '{account_id}'.",
+            "message": "OK"
+        }
+    except Exception as err:
+        frappe.log_error(frappe.get_traceback(), "webshop.get_balance_sheet_pdf")
+        return {
+            "success": False,
+            "file": None,
+            "internal_message": f"Failed to generate PDF: {str(err)}",
+            "message": "Failed to generate PDF"
         }
