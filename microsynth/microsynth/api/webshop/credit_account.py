@@ -182,3 +182,49 @@ def get_credit_accounts(webshop_account, workgroup_members):
             "internal_message": msg,
             "credit_accounts": []
         }
+
+
+@frappe.whitelist()
+def create_credit_account(webshop_account, name, description, company, product_types):
+    """
+    Create a new Credit Account for the given webshop_account (Contact ID) with the given name, description, company and product types.
+
+    bench execute microsynth.microsynth.api.webshop.credit_account.create_credit_account --kwargs "{'webshop_account': '215856', 'name': 'Test', 'description': 'some description', 'company': 'Microsynth AG', 'product_types': ['Oligos', 'Sequencing']}"
+    """
+    try:
+        if isinstance(product_types, str):
+            product_types = json.loads(product_types)
+
+        customer_id = get_customer(webshop_account)
+
+        credit_account = frappe.get_doc({
+            'doctype': 'Credit Account',
+            'contact_person': webshop_account,
+            'customer': customer_id,
+            'account_name': name,
+            'description': description,
+            'company': company,
+            'currency': frappe.db.get_value('Customer', customer_id, 'default_currency'),
+            'status': 'Active'
+        })
+        # Add product types
+        for pt in product_types:
+            credit_account.append("product_types", {
+                "product_type": pt
+            })
+        credit_account.insert()
+        return {
+            "success": True,
+            "message": "OK",
+            "internal_message": f"Created Credit Account '{credit_account.name}' for webshop_account '{webshop_account}'.",
+            "credit_account": get_credit_account_dto(credit_account)
+        }
+    except Exception as err:
+        msg = f"Error creating Credit Account for webshop_account '{webshop_account}': {err}. Check ERP Error Log for details."
+        frappe.log_error(f"{msg}\n\n{traceback.format_exc()}", "webshop.create_credit_account")
+        return {
+            "success": False,
+            "message": "Failed to create Credit Account.",
+            "internal_message": msg,
+            "credit_accounts": []
+        }
