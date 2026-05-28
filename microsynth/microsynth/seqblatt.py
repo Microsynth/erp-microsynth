@@ -3,7 +3,6 @@
 # For license information, please see license.txt
 # For more details, refer to https://github.com/Microsynth/erp-microsynth/
 
-import time
 import json
 import traceback
 from datetime import datetime
@@ -13,8 +12,7 @@ from frappe.utils import get_url_to_form
 from erpnext.selling.doctype.sales_order.sales_order import make_delivery_note
 
 from microsynth.microsynth.naming_series import get_naming_series
-from microsynth.microsynth.utils import validate_sales_order, has_items_delivered_by_supplier, get_customer
-from microsynth.microsynth.shipping import create_receiver_address_lines
+from microsynth.microsynth.utils import validate_sales_order, has_items_delivered_by_supplier
 
 
 def check_and_get_label(label):

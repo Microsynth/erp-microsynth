@@ -7,7 +7,6 @@
 
 import frappe
 import json
-import re
 import base64
 from frappe.desk.form.linked_with import get_linked_docs
 from microsynth.microsynth.utils import (
@@ -23,16 +22,13 @@ from microsynth.microsynth.utils import (
     get_margin_from_customer,
     to_bool,
     update_address_links_from_contact,
-    send_email_from_template,
-    get_alternative_account
+    send_email_from_template
 )
-from microsynth.microsynth.credits import get_credit_account_balance
 from microsynth.microsynth.taxes import find_dated_tax_template
 from microsynth.microsynth.marketing import lock_contact_by_name
 from microsynth.microsynth.naming_series import get_naming_series
-from microsynth.microsynth.invoicing import set_income_accounts, transmit_sales_invoice
+from microsynth.microsynth.invoicing import set_income_accounts
 from microsynth.microsynth.shipping import create_receiver_address_lines
-from microsynth.microsynth.api.webshop.credit_account import get_product_types, get_credit_account_dto, get_open_sales_orders
 from datetime import date, datetime, timedelta
 from erpnextswiss.scripts.crm_tools import get_primary_customer_address
 from erpnext.selling.doctype.sales_order.sales_order import make_sales_invoice

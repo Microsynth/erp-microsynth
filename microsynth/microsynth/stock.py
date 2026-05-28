@@ -1,8 +1,5 @@
-
-import json
 import frappe
 from frappe.utils import flt
-from microsynth.microsynth.utils import user_has_role
 from microsynth.microsynth.labels import print_purchasing_labels
 
 def get_purchasing_items(company="Microsynth AG"):
