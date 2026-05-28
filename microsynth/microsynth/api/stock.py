@@ -23,7 +23,7 @@ def get_purchasing_items_with_internal_code():
             AND `tabItem`.`is_purchase_item` = 1
             AND `tabItem`.`item_group` = "Purchasing"
             AND `tabItem`.`item_code` LIKE "P00%"
-        ORDER BY `tabItem`.`internal_code` ASC;
+        ORDER BY `internal_code` ASC;
     """, as_dict=True)
 
     return {
