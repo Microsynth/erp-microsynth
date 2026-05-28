@@ -57,8 +57,9 @@ def issue_material(company, user, items):
 
     bench execute microsynth.microsynth.stock.issue_material --kwargs '{"company": "Microsynth AG", "user": "firstname.lastname@microsynth.ch", "items": [{"item_code": "P007441", "qty": 2, "warehouse": "Stores - BAL", "batch_no": "HMBJ7023-HMBK0735"}]}'
     """
+    # TODO: Deprecate this function and move to api.stock.issue_material
     from microsynth.microsynth.api.stock import issue_material
-    frappe.log_error(f"Called 'stock.issue_material' by {frappe.session.user}. Please change to 'api.stock.issue_material'.", "stock.issue_material")
+    frappe.log_error(f"Called deprecated 'stock.issue_material' by {frappe.session.user}. Please change to 'api.stock.issue_material'.", "stock.issue_material")
     return issue_material(company, user, items)
 
 

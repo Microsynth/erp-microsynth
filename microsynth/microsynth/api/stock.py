@@ -2,6 +2,37 @@ import json
 import frappe
 
 
+@frappe.whitelist(allow_guest=True)
+def get_purchasing_items_with_internal_code():
+    """
+    Get a list of all enabled Purchasing Items with an internal code (item_code starting with P00).
+
+    bench execute microsynth.microsynth.api.stock.get_purchasing_items_with_internal_code
+    """
+    items = frappe.db.sql("""
+        SELECT
+            `tabItem`.`name`,
+            `tabItem`.`item_name`,
+            `tabItem`.`item_code`,
+            RIGHT(`tabItem`.`item_code`, 4) AS `internal_code`,
+            `tabItem`.`description`,
+            `tabItem`.`material_code`,
+            `tabItem`.`shelf_life_in_days`
+        FROM `tabItem`
+        WHERE `tabItem`.`disabled` = 0
+            AND `tabItem`.`is_purchase_item` = 1
+            AND `tabItem`.`item_group` = "Purchasing"
+            AND `tabItem`.`item_code` LIKE "P00%"
+        ORDER BY `tabItem`.`internal_code` ASC;
+    """, as_dict=True)
+
+    return {
+        'success': True,
+        'message': 'OK',
+        'items': items
+    }
+
+
 @frappe.whitelist(methods=["POST"])
 def issue_material(company, user, items):
     """
