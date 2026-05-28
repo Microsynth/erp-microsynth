@@ -744,63 +744,9 @@ def get_shipping_addresses(webshop_accounts):
 
     bench execute microsynth.microsynth.seqblatt.get_shipping_addresses --kwargs "{'webshop_accounts': ['215856', '215857']}"
     """
-    account_addresses = []
-    for webshop_account in list(set(webshop_accounts)):  # remove duplicates
-        if not webshop_account or webshop_account.strip() == "" or not isinstance(webshop_account, str):
-            return {
-                "success": False,
-                "message": "Wrong input",
-                "internal_message": f"Webshop account '{webshop_account}' is not a valid non-empty string.",
-                "account_addresses": account_addresses
-            }
-        customer_id = None
-        contact_id = None
-        address_id = None
-        try:
-            webshop_address_doc = frappe.get_doc("Webshop Address", webshop_account)
-        except frappe.DoesNotExistError as err:
-            return {
-                "success": False,
-                "message": f"Unable to get Webshop Address '{webshop_account}'",
-                "internal_message": str(err),
-                "account_addresses": account_addresses
-            }
-        for a in webshop_address_doc.addresses:
-            if a.is_default_shipping and not a.disabled:
-                customer_id = get_customer(a.contact)
-                contact_id = a.contact
-                contact_doc = frappe.get_doc("Contact", contact_id)
-                address_id = contact_doc.address
-                break
-        if customer_id and contact_id and address_id:
-            customer_name = frappe.get_value("Customer", customer_id, "customer_name")
-            shipping_address_lines = create_receiver_address_lines(customer_name, contact_id, address_id)
-        else:
-            return {
-                "success": False,
-                "message": f"Unable to get default shipping address for webshop account {webshop_account}",
-                "internal_message": f"No default shipping address found for webshop account {webshop_account}",
-                "account_addresses": account_addresses
-            }
-
-        account_addresses.append({
-            "webshop_account": webshop_account,
-            "first_name": contact_doc.first_name,
-            "last_name": contact_doc.last_name,
-            "salutation": contact_doc.salutation,
-            "title": contact_doc.designation,
-            "full_name": contact_doc.full_name,
-            "email": contact_doc.email_id,
-            "email_cc": [email.get("email_id") for email in contact_doc.get("email_ids") if email.get("email_id") != contact_doc.email_id],
-            "shipping_address_lines": shipping_address_lines
-        })
-
-    return {
-        "success": True,
-        "message": "OK",
-        "internal_message": None,
-        "account_addresses": account_addresses
-    }
+    from microsynth.microsynth.api.seqblatt import get_shipping_addresses
+    frappe.log_error(f"Called 'seqblatt.get_shipping_addresses' by {frappe.session.user}. Please change to 'api.seqblatt.get_shipping_addresses'.", "seqblatt.get_shipping_addresses")
+    return get_shipping_addresses(webshop_accounts)
 
 
 @frappe.whitelist()
