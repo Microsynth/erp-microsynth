@@ -9,11 +9,11 @@ def get_purchasing_items_with_internal_code():
 
     bench execute microsynth.microsynth.api.stock.get_purchasing_items_with_internal_code
     """
+    # TODO: Item.name vs Item.item_code - which one should be returned? For now, we return both.
     items = frappe.db.sql("""
         SELECT
-            `tabItem`.`name`,
-            `tabItem`.`item_name`,
             `tabItem`.`item_code`,
+            `tabItem`.`item_name`,
             RIGHT(`tabItem`.`item_code`, 4) AS `internal_code`,
             `tabItem`.`description`,
             `tabItem`.`material_code`,

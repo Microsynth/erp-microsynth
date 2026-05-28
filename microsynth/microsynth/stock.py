@@ -11,6 +11,7 @@ def get_purchasing_items(company="Microsynth AG"):
 
     bench execute microsynth.microsynth.stock.get_purchasing_items --kwargs '{"company": "Microsynth AG"}'
     """
+    # TODO: what is the purpose of this function? Where is it used?
     query = """
         SELECT
             `tabItem`.`item_code`,
