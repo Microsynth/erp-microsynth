@@ -8,7 +8,8 @@
   "user",
   "full_name",
   "label_printer",
-  "purchase_label_printer"
+  "purchase_label_printer",
+  "stock_correction_printer"
  ],
  "fields": [
   {
@@ -44,9 +45,15 @@
    "in_standard_filter": 1,
    "label": "Purchase Label Printer",
    "options": "Brady Printer"
+  },
+  {
+   "fieldname": "stock_correction_printer",
+   "fieldtype": "Link",
+   "label": "Stock Correction Printer",
+   "options": "Brady Printer"
   }
  ],
- "modified": "2026-04-30 16:06:55.249930",
+ "modified": "2026-06-02 13:36:47.150821",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "User Printer",

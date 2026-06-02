@@ -436,7 +436,7 @@ def print_instrument_label(qm_instrument_id, acquisition_date):
 
 
 @frappe.whitelist()
-def print_purchasing_labels(label_table, is_legacy=False, use_brady=False):
+def print_purchasing_labels(label_table, is_legacy=False, use_brady=True):
     """
     bench execute microsynth.microsynth.labels.print_purchasing_labels --kwargs "{'label_table': [{'labels_to_print':1,'item_code':'P001015','item_name':'Cap A 4.0 L 89','shelf_life_date':'2029-05-03','material_code':'Cap A','internal_code':'1015','batch_no':'HMBK8790','serial_no':'','idx':1}], 'is_legacy': False, 'use_brady': True}"
     """
@@ -448,7 +448,7 @@ def print_purchasing_labels(label_table, is_legacy=False, use_brady=False):
     else:
         purchase_label_template = "microsynth/templates/includes/purchase_label_novexx.html"
 
-    label_printer_ip = "192.0.1.73"  # change to 192.0.1.85 for Brady printer
+    label_printer_ip = "192.0.1.85"  # change to 192.0.1.73 for Novexx printer
     label_printer_port = 9100
     user = frappe.get_user().name
     username = frappe.get_value("User", user, "username")
@@ -456,10 +456,14 @@ def print_purchasing_labels(label_table, is_legacy=False, use_brady=False):
 
     # check if there is a user-specific printer
     if frappe.db.exists("User Printer", user):
-        printer_name = frappe.get_value("User Printer", user, "purchase_label_printer")
-        printer = frappe.get_doc("Brady Printer", printer_name)  # also used for Novexx printers
-        label_printer_ip = printer.ip
-        label_printer_port = printer.port
+        if is_legacy:
+            printer_name = frappe.get_value("User Printer", user, "stock_correction_printer")
+        else:
+            printer_name = frappe.get_value("User Printer", user, "purchase_label_printer")
+        if printer_name:
+            printer = frappe.get_doc("Brady Printer", printer_name)  # also used for Novexx printers
+            label_printer_ip = printer.ip
+            label_printer_port = printer.port
 
     if isinstance(label_table, str):
         label_table = json.loads(label_table)
