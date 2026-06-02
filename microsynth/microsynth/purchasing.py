@@ -2776,7 +2776,7 @@ def change_item_uom_and_has_batch_no(item_code, expected_current_stock_uom=None,
         - Placeholder batches ([NA]-<item_code>) may group stock artificially
         - Only supports single-company items (based on warehouses)
 
-    sudo bench execute microsynth.microsynth.purchasing.change_item_uom_and_has_batch_no --kwargs "{'item_code': 'P012544', 'new_stock_uom': 'Box', 'dry_run': False, 'verbose': True}"
+    sudo bench execute microsynth.microsynth.purchasing.change_item_uom_and_has_batch_no --kwargs "{'item_code': 'P013471', 'new_has_batch_no': 1, 'dry_run': False, 'verbose': True}"
     """
     def log(msg):
         if verbose:
@@ -2786,10 +2786,6 @@ def change_item_uom_and_has_batch_no(item_code, expected_current_stock_uom=None,
 
     if not item_code:
         frappe.throw("item_code is required.")
-
-    if frappe.db.exists("Item", f"x{item_code}"):
-        print(f"ERROR: Migration for Item {item_code} already (partially) executed. Please fix manually if still needed.")
-        return
 
     posting_dt = now_datetime()
 
@@ -2839,6 +2835,20 @@ def change_item_uom_and_has_batch_no(item_code, expected_current_stock_uom=None,
 
     if item_doc.has_serial_no:
         frappe.throw("Serial-numbered items are NOT supported by this migration script.")
+
+    existing_migrated_items = frappe.db.get_all("Item", filters=[["name", "like", f"x{item_code}%"]], fields=["name"], order_by="name desc")
+    if existing_migrated_items:
+        if len(existing_migrated_items) == 1 and existing_migrated_items[0]['name'] == f"x{item_code}":
+            temp_item_code = f"x{item_code}-1"
+        elif len(existing_migrated_items) > 1 and existing_migrated_items[0]['name'].startswith(f"x{item_code}-") and existing_migrated_items[0]['name'].split('-')[1].isdigit():
+            temp_item_code = f"x{item_code}-{int(existing_migrated_items[0]['name'].split('-')[-1])+1}"
+        else:
+            log(f"ERROR: Found {len(existing_migrated_items)} existing migrated items with unexpected names for {item_code}: {[i['name'] for i in existing_migrated_items]}. Please resolve manually. Skipping.")
+            return
+        log(f"WARNING: Found {len(existing_migrated_items)} migrated item(s) for {item_code}: {[i['name'] for i in existing_migrated_items]}. Renaming to {temp_item_code} to avoid conflicts.")
+    else:
+        temp_item_code = f"x{item_code}"
+
     log(f"Item {item_code} validated (current has_batch_no={item_doc.has_batch_no}, target_has_batch_no={target_has_batch_no}, stock_uom={item_doc.stock_uom}, target_stock_uom={target_stock_uom})")
 
     # 2. Collect stock data
@@ -2937,7 +2947,6 @@ def change_item_uom_and_has_batch_no(item_code, expected_current_stock_uom=None,
 
     # 4. Rename & disable old item
     old_item_code = item_code
-    temp_item_code = f"x{item_code}"
     log(f"Renaming Item {old_item_code} → {temp_item_code}")
 
     if not dry_run:
