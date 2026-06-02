@@ -610,6 +610,13 @@ def get_data():
                         "label": _("Analysis Report Monitoring"),
                         "doctype": "Analysis Report",
                         "is_query_report": True
+                    },
+                    {
+                        "type": "report",
+                        "name": "Promo Credit Monitoring",
+                        "label": _("Promo Credit Monitoring"),
+                        "doctype": "Credit Account",
+                        "is_query_report": True
                     }
             ]
         },
