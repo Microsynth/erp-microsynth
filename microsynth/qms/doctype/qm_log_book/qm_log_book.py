@@ -10,9 +10,10 @@ from datetime import datetime
 import socket
 from frappe import _
 import frappe
-from frappe.utils import formatdate
+from frappe.utils import formatdate, now_datetime, cstr
 from frappe.model.document import Document
-from microsynth.qms.doctype.qm_instrument.qm_instrument import get_due_qualifications
+from microsynth.qms.doctype.qm_instrument.qm_instrument import get_due_qualifications, is_gmp
+from microsynth.qms.signing import sign
 
 
 SITE_COMPANY_MAP = {
@@ -118,6 +119,59 @@ def print_instrument_certification_label(qm_log_book_entry_id):
             "success": False,
             "message": f"Error printing {qm_log_book_doc.entry_type} label for QM Instrument '{qm_instrument_id}': {err}"
         }
+
+
+@frappe.whitelist()
+def approve_and_close_log_book(dn, approval_password=None, expected_modified=None):
+    """
+    Robust wrapper for closing a QM Log Book entry.
+    - Verifies the client did not start from a stale document.
+    - If linked instrument is GMP, signs closure_signature via signing.sign().
+    - Reloads the document after signing because signing.sign() saves and commits.
+    - Sets closed_on, closed_by and status server-side.
+    - Avoids any stale frm.save() from the browser.
+    """
+    doc = frappe.get_doc("QM Log Book", dn)
+
+    if doc.status == "Closed":
+        return {
+            "ok": True,
+            "already_closed": True
+        }
+    if expected_modified and frappe.utils.cstr(doc.modified) != frappe.utils.cstr(expected_modified):
+        frappe.throw(
+            _("This Log Book Entry was modified after you opened it. Please reload and try again.")
+        )
+    gmp = is_gmp(doc.document_name)
+
+    if gmp:
+        if not approval_password:
+            frappe.throw(_("Approval password is required."))
+        sign(
+            dt="QM Log Book",
+            dn=dn,
+            user=frappe.session.user,
+            password=approval_password,
+            target_field="closure_signature",
+            submit=False
+        )
+        # signing.sign() saved and committed the document, so reload before changing more fields.
+        doc = frappe.get_doc("QM Log Book", dn)
+
+        if not doc.closure_signature:
+            frappe.throw(_("Signing failed. Closure signature was not set."))
+
+    doc.status = "Closed"
+    doc.closed_on = frappe.utils.now_datetime()
+    doc.closed_by = frappe.session.user
+    doc.save()
+    frappe.db.commit()
+
+    return {
+        "ok": True,
+        "already_closed": False,
+        "gmp": gmp
+    }
 
 
 def safe_join_path(base, *paths):
