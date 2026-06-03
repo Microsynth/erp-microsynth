@@ -82,12 +82,18 @@ def print_instrument_certification_label(qm_log_book_entry_id):
 
         # check if there is a user-specific printer
         if frappe.db.exists("User Printer", user):
-            printer_name = "BAL-Purch" # TODO: frappe.get_value("User Printer", user, "instr_cert_label_printer")
-            printer = frappe.get_doc("Brady Printer", printer_name)
+            printer_name = frappe.get_value("User Printer", user, "instr_cert_label_printer")
+            if printer_name:
+                printer = frappe.get_doc("Brady Printer", printer_name)
+            else:
+                return {
+                    "success": False,
+                    "message": f"Found no instrument certification label printer for user '{user}'. Please let IT App know which printer to use."
+                }
         else:
             return {
                 "success": False,
-                "message": f"No user-specific printer found for user '{user}'. Please contact IT App."
+                "message": f"No user-specific printer found for user '{user}'. Please let IT App know which printer to use."
             }
         qm_log_book_doc = frappe.get_doc("QM Log Book", qm_log_book_entry_id)
         qm_instrument_id = qm_log_book_doc.document_name
@@ -110,7 +116,7 @@ def print_instrument_certification_label(qm_log_book_entry_id):
         else:
             return {
                 "success": False,
-                "message": f"Found no Brady printer for user '{user}'. Please contact IT App."
+                "message": f"Found no Brady printer for user '{user}'. Please let IT App know which printer to use."
             }
     except Exception as err:
         msg = f"Error printing {qm_log_book_doc.entry_type} label for QM Instrument '{qm_instrument_id}': {err}"
@@ -184,7 +190,7 @@ def safe_join_path(base, *paths):
 
 def import_log_book_entries_from_file(path, BASE_PATH=None, verbose=False, print_label=False):
     """
-    bench execute microsynth.qms.doctype.qm_log_book.qm_log_book.import_log_book_entries_from_file --kwargs "{'path': '/mnt/erp_share/JPe/260505_QM_Log_Book_Testimport.csv', 'verbose': True, 'print_label': False}"
+    bench execute microsynth.qms.doctype.qm_log_book.qm_log_book.import_log_book_entries_from_file --kwargs "{'path': '/mnt/erp_share/Quality_Management/certificates_to_import/ERPImportFile.txt', 'BASE_PATH': '/mnt/erp_share/Quality_Management/certificates_to_import', 'verbose': True, 'print_label': False}"
     """
 
     def _attach_file(doc, path):

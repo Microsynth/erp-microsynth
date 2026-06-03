@@ -9,7 +9,8 @@
   "full_name",
   "label_printer",
   "purchase_label_printer",
-  "stock_correction_printer"
+  "stock_correction_printer",
+  "instr_cert_label_printer"
  ],
  "fields": [
   {
@@ -51,9 +52,15 @@
    "fieldtype": "Link",
    "label": "Stock Correction Printer",
    "options": "Brady Printer"
+  },
+  {
+   "fieldname": "instr_cert_label_printer",
+   "fieldtype": "Link",
+   "label": "Instrument Certification Label Printer",
+   "options": "Brady Printer"
   }
  ],
- "modified": "2026-06-02 13:36:47.150821",
+ "modified": "2026-06-03 12:59:35.952875",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "User Printer",
