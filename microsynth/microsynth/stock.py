@@ -295,7 +295,7 @@ def correct_stock(item_code, warehouse, rows):
 
     # Only print if successful
     if receipt_doc and label_table:
-        print_purchasing_labels(frappe.as_json(label_table), is_legacy=True)
+        print_purchasing_labels(frappe.as_json(label_table), is_legacy=True, use_brady=False)
 
     return {
         "success": True,
