@@ -1341,6 +1341,18 @@ def set_webshop_services(customer_id):
         add_webshop_service(customer_id, 'EcoliNightSeq')
 
 
+def set_po_required(customer_id):
+    """
+    Set the flag "Purchase Order Required" for the given customer if it has a french territory.
+
+    bench execute microsynth.microsynth.utils.set_po_required --kwargs "{'customer_id': '842586'}"
+    """
+    customer = frappe.get_doc('Customer', customer_id)
+    if customer.territory in ['Paris', 'France', 'France (Southeast)', 'France (Northwest)']:
+        customer.po_required = 1
+        customer.save()
+
+
 @frappe.whitelist()
 def configure_customer(customer):
     """
@@ -1365,6 +1377,7 @@ def configure_new_customer(customer):
     set_default_company(customer)
     add_webshop_services_for_italy(customer)
     set_webshop_services(customer)
+    set_po_required(customer)
 
 
 def get_alternative_account(account, currency):
