@@ -49,18 +49,6 @@ def get_data():
             ]
         },
         {
-            "label": _("Training Courses"),
-            "icon": "octicon octicon-file-submodule",
-            "items": [
-                    {
-                       "type": "doctype",
-                       "name": "QM Training Course",
-                       "label": _("Training Course"),
-                       "description": _("Training Course")
-                    }
-            ]
-        },
-        {
             "label": _("Nonconformities"),
             "icon": "octicon octicon-file-submodule",
             "items": [
@@ -88,6 +76,38 @@ def get_data():
                        "name": "QM Change",
                        "label": _("Change"),
                        "description": _("QM Change")
+                    }
+            ]
+        },
+        {
+            "label": _("Instruments"),
+            "icon": "octicon octicon-file-submodule",
+            "items": [
+                    {
+                       "type": "doctype",
+                       "name": "QM Instrument",
+                       "label": _("Instrument"),
+                       "description": _("Instrument")
+                    },
+                    {
+                        "type": "report",
+                        "name": "Instrument Compliance Due",
+                        "label": _("Instrument Compliance Due"),
+                        "doctype": "QM Instrument",
+                        "is_query_report": True
+                    },
+                    {
+                        "type": "doctype",
+                        "name": "QM Log Book",
+                        "label": _("Log Book entries"),
+                        "description": _("Log Book entries")
+                    },
+                    {
+                        "type": "report",
+                        "name": "Log Book Review Required",
+                        "label": _("Log Book Review Required"),
+                        "doctype": "QM Log Book",
+                        "is_query_report": True
                     }
             ]
         },
@@ -125,6 +145,18 @@ def get_data():
                        "name": "Contact Note",
                        "label": _("Contact Notes"),
                        "description": _("Contact Note")
+                    }
+            ]
+        },
+        {
+            "label": _("Training Courses"),
+            "icon": "octicon octicon-file-submodule",
+            "items": [
+                    {
+                       "type": "doctype",
+                       "name": "QM Training Course",
+                       "label": _("Training Course"),
+                       "description": _("Training Course")
                     }
             ]
         },
