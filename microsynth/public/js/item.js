@@ -538,6 +538,55 @@ function refresh_field_states(d) {
 }
 
 
+function commit_active_dialog_grid_cell(dialog, table_fieldname) {
+    const table_field = dialog.fields_dict[table_fieldname];
+
+    if (document.activeElement) {
+        $(document.activeElement).trigger("input");
+        $(document.activeElement).trigger("change");
+        $(document.activeElement).trigger("blur");
+    }
+    if (table_field && table_field.grid) {
+        const $active_control = table_field.grid.wrapper.find(
+            "input:focus, textarea:focus, select:focus"
+        );
+        if ($active_control.length) {
+            $active_control.trigger("input");
+            $active_control.trigger("change");
+            $active_control.trigger("blur");
+        }
+    }
+    return new Promise(resolve => setTimeout(resolve, 150));
+}
+
+
+function get_dialog_table_rows(dialog, table_fieldname) {
+    const table_field = dialog.fields_dict[table_fieldname];
+    if (
+        table_field &&
+        table_field.grid &&
+        typeof table_field.grid.get_data === "function"
+    ) {
+        const grid_rows = table_field.grid.get_data();
+        if (Array.isArray(grid_rows)) {
+            return grid_rows;
+        }
+    }
+    const values = dialog.get_values() || {};
+    if (Array.isArray(values[table_fieldname])) {
+        return values[table_fieldname];
+    }
+    if (
+        table_field &&
+        table_field.df &&
+        Array.isArray(table_field.df.data)
+    ) {
+        return table_field.df.data;
+    }
+    return [];
+}
+
+
 async function open_correct_stock_dialog(frm) {
     let batch_request_seq = 0;
     const FLOAT_PRECISION = cint(frappe.defaults.get_default("float_precision")) || 2;
@@ -616,18 +665,17 @@ async function open_correct_stock_dialog(frm) {
             }
         ],
         'primary_action_label': __("Submit"),
-        'primary_action': async () => {
+        'primary_action': async function(values) {
             d.disable_primary_action();
             try {
-                // Ensure active grid editor commits value
-                if (
-                    document.activeElement &&
-                    typeof document.activeElement.blur === "function"
-                ) {
-                    document.activeElement.blur();
+                await commit_active_dialog_grid_cell(d, "batch_table");
+
+                values = d.get_values();
+                if (!values) {
+                    return;
                 }
-                await new Promise(resolve => setTimeout(resolve, 0));
-                const warehouse = d.get_value("warehouse");
+                const warehouse = values.warehouse;
+                const raw_rows = get_dialog_table_rows(d, "batch_table");
 
                 if (!warehouse) {
                     frappe.msgprint({
@@ -637,30 +685,66 @@ async function open_correct_stock_dialog(frm) {
                     });
                     return;
                 }
-                const table_field = d.fields_dict.batch_table;
-                const raw_rows = get_table_rows(table_field);
                 const invalid_batches = [];
+                const incomplete_rows = [];
+                const seen_batches = {};
+                const duplicate_batches = [];
+
+                function has_value(value) {
+                    return value !== null && value !== undefined && value !== "";
+                }
+
                 const rows = (raw_rows || [])
-                    .filter(row => row && row.batch_no)
+                    .filter(row => {
+                        if (!row) {
+                            return false;
+                        }
+                        const has_any_value =
+                            has_value(row.batch_no) ||
+                            has_value(row.manufacturing_date) ||
+                            has_value(row.expiry_date) ||
+                            has_value(row.current_qty) ||
+                            has_value(row.new_qty);
+                        if (
+                            has_any_value &&
+                            (!has_value(row.batch_no) || String(row.batch_no).trim() === "")
+                        ) {
+                            incomplete_rows.push(row.idx || "?");
+                            return false;
+                        }
+                        return has_value(row.batch_no) && String(row.batch_no).trim() !== "";
+                    })
                     .map(row => {
-                        const parsed_new_qty = flt(
-                            row.new_qty,
-                            FLOAT_PRECISION
-                        );
+                        const batch_no = String(row.batch_no || "").trim();
+                        const raw_new_qty = row.new_qty;
+                        const parsed_new_qty = flt(raw_new_qty, FLOAT_PRECISION);
+
                         const has_invalid_qty =
-                            row.new_qty === null ||
-                            row.new_qty === undefined ||
-                            row.new_qty === "" ||
+                            raw_new_qty === null ||
+                            raw_new_qty === undefined ||
+                            raw_new_qty === "" ||
                             isNaN(parsed_new_qty);
 
                         if (has_invalid_qty) {
-                            invalid_batches.push(row.batch_no);
+                            invalid_batches.push(batch_no);
                         }
                         return {
-                            batch_no: row.batch_no,
+                            batch_no: batch_no,
                             new_qty: parsed_new_qty
                         };
                     });
+
+                if (incomplete_rows.length) {
+                    frappe.msgprint({
+                        title: __("Incomplete Row"),
+                        indicator: "red",
+                        message: __(
+                            "Please enter a Batch for row(s): {0}",
+                            [incomplete_rows.join(", ")]
+                        )
+                    });
+                    return;
+                }
                 if (invalid_batches.length) {
                     frappe.msgprint({
                         title: __("Invalid Quantity"),
@@ -668,6 +752,26 @@ async function open_correct_stock_dialog(frm) {
                         message: __(
                             "Please enter a valid New Qty for batch(es): {0}",
                             [invalid_batches.join(", ")]
+                        )
+                    });
+                    return;
+                }
+                rows.forEach(row => {
+                    if (seen_batches[row.batch_no]) {
+                        if (duplicate_batches.indexOf(row.batch_no) === -1) {
+                            duplicate_batches.push(row.batch_no);
+                        }
+                    }
+                    seen_batches[row.batch_no] = true;
+                });
+
+                if (duplicate_batches.length) {
+                    frappe.msgprint({
+                        title: __("Duplicate Batch"),
+                        indicator: "red",
+                        message: __(
+                            "Duplicate batch row(s): {0}",
+                            [duplicate_batches.join(", ")]
                         )
                     });
                     return;
@@ -703,8 +807,7 @@ async function open_correct_stock_dialog(frm) {
                         title: __("No Changes"),
                         indicator: "orange",
                         message: __(
-                            r.message.message ||
-                            "No stock changes were applied."
+                            r.message.message || "No stock changes were applied."
                         )
                     });
                     return;
@@ -732,16 +835,6 @@ async function open_correct_stock_dialog(frm) {
             }
         }
     });
-
-    function get_table_rows(table_field) {
-        if (
-            table_field.grid &&
-            typeof table_field.grid.get_data === "function"
-        ) {
-            return table_field.grid.get_data();
-        }
-        return table_field.df.data || [];
-    }
 
     async function load_batches() {
         const request_id = ++batch_request_seq;
