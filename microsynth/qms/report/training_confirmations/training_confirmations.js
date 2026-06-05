@@ -11,6 +11,12 @@ frappe.query_reports["Training Confirmations"] = {
             "options": "User"
         },
         {
+            "fieldname": "training_status",
+            "label": __("Training Status"),
+            "fieldtype": "Select",
+            "options": "\nSigned\nUnsigned\nCancelled"
+        },
+        {
             "fieldname": "qm_process",
             "label": __("QM Process"),
             "fieldtype": "Link",

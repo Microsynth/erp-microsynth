@@ -34,6 +34,15 @@ def get_data(filters):
             filter_conditions += f"AND `tabQM Training Record`.`document_name` = '{filters.get('qm_document')}'"
         if filters.get('limit_to_valid'):
             filter_conditions += f"AND `tabQM Document`.`status` = 'Valid'"
+        if filters.get('training_status'):
+            training_status_map = {
+                'Unsigned': 0,
+                'Signed': 1,
+                'Cancelled': 2
+            }
+            mapped_status = training_status_map.get(filters.get('training_status'))
+            if mapped_status is not None:
+                filter_conditions += f"AND `tabQM Training Record`.`docstatus` = {mapped_status}"
 
         query = """
             SELECT `tabQM Training Record`.`name`,
