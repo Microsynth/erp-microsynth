@@ -482,6 +482,8 @@ def print_purchasing_labels(label_table, is_legacy=False, use_brady=True):
                     prepare_brady_rows(row, username, is_legacy, receipt_date)
                 # Render the label
                 content = frappe.render_template(purchase_label_template, {"row": row})
+                #frappe.log_error(f"DEBUG: Starting to print purchasing labels with label_table={label_table},\n\nis_legacy={is_legacy}, use_brady={use_brady}, label_printer_ip={label_printer_ip}, label_printer_port={label_printer_port},\npurchase_label_template={purchase_label_template}, username={username}, receipt_date={receipt_date},\n\ncontent={content}")
+                #return
                 # Send to printer
                 if use_brady:
                     s.sendall((content + "\n").encode("utf-8"))
