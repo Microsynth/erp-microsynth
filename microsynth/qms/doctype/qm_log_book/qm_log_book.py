@@ -68,7 +68,7 @@ def is_user_process_owner(log_book_id, user):
 def print_raw(ip, port, content):
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.connect((ip, port))
-    s.send(content.encode())
+    s.sendall(content.encode())
     s.close()
 
 
@@ -108,7 +108,8 @@ def print_instrument_certification_label(qm_log_book_entry_id):
         }
         content = frappe.render_template("microsynth/templates/includes/instrument_certification_label_brady.html", label_data)
         if printer:
-            print_raw(printer.ip, printer.port, content)
+            #frappe.log_error(f"DEBUG: Printing label for QM Log Book Entry '{qm_log_book_entry_id}' on printer '{printer.name}' with IP {printer.ip} and port {printer.port}. Content:\n{content}\n\n{raw_next_due_date=}, {next_due_date=}", "labels.print_instrument_certification_label")
+            print_raw(printer.ip, printer.port, content + "\n")  # Added newline to ensure the printer processes the content
             return {
                 "success": True,
                 "message": f"{qm_log_book_doc.entry_type} label for QM Instrument {qm_instrument_id} printed successfully on printer {printer.name}."
