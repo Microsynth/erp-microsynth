@@ -538,60 +538,11 @@ function refresh_field_states(d) {
 }
 
 
-function commit_active_dialog_grid_cell(dialog, table_fieldname) {
-    const table_field = dialog.fields_dict[table_fieldname];
-
-    if (document.activeElement) {
-        $(document.activeElement).trigger("input");
-        $(document.activeElement).trigger("change");
-        $(document.activeElement).trigger("blur");
-    }
-    if (table_field && table_field.grid) {
-        const $active_control = table_field.grid.wrapper.find(
-            "input:focus, textarea:focus, select:focus"
-        );
-        if ($active_control.length) {
-            $active_control.trigger("input");
-            $active_control.trigger("change");
-            $active_control.trigger("blur");
-        }
-    }
-    return new Promise(resolve => setTimeout(resolve, 150));
-}
-
-
-function get_dialog_table_rows(dialog, table_fieldname) {
-    const table_field = dialog.fields_dict[table_fieldname];
-    if (
-        table_field &&
-        table_field.grid &&
-        typeof table_field.grid.get_data === "function"
-    ) {
-        const grid_rows = table_field.grid.get_data();
-        if (Array.isArray(grid_rows)) {
-            return grid_rows;
-        }
-    }
-    const values = dialog.get_values() || {};
-    if (Array.isArray(values[table_fieldname])) {
-        return values[table_fieldname];
-    }
-    if (
-        table_field &&
-        table_field.df &&
-        Array.isArray(table_field.df.data)
-    ) {
-        return table_field.df.data;
-    }
-    return [];
-}
-
-
 async function open_correct_stock_dialog(frm) {
-    let batch_request_seq = 0;
+    var batch_request_seq = 0;
     const FLOAT_PRECISION = cint(frappe.defaults.get_default("float_precision")) || 2;
 
-    const d = new frappe.ui.Dialog({
+    var d = new frappe.ui.Dialog({
         'title': __("Correct Stock"),
         'fields': [
             {
@@ -620,14 +571,18 @@ async function open_correct_stock_dialog(frm) {
                 fieldname: "batch_table",
                 fieldtype: "Table",
                 label: __("Batches"),
-                in_place_edit: true,
+                reqd: 1,
+                // Important for ERPNext v12 reliability:
+                // Do NOT use in_place_edit here.
+                // Let users add/edit rows through the normal row editor.
                 fields: [
                     {
                         fieldname: "batch_no",
                         fieldtype: "Data",
                         label: __("Batch"),
                         in_list_view: 1,
-                        columns: 2
+                        columns: 2,
+                        reqd: 1
                     },
                     {
                         fieldname: "manufacturing_date",
@@ -658,237 +613,229 @@ async function open_correct_stock_dialog(frm) {
                         precision: FLOAT_PRECISION,
                         label: __("New Qty"),
                         in_list_view: 1,
-                        columns: 2
+                        columns: 2,
+                        reqd: 1
                     }
                 ],
                 data: []
             }
         ],
         'primary_action_label': __("Submit"),
-        'primary_action': async function(values) {
-            d.disable_primary_action();
-            try {
-                await commit_active_dialog_grid_cell(d, "batch_table");
+        'primary_action': function() {
+            var values = d.get_values();
+            if (!values) {
+                return;
+            }
+            var warehouse = values.warehouse;
+            var raw_rows = values.batch_table || [];
 
-                values = d.get_values();
-                if (!values) {
-                    return;
-                }
-                const warehouse = values.warehouse;
-                const raw_rows = get_dialog_table_rows(d, "batch_table");
-
-                if (!warehouse) {
-                    frappe.msgprint({
-                        title: __("Error"),
-                        indicator: "red",
-                        message: __("Please select a warehouse.")
-                    });
-                    return;
-                }
-                const invalid_batches = [];
-                const incomplete_rows = [];
-                const seen_batches = {};
-                const duplicate_batches = [];
-
-                function has_value(value) {
-                    return value !== null && value !== undefined && value !== "";
-                }
-
-                const rows = (raw_rows || [])
-                    .filter(row => {
-                        if (!row) {
-                            return false;
-                        }
-                        const has_any_value =
-                            has_value(row.batch_no) ||
-                            has_value(row.manufacturing_date) ||
-                            has_value(row.expiry_date) ||
-                            has_value(row.current_qty) ||
-                            has_value(row.new_qty);
-                        if (
-                            has_any_value &&
-                            (!has_value(row.batch_no) || String(row.batch_no).trim() === "")
-                        ) {
-                            incomplete_rows.push(row.idx || "?");
-                            return false;
-                        }
-                        return has_value(row.batch_no) && String(row.batch_no).trim() !== "";
-                    })
-                    .map(row => {
-                        const batch_no = String(row.batch_no || "").trim();
-                        const raw_new_qty = row.new_qty;
-                        const parsed_new_qty = flt(raw_new_qty, FLOAT_PRECISION);
-
-                        const has_invalid_qty =
-                            raw_new_qty === null ||
-                            raw_new_qty === undefined ||
-                            raw_new_qty === "" ||
-                            isNaN(parsed_new_qty);
-
-                        if (has_invalid_qty) {
-                            invalid_batches.push(batch_no);
-                        }
-                        return {
-                            batch_no: batch_no,
-                            new_qty: parsed_new_qty
-                        };
-                    });
-
-                if (incomplete_rows.length) {
-                    frappe.msgprint({
-                        title: __("Incomplete Row"),
-                        indicator: "red",
-                        message: __(
-                            "Please enter a Batch for row(s): {0}",
-                            [incomplete_rows.join(", ")]
-                        )
-                    });
-                    return;
-                }
-                if (invalid_batches.length) {
-                    frappe.msgprint({
-                        title: __("Invalid Quantity"),
-                        indicator: "red",
-                        message: __(
-                            "Please enter a valid New Qty for batch(es): {0}",
-                            [invalid_batches.join(", ")]
-                        )
-                    });
-                    return;
-                }
-                rows.forEach(row => {
-                    if (seen_batches[row.batch_no]) {
-                        if (duplicate_batches.indexOf(row.batch_no) === -1) {
-                            duplicate_batches.push(row.batch_no);
-                        }
-                    }
-                    seen_batches[row.batch_no] = true;
-                });
-
-                if (duplicate_batches.length) {
-                    frappe.msgprint({
-                        title: __("Duplicate Batch"),
-                        indicator: "red",
-                        message: __(
-                            "Duplicate batch row(s): {0}",
-                            [duplicate_batches.join(", ")]
-                        )
-                    });
-                    return;
-                }
-                const r = await frappe.call({
-                    'method': "microsynth.microsynth.stock.correct_stock",
-                    'args': {
-                        'item_code': frm.doc.name,
-                        'warehouse': warehouse,
-                        'rows': rows
-                    },
-                    'freeze': true,
-                    'freeze_message': __("Correcting stock...")
-                });
-                if (r.exc) {
-                    frappe.msgprint({
-                        title: __("Error"),
-                        indicator: "red",
-                        message: __("Error correcting stock.")
-                    });
-                    return;
-                }
-                if (!r.message) {
-                    frappe.msgprint({
-                        title: __("Error"),
-                        indicator: "red",
-                        message: __("No response from server.")
-                    });
-                    return;
-                }
-                if (!r.message.success) {
-                    frappe.msgprint({
-                        title: __("No Changes"),
-                        indicator: "orange",
-                        message: __(
-                            r.message.message || "No stock changes were applied."
-                        )
-                    });
-                    return;
-                }
-                d.hide();
+            if (!warehouse) {
                 frappe.msgprint({
-                    title: __("Success"),
-                    indicator: "green",
+                    title: __("Error"),
+                    indicator: "red",
+                    message: __("Please select a warehouse.")
+                });
+                return;
+            }
+            var rows = [];
+            var invalid_batches = [];
+            var incomplete_rows = [];
+            var duplicate_batches = [];
+            var seen_batches = {};
+
+            function has_value(value) {
+                return value !== null && value !== undefined && value !== "";
+            }
+
+            for (var i = 0; i < raw_rows.length; i++) {
+                var row = raw_rows[i] || {};
+                var row_no = row.idx || i + 1;
+                var batch_no = String(row.batch_no || "").trim();
+                var raw_new_qty = row.new_qty;
+                var has_any_value =
+                    has_value(row.batch_no) ||
+                    has_value(row.manufacturing_date) ||
+                    has_value(row.expiry_date) ||
+                    has_value(row.current_qty) ||
+                    has_value(row.new_qty);
+                // Ignore completely empty rows.
+                if (!has_any_value) {
+                    continue;
+                }
+                if (!batch_no) {
+                    incomplete_rows.push(row_no);
+                    continue;
+                }
+                var parsed_new_qty = flt(raw_new_qty, FLOAT_PRECISION);
+                if (
+                    raw_new_qty === null ||
+                    raw_new_qty === undefined ||
+                    raw_new_qty === "" ||
+                    isNaN(parsed_new_qty)
+                ) {
+                    invalid_batches.push(batch_no);
+                    continue;
+                }
+                if (seen_batches[batch_no]) {
+                    if (duplicate_batches.indexOf(batch_no) === -1) {
+                        duplicate_batches.push(batch_no);
+                    }
+                    continue;
+                }
+                seen_batches[batch_no] = true;
+
+                rows.push({
+                    'batch_no': batch_no,
+                    'manufacturing_date': row.manufacturing_date || null,
+                    'expiry_date': row.expiry_date || null,
+                    'current_qty': flt(row.current_qty, FLOAT_PRECISION),
+                    'new_qty': parsed_new_qty
+                });
+            }
+            if (incomplete_rows.length) {
+                frappe.msgprint({
+                    title: __("Incomplete Row"),
+                    indicator: "red",
                     message: __(
-                        "{0} batch(es) corrected.",
-                        [r.message.changed_batches || 0]
+                        "Please enter a Batch for row(s): {0}",
+                        [incomplete_rows.join(", ")]
                     )
                 });
-                await frm.reload_doc();
-            } catch (e) {
-                console.error(e);
-
-                frappe.msgprint({
-                    title: __("Server Error"),
-                    indicator: "red",
-                    message: __("An unexpected error occurred.")
-                });
-            } finally {
-                d.enable_primary_action();
+                return;
             }
+            if (invalid_batches.length) {
+                frappe.msgprint({
+                    title: __("Invalid Quantity"),
+                    indicator: "red",
+                    message: __(
+                        "Please enter a valid New Qty for batch(es): {0}",
+                        [invalid_batches.join(", ")]
+                    )
+                });
+                return;
+            }
+            if (duplicate_batches.length) {
+                frappe.msgprint({
+                    title: __("Duplicate Batch"),
+                    indicator: "red",
+                    message: __(
+                        "Duplicate batch row(s): {0}",
+                        [duplicate_batches.join(", ")]
+                    )
+                });
+                return;
+            }
+            if (!rows.length) {
+                frappe.msgprint({
+                    title: __("No Rows"),
+                    indicator: "orange",
+                    message: __("Please enter at least one batch row.")
+                });
+                return;
+            }
+            d.disable_primary_action();
+
+            frappe.call({
+                'method': "microsynth.microsynth.stock.correct_stock",
+                'args': {
+                    'item_code': frm.doc.name,
+                    'warehouse': warehouse,
+                    'rows': rows
+                },
+                'freeze': true,
+                'freeze_message': __("Correcting stock..."),
+                'callback': function(r) {
+                    d.enable_primary_action();
+                    if (r.exc) {
+                        frappe.msgprint({
+                            title: __("Error"),
+                            indicator: "red",
+                            message: __("Error correcting stock.")
+                        });
+                        return;
+                    }
+                    if (!r.message) {
+                        frappe.msgprint({
+                            title: __("Error"),
+                            indicator: "red",
+                            message: __("No response from server.")
+                        });
+                        return;
+                    }
+                    if (!r.message.success) {
+                        frappe.msgprint({
+                            title: __("No Changes"),
+                            indicator: "orange",
+                            message: __(
+                                r.message.message || "No stock changes were applied."
+                            )
+                        });
+                        return;
+                    }
+                    d.hide();
+                    frappe.msgprint({
+                        title: __("Success"),
+                        indicator: "green",
+                        message: __(
+                            "{0} batch(es) corrected.",
+                            [r.message.changed_batches || 0]
+                        )
+                    });
+                    frm.reload_doc();
+                },
+                error: function() {
+                    d.enable_primary_action();
+                    frappe.msgprint({
+                        title: __("Server Error"),
+                        indicator: "red",
+                        message: __("An unexpected error occurred.")
+                    });
+                }
+            });
         }
     });
 
-    async function load_batches() {
-        const request_id = ++batch_request_seq;
-        try {
-            const warehouse = d.get_value("warehouse");
-            if (!warehouse) {
-                return;
-            }
-            const r = await frappe.call({
-                'method': "microsynth.microsynth.stock.get_batches_with_qty",
-                'args': {
-                    'item_code': frm.doc.name,
-                    'warehouse': warehouse
-                }
-            });
-            // Ignore stale async responses
-            if (request_id !== batch_request_seq) {
-                return;
-            }
-            const rows = (r.message || []).map(row => ({
-                batch_no: row.batch_no,
-                manufacturing_date: row.manufacturing_date,
-                expiry_date: row.expiry_date,
-                current_qty: flt(
-                    row.current_qty,
-                    FLOAT_PRECISION
-                ),
-                new_qty: flt(
-                    row.current_qty,
-                    FLOAT_PRECISION
-                )
-            }));
-            const table_field = d.fields_dict.batch_table;
-            table_field.df.data = rows;
-            if (table_field.grid) {
-                table_field.grid.refresh();
-            }
-        } catch (e) {
-            console.error(e);
-            frappe.msgprint({
-                title: __("Error"),
-                indicator: "red",
-                message: __("Failed to load batches.")
-            });
+    function load_batches() {
+        var request_id = ++batch_request_seq;
+        var warehouse = d.get_value("warehouse");
+        if (!warehouse) {
+            return;
         }
+        frappe.call({
+            'method': "microsynth.microsynth.stock.get_batches_with_qty",
+            'args': {
+                'item_code': frm.doc.name,
+                'warehouse': warehouse
+            },
+            'callback': function(r) {
+                if (request_id !== batch_request_seq) {
+                    return;
+                }
+                var rows = (r.message || []).map(function(row) {
+                    return {
+                        batch_no: row.batch_no,
+                        manufacturing_date: row.manufacturing_date,
+                        expiry_date: row.expiry_date,
+                        current_qty: flt(row.current_qty, FLOAT_PRECISION),
+                        new_qty: flt(row.current_qty, FLOAT_PRECISION)
+                    };
+                });
+                var table_field = d.fields_dict.batch_table;
+                table_field.df.data = rows;
+
+                if (table_field.grid) {
+                    table_field.grid.refresh();
+                }
+            }
+        });
     }
     d.show();
-    // v12-safe modal sizing
     d.$wrapper
         .find(".modal-dialog")
-        .css("width", "800px");
-    // Cleanup
+        .css("width", "900px");
+
     d.onhide = function() {
         batch_request_seq = 0;
     };
-    await load_batches();
+    load_batches();
 }
