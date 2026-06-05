@@ -857,6 +857,34 @@ def get_or_create_location(floor, room, destination, fridge_rack, company='Micro
     return final_doc
 
 
+def import_locations(input_filepath):
+    """
+    Imports Locations from a given CSV file. The CSV file should have the following columns:
+    company, floor, room, destination, fridge_rack
+
+    bench execute microsynth.microsynth.purchasing.import_locations --kwargs "{'input_filepath': '/mnt/erp_share/Migration/Locations/2026-06-05_Fridges_Freezers.csv'}"
+    """
+    with open(input_filepath) as file:
+        print(f"INFO: Parsing Locations from '{input_filepath}' ...")
+        csv_reader = csv.reader((l.replace('\0', '') for l in file), delimiter=";")  # replace NULL bytes (throwing an error)
+        next(csv_reader)  # skip header
+        for line in csv_reader:
+            if len(line) != 5:
+                print(f"ERROR: Line '{line}' has length {len(line)}, but expected length 5. Going to continue.")
+                continue
+            company = line[0].strip()
+            floor = line[1].strip()
+            room = line[2].strip()
+            destination = line[3].strip()
+            fridge_rack = line[4].strip()
+            try:
+                location_doc = get_or_create_location(floor, room, destination, fridge_rack, company)
+                print(f"Successfully processed location for floor '{floor}', room '{room}', destination '{destination}', fridge rack '{fridge_rack}' in company '{company}'. Final location: '{location_doc.name}'")
+            except Exception as e:
+                print(f"ERROR processing location for floor '{floor}', room '{room}', destination '{destination}', fridge rack '{fridge_rack}' in company '{company}': {e}. Going to continue.")
+    print("Finished processing locations.")
+
+
 def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file, company='Microsynth AG', expected_line_length=43, update_existing_items=False):
     """
     Seqlab:
@@ -3067,7 +3095,7 @@ def change_item_uoms_and_has_batch_nos(input_filepath, expected_line_length=11, 
     item_code	item_name	 purchase_uom 	 conversion_factor 	stock_uom	new_stock_uom	 pack_size    	 pack_uom       	has_batch_no	new_has_batch_no	batch_type
 
     sudo bench execute microsynth.microsynth.purchasing.change_item_uoms_and_has_batch_nos --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2026-05-07_Sanger_items_to_change.csv', 'dry_run': True, 'verbose': True}"
-    sudo bench execute microsynth.microsynth.purchasing.change_item_uoms_and_has_batch_nos --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2026-05-07_Genetic_Analysis_items_to_change.csv', 'dry_run': True, 'verbose': True}"
+    sudo bench execute microsynth.microsynth.purchasing.change_item_uoms_and_has_batch_nos --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2026-06-05_Oligo_items_to_change.csv', 'dry_run': True, 'verbose': True}"
     """
     with open(input_filepath, newline='', encoding='utf-8') as file:
         print(f"INFO: Update Items from '{input_filepath}' ...")
