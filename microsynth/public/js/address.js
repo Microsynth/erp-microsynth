@@ -4,6 +4,27 @@ frappe.ui.form.on('Address', {
         if (frm.doc.__islocal) {
             cur_frm.set_value("address_source", "Manual");
         }
+
+        // lock Links table
+        if (!frm.doc.__islocal && !frappe.user.has_role("System Manager")) {
+            const linksField = cur_frm.get_field("links");
+            if (linksField && linksField.grid) {
+                const grid = linksField.grid;
+                const fieldsMap = grid.fields_map || {};
+                // lock entire child table
+                cur_frm.set_df_property('links', 'read_only', 1);
+                // lock individual columns only if they exist
+                if (fieldsMap.link_doctype) {
+                    cur_frm.get_field("links").grid.fields_map['link_doctype'].read_only = 1;
+                }
+                if (fieldsMap.link_name) {
+                    cur_frm.get_field("links").grid.fields_map['link_name'].read_only = 1;
+                }
+                // refresh grid so changes take effect visually
+                grid.refresh();
+            }
+        }
+
         // show a banner if source = Punchout
         if (frm.doc.address_source && frm.doc.address_source == "Punchout") {
             frm.dashboard.add_comment( __("Punchout Address! Please do <b>not</b> edit."), 'red', true);
