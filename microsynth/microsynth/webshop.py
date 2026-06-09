@@ -1585,7 +1585,7 @@ def place_order(content, client="webshop"):
             place_dropship_order(so_doc.name,
                 intercompany_customer_name=get_customer_from_company(so_doc.company),
                 supplier_company=drop_shipment_manufacturer)
-
+        frappe.db.commit()
         return {
             'success': True,
             'message': 'Sales Order created',
