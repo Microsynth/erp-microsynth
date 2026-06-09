@@ -364,6 +364,7 @@ class ParseAttempt(object):
         self.purchase_invoice = None
         self.pi_docstatus = None
         self.pi_supplier = None
+        self.pi_supplier_name = None
         self.is_submitted = False
         self.is_correct = None
         self.had_error = False
@@ -461,7 +462,7 @@ def bulk_resolve_pi(attempts):
         rows = frappe.get_all(
             "Purchase Invoice",
             filters={"name": ["in", list(pi_names)]},
-            fields=["name", "supplier", "docstatus", "company"]
+            fields=["name", "supplier", "supplier_name", "docstatus", "company"]
         )
         for r in rows:
             pi_data[r.name] = r
@@ -480,6 +481,7 @@ def bulk_resolve_pi(attempts):
             continue
         a.pi_docstatus = pi.docstatus
         a.pi_supplier = pi.supplier
+        a.pi_supplier_name = pi.supplier_name
         a.is_submitted = (pi.docstatus == 1)
         if a.is_submitted:
             if a.detected_supplier:
@@ -545,7 +547,7 @@ def get_supplier_detection_cases(
     dedupe="file_latest"
 ):
     """
-    bench execute microsynth.microsynth.batch_invoice_processing.get_supplier_detection_cases --kwargs "{'log_file_path': '/mnt/erp_share/JPe/batch_invoice_processing.log', 'method': 'zugferd', 'is_correct': False, 'submitted_only': True, 'dedupe': 'file_latest'}"
+    bench execute microsynth.microsynth.batch_invoice_processing.get_supplier_detection_cases --kwargs "{'log_file_path': '/mnt/erp_share/JPe/batch_invoice_processing.log', 'method': 'pdf', 'is_correct': False, 'submitted_only': True, 'dedupe': 'file_latest'}"
     """
     with open(log_file_path, "r", encoding="utf-8") as f:
         log_text = f.read()
@@ -580,12 +582,23 @@ def get_supplier_detection_cases(
             "method": a.supplier_method,
             "detected_supplier": a.detected_supplier,
             "actual_supplier": a.pi_supplier,
+            "actual_supplier_name": a.pi_supplier_name,
             "correct": a.is_correct,
             "timestamp": a.ts,
         })
     total = len(filtered)
     correct = len([a for a in filtered if a.is_correct])
     wrong = len([a for a in filtered if a.is_correct is False])
+    detected_supplier_counts = {}
+    actual_supplier_counts = {}
+    detected_actual_pairs = {}
+    for r in rows:
+        detected_supplier = r["detected_supplier"] or "None"
+        detected_supplier_counts[detected_supplier] = detected_supplier_counts.get(detected_supplier, 0) + 1
+        actual_supplier_key = f'{r["actual_supplier"] or "None"}: {r["actual_supplier_name"] or "None"}'
+        actual_supplier_counts[actual_supplier_key] = actual_supplier_counts.get(actual_supplier_key, 0) + 1
+        pair = str((detected_supplier, actual_supplier_key))
+        detected_actual_pairs[pair] = detected_actual_pairs.get(pair, 0) + 1
 
     return {
         "filters": {
@@ -597,6 +610,10 @@ def get_supplier_detection_cases(
             "count": total,
             "correct": correct,
             "wrong": wrong,
+            "accuracy_pct": round((correct / total * 100), 2) if total else 0,
+            "detected_supplier_counts": dict(sorted(detected_supplier_counts.items(), key=lambda x: x[1], reverse=True)),
+            "actual_supplier_counts": dict(sorted(actual_supplier_counts.items(), key=lambda x: x[1], reverse=True)),
+            "detected_actual_pairs": dict(sorted(detected_actual_pairs.items(), key=lambda x: x[1], reverse=True))
         },
         "rows": rows
     }
@@ -604,7 +621,7 @@ def get_supplier_detection_cases(
 
 def build_stats_from_log_file(log_file_path, **kwargs):
     """
-    bench execute microsynth.microsynth.batch_invoice_processing.build_stats_from_log_file --kwargs "{'log_file_path': '/mnt/erp_share/JPe/batch_invoice_processing.log'}"
+    sudo bench execute microsynth.microsynth.batch_invoice_processing.build_stats_from_log_file --kwargs "{'log_file_path': '/home/frappe/frappe-bench/logs/batch_invoice_processing.log'}"
     """
     with open(log_file_path, "r", encoding="utf-8") as f:
         log_text = f.read()
