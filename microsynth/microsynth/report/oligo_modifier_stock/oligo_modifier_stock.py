@@ -1,0 +1,149 @@
+# Copyright (c) 2026, Microsynth
+# For license information, please see license.txt
+
+from __future__ import unicode_literals
+import frappe
+from frappe import _
+
+
+def get_columns():
+	return [
+		{"label": _("Location"), "fieldname": "location", "fieldtype": "Link", "options": "Location", "width": 80},
+		{"label": _("Item"), "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 450},
+		{"label": _("Pack Size"), "fieldname": "pack_size", "fieldtype": "Float", "precision": 2, "width": 80},
+		{"label": _("Pack UOM"), "fieldname": "pack_uom", "fieldtype": "Link", "options": "UOM", "width": 80},
+		{"label": _("Material Code"), "fieldname": "material_code", "fieldtype": "Data", "width": 95},
+		{"label": _("Stock Qty"), "fieldname": "stock_qty", "fieldtype": "Int", "width": 85},
+		{"label": _("Requested Qty"), "fieldname": "requested_qty", "fieldtype": "Int", "width": 100},
+		{"label": _("Ordered Qty"), "fieldname": "ordered_qty", "fieldtype": "Int", "width": 90},
+		{"label": _("Stock UOM"), "fieldname": "stock_uom", "fieldtype": "Link", "options": "UOM", "width": 80},
+		{"label": _("Shelf Life in months"), "fieldname": "shelf_life_in_months", "fieldtype": "Int", "width": 130},
+		{"label": _("Supplier Item Code"), "fieldname": "supplier_item_code", "fieldtype": "Data", "width": 160},
+		{"label": _("Substitute Status"), "fieldname": "substitute_status", "fieldtype": "Data", "width": 120},
+	]
+
+
+def get_data():
+	query = """
+		SELECT DISTINCT
+			`tabLocation`.`name` AS `location`,
+			`tabItem`.`name` AS `item_code`,
+			`tabItem`.`pack_size` AS `pack_size`,
+			`tabItem`.`pack_uom` AS `pack_uom`,
+			(
+				SELECT `tabItem Supplier`.`supplier_part_no`
+				FROM `tabItem Supplier`
+				WHERE
+					`tabItem Supplier`.`parent` = `tabItem`.`name`
+					AND `tabItem Supplier`.`supplier` = (
+						SELECT `tabItem Default`.`default_supplier`
+						FROM `tabItem Default`
+						WHERE
+							`tabItem Default`.`parent` = `tabItem`.`name`
+							AND IFNULL(`tabItem Default`.`default_supplier`, '') != ''
+						ORDER BY `tabItem Default`.`idx` ASC
+						LIMIT 1
+					)
+				LIMIT 1
+			) AS `supplier_item_code`,
+			`tabItem`.`item_name` AS `item_name`,
+			`tabItem`.`material_code` AS `material_code`,
+			IFNULL(FLOOR(`tabItem`.`shelf_life_in_days` * 12 / 365), 0) AS `shelf_life_in_months`,
+			CAST(ROUND(IFNULL(`tabItem Stock`.`actual_qty`, 0), 0) AS SIGNED) AS `stock_qty`,
+			CAST(ROUND((
+				SELECT IFNULL(SUM(
+					GREATEST(
+						(`tabMaterial Request Item`.`qty` * IFNULL(`tabMaterial Request Item`.`conversion_factor`, 1))
+						-
+						(IFNULL(`tabMaterial Request Item`.`ordered_qty`, 0) * IFNULL(`tabMaterial Request Item`.`conversion_factor`, 1)),
+						0
+					)
+				), 0)
+				FROM `tabMaterial Request Item`
+				INNER JOIN `tabMaterial Request`
+					ON `tabMaterial Request`.`name` = `tabMaterial Request Item`.`parent`
+				WHERE
+					`tabMaterial Request`.`docstatus` = 1
+					AND `tabMaterial Request`.`status` != 'Stopped'
+					AND `tabMaterial Request Item`.`item_code` = `tabItem`.`name`
+			), 0) AS SIGNED) AS `requested_qty`,
+			CAST(ROUND((
+				SELECT IFNULL(SUM(
+					GREATEST(
+						(`tabPurchase Order Item`.`qty` * IFNULL(`tabPurchase Order Item`.`conversion_factor`, 1))
+						-
+						(IFNULL(`tabPurchase Order Item`.`received_qty`, 0) * IFNULL(`tabPurchase Order Item`.`conversion_factor`, 1)),
+						0
+					)
+				), 0)
+				FROM `tabPurchase Order Item`
+				INNER JOIN `tabPurchase Order`
+					ON `tabPurchase Order`.`name` = `tabPurchase Order Item`.`parent`
+				WHERE
+					`tabPurchase Order`.`docstatus` = 1
+					AND `tabPurchase Order Item`.`item_code` = `tabItem`.`name`
+			), 0) AS SIGNED) AS `ordered_qty`,
+			`tabItem`.`stock_uom` AS `stock_uom`,
+			(
+				SELECT `tabItem Supplier`.`substitute_status`
+				FROM `tabItem Supplier`
+				WHERE
+					`tabItem Supplier`.`parent` = `tabItem`.`name`
+					AND `tabItem Supplier`.`supplier` = (
+						SELECT `tabItem Default`.`default_supplier`
+						FROM `tabItem Default`
+						WHERE
+							`tabItem Default`.`parent` = `tabItem`.`name`
+							AND IFNULL(`tabItem Default`.`default_supplier`, '') != ''
+						ORDER BY `tabItem Default`.`idx` ASC
+						LIMIT 1
+					)
+				LIMIT 1
+			) AS `substitute_status`
+		FROM `tabLocation` AS `tabBase Location`
+		INNER JOIN `tabLocation`
+			ON `tabLocation`.`lft` > `tabBase Location`.`lft`
+			AND `tabLocation`.`rgt` < `tabBase Location`.`rgt`
+		INNER JOIN `tabLocation Link`
+			ON `tabLocation Link`.`location` = `tabLocation`.`name`
+			AND `tabLocation Link`.`parenttype` = 'Item'
+			AND `tabLocation Link`.`parentfield` = 'storage_locations'
+		INNER JOIN `tabItem`
+			ON `tabItem`.`name` = `tabLocation Link`.`parent`
+		LEFT JOIN (
+			SELECT
+				`tabBin`.`item_code`,
+				SUM(`tabBin`.`actual_qty`) AS `actual_qty`
+			FROM `tabBin`
+			GROUP BY `tabBin`.`item_code`
+		) AS `tabItem Stock`
+			ON `tabItem Stock`.`item_code` = `tabItem`.`name`
+		WHERE
+			`tabBase Location`.`name` = '11-03 Oligo Synthesis'
+			AND (
+				(
+					SELECT COUNT(*)
+					FROM `tabLocation` AS `tabLocation Ancestor`
+					WHERE
+						`tabLocation Ancestor`.`lft` <= `tabLocation`.`lft`
+						AND `tabLocation Ancestor`.`rgt` >= `tabLocation`.`rgt`
+				)
+				-
+				(
+					SELECT COUNT(*)
+					FROM `tabLocation` AS `tabBase Location Ancestor`
+					WHERE
+						`tabBase Location Ancestor`.`lft` <= `tabBase Location`.`lft`
+						AND `tabBase Location Ancestor`.`rgt` >= `tabBase Location`.`rgt`
+				)
+			) = 2
+			AND `tabItem`.`disabled` = 0
+		ORDER BY `tabLocation`.`name` ASC, `tabItem`.`name` ASC
+	"""
+	return frappe.db.sql(query, as_dict=True)
+
+
+def execute(filters=None):
+	columns = get_columns()
+	data = get_data()
+	return columns, data
