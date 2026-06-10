@@ -1,4 +1,4 @@
-# Copyright (c) 2013, Microsynth, libracore and contributors and contributors
+# Copyright (c) 2026, Microsynth
 # For license information, please see license.txt
 
 from __future__ import unicode_literals
@@ -8,10 +8,10 @@ from frappe import _
 
 def get_columns():
 	return [
-		{"label": _("Company"), "fieldname": "company", "fieldtype": "Link", "options": "Company", "width": 220},
-		{"label": _("User"), "fieldname": "user", "fieldtype": "Link", "options": "User", "width": 260},
+		{"label": _("Company"), "fieldname": "company", "fieldtype": "Link", "options": "Company", "width": 160},
+		{"label": _("User Full Name"), "fieldname": "full_name", "fieldtype": "Data", "width": 180},
 		{"label": _("QM Process"), "fieldname": "qm_process", "fieldtype": "Link", "options": "QM Process", "width": 220},
-		{"label": _("Is Process Owner"), "fieldname": "is_process_owner", "fieldtype": "Check", "width": 140},
+		{"label": _("Is Process Owner"), "fieldname": "is_process_owner", "fieldtype": "Check", "width": 120},
 	]
 
 
@@ -44,11 +44,12 @@ def get_data(filters=None):
 	query = f"""
 		SELECT DISTINCT
 			`tabQM User Process Assignment`.`company` AS `company`,
-			`tabUser Settings`.`user` AS `user`,
+			IFNULL(`tabSignature`.`full_name`, `tabUser Settings`.`user`) AS `full_name`,
 			`tabQM User Process Assignment`.`qm_process` AS `qm_process`,
 			CASE WHEN `tabQM Process Owner`.`name` IS NULL THEN 0 ELSE 1 END AS `is_process_owner`
 		FROM `tabUser Settings`
 		INNER JOIN `tabQM User Process Assignment` ON `tabQM User Process Assignment`.`parent` = `tabUser Settings`.`name`
+		LEFT JOIN `tabSignature` ON `tabSignature`.`user` = `tabUser Settings`.`user`
 		LEFT JOIN `tabQM Process Owner` ON `tabQM Process Owner`.`qm_process` = `tabQM User Process Assignment`.`qm_process`
 			AND IFNULL(`tabQM Process Owner`.`company`, '') = IFNULL(`tabQM User Process Assignment`.`company`, '')
 			AND `tabQM Process Owner`.`process_owner` = `tabUser Settings`.`user`
