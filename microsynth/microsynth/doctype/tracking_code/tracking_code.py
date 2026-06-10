@@ -92,6 +92,7 @@ def check_tracking_code(web_order_id, tracking_code):
     """
     bench execute microsynth.microsynth.doctype.tracking_code.tracking_code.check_tracking_code --kwargs "{'web_order_id': '4492332', 'tracking_code': 'A00216192C000000B095'}"
     bench execute microsynth.microsynth.doctype.tracking_code.tracking_code.check_tracking_code --kwargs "{'web_order_id': '4194198', 'tracking_code': '779487631663'}"
+    bench execute microsynth.microsynth.doctype.tracking_code.tracking_code.check_tracking_code --kwargs "{'web_order_id': '4765980', 'tracking_code': '1Z2AW9566842526813'}"
     """
     sales_orders = frappe.get_all("Sales Order",
         filters={'web_order_id': web_order_id, 'docstatus': 1},
@@ -134,7 +135,7 @@ def check_tracking_code(web_order_id, tracking_code):
         elif shipping_item in ['1101', '1102']:  # Post CH
             regex_str = '^\d{18}$'
         elif shipping_item in ['1108', '1113', '1115', '1160', '1161', '1162', '1165', '1166', '1167']:  # UPS
-            regex_str = '^1Z\d{16}$'
+            regex_str = '^1Z[0-9A-Z]{16}$'
         else:
             msg = f"Unable to check tracking code '{tracking_code}', because of unknown Shipping Item {shipping_item}."
             frappe.log_error(msg, "tracking_code.check_tracking_code")
