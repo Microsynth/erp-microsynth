@@ -12,6 +12,7 @@ def get_columns():
 		{"label": _("User Full Name"), "fieldname": "full_name", "fieldtype": "Data", "width": 180},
 		{"label": _("QM Process"), "fieldname": "qm_process", "fieldtype": "Link", "options": "QM Process", "width": 220},
 		{"label": _("Is Process Owner"), "fieldname": "is_process_owner", "fieldtype": "Check", "width": 120},
+		{"label": _("Last Modified On"), "fieldname": "last_modified_on", "fieldtype": "Datetime", "width": 170},
 	]
 
 
@@ -46,7 +47,13 @@ def get_data(filters=None):
 			`tabQM User Process Assignment`.`company` AS `company`,
 			IFNULL(`tabSignature`.`full_name`, `tabUser Settings`.`user`) AS `full_name`,
 			`tabQM User Process Assignment`.`qm_process` AS `qm_process`,
-			CASE WHEN `tabQM Process Owner`.`name` IS NULL THEN 0 ELSE 1 END AS `is_process_owner`
+			CASE WHEN `tabQM Process Owner`.`name` IS NULL THEN 0 ELSE 1 END AS `is_process_owner`,
+			CASE
+				WHEN `tabQM Process Owner`.`modified` IS NOT NULL
+					AND `tabQM Process Owner`.`modified` > `tabQM User Process Assignment`.`creation`
+				THEN `tabQM Process Owner`.`modified`
+				ELSE `tabQM User Process Assignment`.`creation`
+			END AS `last_modified_on`
 		FROM `tabUser Settings`
 		INNER JOIN `tabQM User Process Assignment` ON `tabQM User Process Assignment`.`parent` = `tabUser Settings`.`name`
 		LEFT JOIN `tabSignature` ON `tabSignature`.`user` = `tabUser Settings`.`user`
