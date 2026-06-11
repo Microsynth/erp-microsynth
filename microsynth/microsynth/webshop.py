@@ -2169,7 +2169,7 @@ def cancel_order(sales_order, web_order_id):
     """
     Cancel the given Sales Order and return the labels of its samples.
 
-    bench execute microsynth.microsynth.webshop.cancel_order --kwargs "{'sales_order': 'SO-BAL-24032361', 'web_order_id': '4128337'}"
+    bench execute microsynth.microsynth.webshop.cancel_order --kwargs "{'sales_order': 'SO-GOE-26008812', 'web_order_id': '4736508'}"
     """
     try:
         sales_order_doc = frappe.get_doc("Sales Order", sales_order)
@@ -2248,6 +2248,33 @@ def cancel_order(sales_order, web_order_id):
             'reference_name': sales_order_doc.name
         })
         new_comment.insert(ignore_permissions=True)
+
+        # Search for an intercompany Sales Order in the dropshipment workflow and cancel it as well (if exists)
+        dropship_orders = frappe.get_all("Sales Order",
+                                         filters=[
+                                             ['po_no', '=', sales_order_doc.name],
+                                             ['is_intercompany', '=', 1],
+                                             ['docstatus', '=', 1],
+                                             ['web_order_id', '=', sales_order_doc.web_order_id]
+                                         ],
+                                         fields=['name'])
+        if len(dropship_orders) == 1:
+            dropship_order_doc = frappe.get_doc("Sales Order", dropship_orders[0]['name'])
+            dropship_order_doc.cancel()
+            new_comment = frappe.get_doc({
+                'doctype': "Comment",
+                'comment_type': "Comment",
+                'subject': dropship_order_doc.name,
+                'content': f"Cancelled by the Webshop due to cancellation of linked Sales Order {sales_order_doc.name} (webshop.cancel_order)",
+                'reference_doctype': "Sales Order",
+                'status': "Linked",
+                'reference_name': dropship_order_doc.name
+            })
+            new_comment.insert(ignore_permissions=True)
+        elif len(dropship_orders) > 1:
+            msg = f"Multiple intercompany Sales Orders found for Sales Order {sales_order_doc.name}. Please check manually if all linked Sales Orders are cancelled. Linked Sales Orders: {', '.join([o['name'] for o in dropship_orders])}."
+            frappe.log_error(msg, "webshop.cancel_order")
+
         return {
             'success': True,
             'message': 'OK',
