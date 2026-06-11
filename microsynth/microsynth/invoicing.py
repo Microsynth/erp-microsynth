@@ -2132,8 +2132,9 @@ Your administration team<br><br>{footer}"
                 if not so_data:
                     skipped_so_ids.add(so_id)
                     continue
-                # check if the Sales Order with so_id has docstatus 1, is not closed and does not have hold_invoice set.
-                # Otherwise log error and send email to responsible person, and skip creation of SI-LYO for this SO-LYO
+
+                # Check if the Sales Order with so_id has docstatus 1, is not closed and does not have hold_invoice set.
+                # Otherwise send an email to aresponsible person, and skip creation of SI-LYO for this SO-LYO
                 if so_data["docstatus"] != 1 or so_data["status"] == "Closed" or so_data["hold_invoice"]:
                     skipped_so_ids.add(so_id)
                     # TODO: Search valid version and use it instead?
@@ -2144,6 +2145,15 @@ Your administration team<br><br>{footer}"
                     msg = f"Intercompany Sales Invoice {sales_invoice.name}: Sales Order {so_id} has status {so_data['status']}, docstatus {so_data['docstatus']} and hold_invoice = {so_data['hold_invoice']}. Unable to create a Sales Invoice.\n\nSend an email to {email_template.recipients}."
                     #frappe.log_error(msg, "invoicing.transmit_sales_invoice")
                     continue
+
+                # Check if the SO-LYO has already been invoiced with an SI-LYO. If yes, skip creation of another SI-LYO for this SO-LYO and log an error.
+                so_per_billed = frappe.get_value("Sales Order", so_id, "per_billed") or 0
+                if so_per_billed > 0:
+                    skipped_so_ids.add(so_id)
+                    msg = f"Intercompany Sales Invoice {sales_invoice.name}: Sales Order {so_id} has already been (partially) billed ({so_per_billed}%). Not going to create another Sales Invoice for this Sales Order. Please check manually."
+                    frappe.log_error(msg, "invoicing.transmit_sales_invoice")
+                    continue
+
                 # Check if end customer of SO-LYO has collective billing.
                 # If yes, group by customer and create one SI-LYO per customer with multiple SO-LYOs if there are multiple SO-LYOs for the same customer
                 customer = so_data["customer"]
