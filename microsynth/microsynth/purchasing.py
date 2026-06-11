@@ -1721,7 +1721,9 @@ def create_batches_and_assign(purchase_receipt, batch_data):
     purchase_receipt_doc = frappe.get_doc("Purchase Receipt", purchase_receipt)
 
     for row in batch_data:
-        batch_no = row.get('batch_id')
+        batch_no = row.get('batch_id').strip() if row.get('batch_id') else None
+        if not batch_no:
+            frappe.throw(f"Missing Batch ID in row {row['idx']}. Please provide a Batch ID and try again.")
         item_code = row['item_code']
         # Check if Batch with batch_no already exists for item_code, if yes use it, if not create and use it
         existing_batch_nos = frappe.db.get_all(
