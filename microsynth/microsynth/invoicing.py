@@ -447,7 +447,7 @@ def async_create_invoices(mode, company, customer, is_monthly_collective_run=Fal
                     # Close previously opened Sales Order
                     so_id, dn_doc = fetch_sales_order_id(dn.get('delivery_note'))
                     so_doc = frappe.get_doc("Sales Order", so_id)
-                    so_doc.update_status('Close')
+                    so_doc.update_status('Closed')
 
         if send_balance_warnings:
             for dn_customer, warnings in insufficient_credit_warnings.items():  # should contain always one customer
