@@ -30,9 +30,10 @@ def get_columns(mode=None):
     ]
     if mode != "To Order":
         columns += [
-            {"label": _("Ordered Qty"), "fieldname": "ordered_qty", "fieldtype": "Int", "width": 85},
+            {"label": _("Ordered Qty"), "fieldname": "ordered_qty", "fieldtype": "Int", "width": 50},
             {"label": _("Purchase Order"), "fieldname": "purchase_order", "fieldtype": "Link", "options": "Purchase Order", "width": 105},
-            {"label": _("Received Qty"), "fieldname": "received_qty", "fieldtype": "Int", "width": 95},
+            {"label": _("Received Qty"), "fieldname": "received_qty", "fieldtype": "Int", "width": 50},
+            {"label": _("Pur. Receipt"), "fieldname": "receipt", "fieldtype": "Link", "options": "Purchase Receipt", "width": 90},
         ]
     columns += [
         {"label": _("Supplier"), "fieldname": "supplier", "fieldtype": "Link", "options": "Supplier", "width": 65},
@@ -112,6 +113,7 @@ def get_data(filters):
                         AND `tabPurchase Order Item`.`material_request_item` = `tabMaterial Request Item`.`name`
                 ) AS `ordered_qty`,
                 IFNULL(`pr_receipts`.`received_qty`, 0) AS `received_qty`,
+                `pr_receipts`.`receipt` AS `receipt`,
                 (
                     SELECT `tabPurchase Order Item`.`parent`
                     FROM `tabPurchase Order Item`
@@ -133,6 +135,7 @@ def get_data(filters):
             LEFT JOIN (
                 SELECT
                     `tabPurchase Receipt Item`.`material_request_item`,
+                    `tabPurchase Receipt Item`.`parent` AS `receipt`,
                     `tabPurchase Receipt`.`posting_date` AS `receipt_date`,
                     SUM(`tabPurchase Receipt Item`.`qty`) AS `received_qty`
                 FROM `tabPurchase Receipt Item`
