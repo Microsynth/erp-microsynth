@@ -73,10 +73,7 @@ frappe.query_reports["Label Manager"] = {
             "options": "Item",
             get_query: function () {
                 return {
-                    'filters': {
-                        'is_sales_item': 1
-                        // TODO: only show Items that have a Label Range associated (Task #24037)
-                    }
+                    query: "microsynth.microsynth.report.label_manager.label_manager.get_items_with_label_range"
                 };
             }
         },

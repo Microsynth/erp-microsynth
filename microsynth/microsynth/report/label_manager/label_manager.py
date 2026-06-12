@@ -191,3 +191,27 @@ def set_labels_unused(content_str, filters, reason, description):
     if response['success']:
         create_label_log('locked', 'unused', reason, description, content_str, filters)
     return response
+
+
+@frappe.whitelist()
+def get_items_with_label_range(doctype, txt, searchfield, start, page_len, filters):
+    txt = txt or ""
+    return frappe.db.sql(
+        """
+        SELECT
+            `tabItem`.`name`,
+            `tabItem`.`item_name`
+        FROM `tabItem`
+        INNER JOIN `tabLabel Range`
+            ON `tabLabel Range`.`item_code` = `tabItem`.`name`
+        WHERE `tabItem`.`name` LIKE %(txt)s
+            OR `tabItem`.`item_name` LIKE %(txt)s
+        ORDER BY `tabItem`.`name` ASC
+        LIMIT %(start)s, %(page_len)s
+        """,
+        {
+            "txt": "%{0}%".format(txt),
+            "start": start,
+            "page_len": page_len,
+        },
+    )
