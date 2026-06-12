@@ -555,6 +555,13 @@ def get_data():
                        "name": "Abacus Export File Addition",
                        "label": _("Abacus Export Addition"),
                        "description": _("Abacus Export Addition")
+                    },
+                    {
+                        "type": "report",
+                        "name": "Enforced Credit Deposit Invoices",
+                        "label": _("Enforced Credit Deposit Invoices"),
+                        "doctype": "Sales Invoice",
+                        "is_query_report": True
                     }
             ]
         },
