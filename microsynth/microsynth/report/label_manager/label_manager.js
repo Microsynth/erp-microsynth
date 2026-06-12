@@ -249,16 +249,3 @@ frappe.query_reports["Label Manager"] = {
         }).addClass("btn-primary");
     }
 };
-
-function hide_column_filters() {
-    let container = document.getElementsByClassName("page-content");
-    const hide_column_filter_style = document.createElement("style");
-    hide_column_filter_style.innerHTML = `
-        .dt-header .dt-row[data-is-filter] {
-          display: none !important;
-        }
-    `
-    for (let i = 0; i < container.length; i++) {
-        container[i].appendChild(hide_column_filter_style);
-    }
-}
