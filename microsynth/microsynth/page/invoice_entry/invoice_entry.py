@@ -276,7 +276,7 @@ def update_pi_according_to_po(purchase_order_name, purchase_invoice_name, bill_n
             "company"  # TODO?
         }
         # Compute copyable common fields
-        common_fields = (pi_fields & po_fields) - excluded_fields
+        common_fields = (pi_fields & po_fields) - excluded_fields  # TODO: Be careful with fields that should not be copied from PO to PI, such as payment terms, currency/exchange fields, supplier address fields, tax fields, schedule-related fields, or custom workflow fields.
 
         for fieldname in common_fields:
             df = pi_meta.get_field(fieldname)
@@ -305,13 +305,19 @@ def update_pi_according_to_po(purchase_order_name, purchase_invoice_name, bill_n
             pi.append("items", {
                 "item_code": item.item_code,
                 "item_name": item.item_name,
+                "description": item.description,
                 "qty": item.qty,
+                "uom": item.uom,
+                "conversion_factor": item.conversion_factor,
+                "stock_uom": item.stock_uom,
+                "stock_qty": item.stock_qty,
                 "rate": item.rate,
                 "expense_account": item.expense_account,
                 "cost_center": item.cost_center,
-                "purchase_order": po.name
+                "purchase_order": po.name,
+                "po_detail": item.name  # this is critical for the PO to change per_billed
             })
-
+        pi.set_missing_values()
         # Ensure that taxes are set according to the template
         if pi.taxes_and_charges:
             # Load taxes from template
@@ -323,9 +329,8 @@ def update_pi_according_to_po(purchase_order_name, purchase_invoice_name, bill_n
             for row in tax_rows:
                 pi.append("taxes", row)
 
-            # Recalculate totals
-            pi.calculate_taxes_and_totals()
-
+        # Recalculate totals
+        pi.calculate_taxes_and_totals()
         pi.save()
         frappe.db.commit()
 
