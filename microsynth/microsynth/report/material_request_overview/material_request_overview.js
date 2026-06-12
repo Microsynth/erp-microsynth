@@ -44,10 +44,33 @@ frappe.query_reports["Material Request Overview"] = {
             label: __("QM Process"),
             fieldtype: "Link",
             options: "QM Process"
+        },
+        {
+            fieldname: "item_code",
+            label: __("Item"),
+            fieldtype: "Link",
+            options: "Item"
+        },
+        {
+            fieldname: "purchase_order",
+            label: __("Purchase Order"),
+            fieldtype: "Link",
+            options: "Purchase Order"
+        },
+        {
+            fieldname: "supplier_item_code",
+            label: __("Supplier Item Code"),
+            fieldtype: "Data"
+        },
+        {
+            fieldname: "comment",
+            label: __("Comment"),
+            fieldtype: "Data"
         }
     ],
     "onload": (report) => {
         hide_chart_buttons();
+        hide_column_filters();
 
         report.page.add_inner_button( __("New Request"), function() {
             // open search dialog currently shown on Material Request (Button "Add Item")

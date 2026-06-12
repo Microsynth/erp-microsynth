@@ -90,6 +90,29 @@ def get_data(filters):
     if filters and filters.get("company"):
         conditions += " AND `tabMaterial Request`.`company` = %(company)s"
         item_request_conditions += " AND `tabItem Request`.`company` = %(company)s"
+    if filters and filters.get("item_code"):
+        conditions += " AND `tabMaterial Request Item`.`item_code` = %(item_code)s"
+        # Item Requests currently do not store a link to Item master records.
+        item_request_conditions += " AND 1 = 0"
+    if filters and filters.get("purchase_order"):
+        conditions += """
+            AND EXISTS (
+                SELECT 1
+                FROM `tabPurchase Order Item`
+                WHERE
+                    `tabPurchase Order Item`.`docstatus` = 1
+                    AND `tabPurchase Order Item`.`material_request_item` = `tabMaterial Request Item`.`name`
+                    AND `tabPurchase Order Item`.`parent` = %(purchase_order)s
+            )
+        """
+        # Item Requests are not linked to Purchase Orders.
+        item_request_conditions += " AND 1 = 0"
+    if filters and filters.get("supplier_item_code"):
+        conditions += " AND IFNULL(`tabItem Supplier`.`supplier_part_no`, '') LIKE CONCAT('%%', %(supplier_item_code)s, '%%')"
+        item_request_conditions += " AND IFNULL(`tabItem Request`.`supplier_part_no`, '') LIKE CONCAT('%%', %(supplier_item_code)s, '%%')"
+    if filters and filters.get("comment"):
+        conditions += " AND IFNULL(`tabMaterial Request`.`comment`, '') LIKE CONCAT('%%', %(comment)s, '%%')"
+        item_request_conditions += " AND IFNULL(`tabItem Request`.`comment`, '') LIKE CONCAT('%%', %(comment)s, '%%')"
 
     if mode == "All Material Requests":
         data = frappe.db.sql(f"""
