@@ -773,7 +773,7 @@ def get_or_create_single_location(location_name, parent_location, is_group=True)
     return loc.name
 
 
-def get_or_create_location(floor, room, destination, fridge_rack, company='Microsynth AG'):
+def get_or_create_location(floor, room, destination, fridge_rack, company='Microsynth AG', explicit_floor_and_room=False):
     """
     Returns the final Location document (creates any missing lower-level locations).
 
@@ -796,36 +796,48 @@ def get_or_create_location(floor, room, destination, fridge_rack, company='Micro
         return frappe.get_doc("Location", city)
 
     # Floor
-    if not floor in FLOOR_MAPPING:
-        frappe.throw(f"Got unknown floor '{floor}'.")
-    floor_name = FLOOR_MAPPING.get(str(floor), '')
+    if explicit_floor_and_room:
+        floor_name = floor
+    else:
+        if not floor in FLOOR_MAPPING:
+            frappe.throw(f"Got unknown floor '{floor}'.")
+        floor_name = FLOOR_MAPPING.get(str(floor), '')
     floor_location = frappe.db.exists("Location", {"location_name": floor_name, "parent_location": city_location})
     if not floor_location:
         frappe.throw(f"Floor '{floor_name}' not found under city '{city}'.")
     if not room:
         return frappe.get_doc("Location", floor_name)
 
-    # Room - exact structured match
-    floor_str = str(floor).strip()
-    room_str = str(room).strip()
-
-    # Validate that floor and room are exactly two digits
-    if not (floor_str.isdigit() and len(floor_str) == 2):
-        frappe.throw(f"Invalid floor '{floor}': must be exactly two digits (e.g. '10', '11').")
-    if not (room_str.isdigit() and len(room_str) == 2) and room_str != '14c':
-        frappe.throw(f"Invalid room '{room}': must be exactly two digits (e.g. '03', '20').")
-
-    if company == 'Microsynth Seqlab GmbH':
-        pattern = f"{floor_str}.{room_str}%"
+    if explicit_floor_and_room:
+        # Room - direct match
+        room_doc = frappe.db.sql("""
+            SELECT `name`
+            FROM `tabLocation`
+            WHERE `parent_location` = %s
+            AND `location_name` = %s
+        """, (floor_location, room), as_dict=True)
     else:
-        pattern = f"{floor_str}-{room_str}%"
+        # Room - exact structured match
+        floor_str = str(floor).strip()
+        room_str = str(room).strip()
 
-    room_doc = frappe.db.sql("""
-        SELECT `name`
-        FROM `tabLocation`
-        WHERE `parent_location` = %s
-          AND `location_name` LIKE %s
-    """, (floor_location, pattern), as_dict=True)
+        # Validate that floor and room are exactly two digits
+        if not (floor_str.isdigit() and len(floor_str) == 2):
+            frappe.throw(f"Invalid floor '{floor}': must be exactly two digits (e.g. '10', '11').")
+        if not (room_str.isdigit() and len(room_str) == 2) and room_str != '14c':
+            frappe.throw(f"Invalid room '{room}': must be exactly two digits (e.g. '03', '20').")
+
+        if company == 'Microsynth Seqlab GmbH':
+            pattern = f"{floor_str}.{room_str}%"
+        else:
+            pattern = f"{floor_str}-{room_str}%"
+
+        room_doc = frappe.db.sql("""
+            SELECT `name`
+            FROM `tabLocation`
+            WHERE `parent_location` = %s
+            AND `location_name` LIKE %s
+        """, (floor_location, pattern), as_dict=True)
 
     if len(room_doc) == 0:
         frappe.throw(f"No room matching pattern '{pattern}' found under floor '{floor_name}' in '{city}'.")
@@ -862,7 +874,7 @@ def import_locations(input_filepath):
     Imports Locations from a given CSV file. The CSV file should have the following columns:
     company, floor, room, destination, fridge_rack
 
-    bench execute microsynth.microsynth.purchasing.import_locations --kwargs "{'input_filepath': '/mnt/erp_share/Migration/Locations/2026-06-05_Fridges_Freezers.csv'}"
+    bench execute microsynth.microsynth.purchasing.import_locations --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2026-06-12_Fridges_Freezers.csv'}"
     """
     with open(input_filepath) as file:
         print(f"INFO: Parsing Locations from '{input_filepath}' ...")
@@ -877,8 +889,9 @@ def import_locations(input_filepath):
             room = line[2].strip()
             destination = line[3].strip()
             fridge_rack = line[4].strip()
+            fridge_rack = None if fridge_rack.lower() in ['none', 'null', 'na', 'n/a', ''] else fridge_rack  # normalize empty values to None
             try:
-                location_doc = get_or_create_location(floor, room, destination, fridge_rack, company)
+                location_doc = get_or_create_location(floor, room, destination, fridge_rack, company, explicit_floor_and_room=True)
                 print(f"Successfully processed location for floor '{floor}', room '{room}', destination '{destination}', fridge rack '{fridge_rack}' in company '{company}'. Final location: '{location_doc.name}'")
             except Exception as e:
                 print(f"ERROR processing location for floor '{floor}', room '{room}', destination '{destination}', fridge rack '{fridge_rack}' in company '{company}': {e}. Going to continue.")
