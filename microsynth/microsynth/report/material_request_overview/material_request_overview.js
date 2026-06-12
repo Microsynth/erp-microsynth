@@ -46,10 +46,9 @@ frappe.query_reports["Material Request Overview"] = {
             options: "QM Process"
         },
         {
-            fieldname: "item_code",
-            label: __("Item"),
-            fieldtype: "Link",
-            options: "Item"
+            fieldname: "item_name",
+            label: __("Item Name"),
+            fieldtype: "Data"
         },
         {
             fieldname: "purchase_order",

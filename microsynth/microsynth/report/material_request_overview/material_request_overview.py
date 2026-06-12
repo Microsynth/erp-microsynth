@@ -90,10 +90,9 @@ def get_data(filters):
     if filters and filters.get("company"):
         conditions += " AND `tabMaterial Request`.`company` = %(company)s"
         item_request_conditions += " AND `tabItem Request`.`company` = %(company)s"
-    if filters and filters.get("item_code"):
-        conditions += " AND `tabMaterial Request Item`.`item_code` = %(item_code)s"
-        # Item Requests currently do not store a link to Item master records.
-        item_request_conditions += " AND 1 = 0"
+    if filters and filters.get("item_name"):
+        conditions += " AND IFNULL(`tabMaterial Request Item`.`item_name`, '') LIKE CONCAT('%%', %(item_name)s, '%%')"
+        item_request_conditions += " AND IFNULL(`tabItem Request`.`item_name`, '') LIKE CONCAT('%%', %(item_name)s, '%%')"
     if filters and filters.get("purchase_order"):
         conditions += """
             AND EXISTS (
