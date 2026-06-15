@@ -1119,7 +1119,7 @@ def create_promo_credit(delivery_note_doc, promo_credit_amount, promo_credit_set
         # adjust expiry date if the current expiry date is before new_expiry_date
         if not credit_account_doc.expiry_date or getdate(credit_account_doc.expiry_date) < new_expiry_date:
             credit_account_doc.expiry_date = new_expiry_date
-            credit_account_doc.save()
+            credit_account_doc.save(ignore_permissions=True)
     else:
         credit_account_name = create_credit_account(
             account_name=promo_credit_settings.credit_account_name,
