@@ -457,7 +457,8 @@ def get_email_ids(contact):
     contact_doc = frappe.get_doc("Contact", contact)
     email_ids = []
     for line in contact_doc.email_ids:
-        email_ids.append(line.email_id)
+        if line.email_id and line.email_id not in email_ids:  # avoid empty and duplicate email_ids
+            email_ids.append(line.email_id)
     return email_ids
 
 
