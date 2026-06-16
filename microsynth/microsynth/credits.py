@@ -1214,6 +1214,32 @@ def check_and_create_promo_credit(delivery_note):
         }
 
 
+def check_and_create_promo_credits(delivery_notes):
+    """
+    Checks and creates promotional credits for a list of Delivery Notes.
+    Returns a summary of the results.
+
+    bench execute microsynth.microsynth.credits.check_and_create_promo_credits --kwargs "{'delivery_notes': ['DN-GOE-26006645', 'DN-GOE-26006655', 'DN-GOE-26006817', 'DN-GOE-26006900', 'DN-GOE-26006910', 'DN-GOE-26006915', 'DN-GOE-26006967', 'DN-GOE-26006968', 'DN-GOE-26006978', 'DN-GOE-26007055', 'DN-GOE-26007056', 'DN-GOE-26007126', 'DN-GOE-26007127', 'DN-GOE-26007129', 'DN-GOE-26007130', 'DN-GOE-26007133', 'DN-GOE-26007196', 'DN-GOE-26007197', 'DN-GOE-26007271', 'DN-GOE-26007273', 'DN-GOE-26007401']}"
+    """
+    results = []
+    for dn in delivery_notes:
+        try:
+            result = check_and_create_promo_credit(dn)
+            results.append({
+                "delivery_note": dn,
+                "success": result.get("success"),
+                "message": result.get("message")
+            })
+        except Exception as e:
+            frappe.log_error(frappe.get_traceback(), "check_and_create_promo_credits")
+            results.append({
+                "delivery_note": dn,
+                "success": False,
+                "message": f"Error processing Delivery Note {dn}: {str(e)}"
+            })
+    return results
+
+
 def delivery_note_on_submit(delivery_note, event):
     try:
         if delivery_note.product_type != "Labels":
