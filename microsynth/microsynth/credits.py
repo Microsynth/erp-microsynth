@@ -1104,6 +1104,7 @@ def create_promo_credit(delivery_note_doc, promo_credit_amount, promo_credit_set
             "account_type": "Enforced Credit",
             "company": company,
             "customer": delivery_note_doc.customer,
+            "contact_person": delivery_note_doc.contact_person,
             "currency": delivery_note_doc.currency,
             "status": "Active",
             "expiry_date": (">=", nowdate())
