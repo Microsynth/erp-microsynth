@@ -89,7 +89,10 @@ def get_data(filters):
             `tabCredit Account`.`contact_person`,
             `tabCredit Account`.`status`,
             `tabCredit Account`.`expiry_date`,
-            `tabSales Invoice`.`contact_display`,
+            (SELECT `tabContact`.`full_name`
+            FROM `tabContact`
+            WHERE `tabContact`.`name` = `tabCredit Account`.`contact_person`
+            LIMIT 1) AS `contact_display`,
             SUM(`tabSales Invoice Item`.`net_amount`) AS `amount`,
             `tabCredit Account`.`currency`
         FROM `tabSales Invoice`
