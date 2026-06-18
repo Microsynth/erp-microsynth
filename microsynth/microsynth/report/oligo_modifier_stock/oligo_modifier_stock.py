@@ -8,18 +8,18 @@ from frappe import _
 
 def get_columns():
 	return [
-		{"label": _("Location"), "fieldname": "location", "fieldtype": "Link", "options": "Location", "width": 80},
-		{"label": _("Item"), "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 450},
-		{"label": _("Pack Size"), "fieldname": "pack_size", "fieldtype": "Float", "precision": 2, "width": 80},
+		{"label": _("Location"), "fieldname": "location", "fieldtype": "Link", "options": "Location", "width": 365},
+		{"label": _("Item"), "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 340},
+		{"label": _("Pack Size"), "fieldname": "pack_size", "fieldtype": "Float", "precision": 2, "width": 75},
 		{"label": _("Pack UOM"), "fieldname": "pack_uom", "fieldtype": "Link", "options": "UOM", "width": 80},
 		{"label": _("Material Code"), "fieldname": "material_code", "fieldtype": "Data", "width": 95},
 		{"label": _("Stock Qty"), "fieldname": "stock_qty", "fieldtype": "Int", "width": 85},
 		{"label": _("Requested Qty"), "fieldname": "requested_qty", "fieldtype": "Int", "width": 100},
 		{"label": _("Ordered Qty"), "fieldname": "ordered_qty", "fieldtype": "Int", "width": 90},
 		{"label": _("Stock UOM"), "fieldname": "stock_uom", "fieldtype": "Link", "options": "UOM", "width": 80},
-		{"label": _("Shelf Life in months"), "fieldname": "shelf_life_in_months", "fieldtype": "Int", "width": 130},
-		{"label": _("Supplier Item Code"), "fieldname": "supplier_item_code", "fieldtype": "Data", "width": 160},
-		{"label": _("Substitute Status"), "fieldname": "substitute_status", "fieldtype": "Data", "width": 120},
+		{"label": _("Shelf Life (m)"), "fieldname": "shelf_life_in_months", "fieldtype": "Int", "width": 100},
+		{"label": _("Supplier Item Code"), "fieldname": "supplier_item_code", "fieldtype": "Data", "width": 140},
+		{"label": _("Substitute Status"), "fieldname": "substitute_status", "fieldtype": "Data", "width": 120, "align": "left"},
 	]
 
 
@@ -120,27 +120,44 @@ def get_data():
 			ON `tabItem Stock`.`item_code` = `tabItem`.`name`
 		WHERE
 			`tabBase Location`.`name` = '11-03 Oligo Synthesis'
-			AND (
-				(
-					SELECT COUNT(*)
-					FROM `tabLocation` AS `tabLocation Ancestor`
-					WHERE
-						`tabLocation Ancestor`.`lft` <= `tabLocation`.`lft`
-						AND `tabLocation Ancestor`.`rgt` >= `tabLocation`.`rgt`
-				)
-				-
-				(
-					SELECT COUNT(*)
-					FROM `tabLocation` AS `tabBase Location Ancestor`
-					WHERE
-						`tabBase Location Ancestor`.`lft` <= `tabBase Location`.`lft`
-						AND `tabBase Location Ancestor`.`rgt` >= `tabBase Location`.`rgt`
-				)
-			) = 2
 			AND `tabItem`.`disabled` = 0
 		ORDER BY `tabLocation`.`name` ASC, `tabItem`.`name` ASC
 	"""
-	return frappe.db.sql(query, as_dict=True)
+	data = frappe.db.sql(query, as_dict=True)
+	set_full_location_path(data)
+	return data
+
+
+def set_full_location_path(data):
+	location_names = list({row.get("location") for row in data if row.get("location")})
+	if not location_names:
+		return
+
+	paths = frappe.db.sql(
+		"""
+			SELECT
+				`tabChild`.`name` AS `location`,
+				GROUP_CONCAT(`tabAncestor`.`name` ORDER BY `tabAncestor`.`lft` SEPARATOR ' / ') AS `location_path`
+			FROM `tabLocation` AS `tabChild`
+			INNER JOIN `tabLocation` AS `tabAncestor`
+				ON `tabAncestor`.`lft` <= `tabChild`.`lft`
+				AND `tabAncestor`.`rgt` >= `tabChild`.`rgt`
+			WHERE `tabChild`.`name` IN %(location_names)s
+			GROUP BY `tabChild`.`name`
+		""",
+		{"location_names": tuple(location_names)},
+		as_dict=True,
+	)
+
+	path_by_location = {row["location"]: row.get("location_path") for row in paths}
+
+	for row in data:
+		location = row.get("location")
+		path = path_by_location.get(location)
+		if path and path.startswith("All Locations / "):
+			row["location"] = path[len("All Locations / "):]
+		elif path:
+			row["location"] = path
 
 
 def execute(filters=None):
