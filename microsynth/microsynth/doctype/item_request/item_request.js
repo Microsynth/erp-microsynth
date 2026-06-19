@@ -425,7 +425,7 @@ function create_new_supplier_item(frm) {
                 fieldname: 'substitute_status',
                 fieldtype: 'Select',
                 description: 'blocked = not allowed to use; discontinued = no longer available from the Supplier',
-                options: '\nPotential\nVerified\nDiscontinued\nBlocked'
+                options: '\nPotential\nSpecial\nVerified\nSuccessor\nDiscontinued\nBlocked'
             }
         ],
         'primary_action_label': 'Create',

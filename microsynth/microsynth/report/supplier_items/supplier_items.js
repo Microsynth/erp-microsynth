@@ -147,7 +147,7 @@ function build_edit_dialog(row_data, report, can_edit_item, currency) {
         { label: __('Minimum Order Quantity'), fieldname: 'min_order_qty', fieldtype: 'Float', default: row_data.min_order_qty, read_only: !can_edit_item },
         { label: __('Pack unit'), fieldname: 'pack_uom', fieldtype: 'Link', options: 'UOM', default: row_data.pack_uom, read_only: !can_edit_item },
         { label: __('Shelf Life in Years'), fieldname: 'shelf_life_in_years', fieldtype: 'Float', default: row_data.shelf_life_in_years, read_only: !can_edit_item },
-        { label: __('Substitute Status'), fieldname: 'substitute_status', fieldtype: 'Select', options: '\nPotential\nVerified\nDiscontinued\nBlocked', default: row_data.substitute_status, read_only: !can_edit_item, description: 'blocked = not allowed to use; discontinued = no longer available from the supplier' },
+        { label: __('Substitute Status'), fieldname: 'substitute_status', fieldtype: 'Select', options: '\nPotential\nSpecial\nVerified\nSuccessor\nDiscontinued\nBlocked', default: row_data.substitute_status, read_only: !can_edit_item, description: 'blocked = not allowed to use; discontinued = no longer available from the supplier' },
 
         { fieldtype: 'Section Break' },
 
@@ -389,7 +389,7 @@ function create_new_supplier_item() {
                 fieldname: 'substitute_status',
                 fieldtype: 'Select',
                 description: 'blocked = not allowed to use; discontinued = no longer available from the Supplier',
-                options: '\nPotential\nVerified\nDiscontinued\nBlocked'
+                options: '\nPotential\nSpecial\nVerified\nSuccessor\nDiscontinued\nBlocked'
             }
         ],
         'primary_action_label': 'Create',

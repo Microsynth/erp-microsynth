@@ -34,7 +34,7 @@
    "modified_by": "jens.petermann@microsynth.ch",
    "name": "Item Supplier-substitute_status",
    "no_copy": 0,
-   "options": "\nPotential\nVerified\nDiscontinued\nBlocked",
+   "options": "\nPotential\nSpecial\nVerified\nSuccessor\nDiscontinued\nBlocked",
    "owner": "Administrator",
    "parent": null,
    "parentfield": null,

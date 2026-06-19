@@ -351,7 +351,7 @@ def update_supplier_item(data):
             supplier_item.supplier = supplier
         if "substitute_status" in data:
             supplier_item.substitute_status = data["substitute_status"]
-        if supplier_item.supplier and supplier_item.substitute_status not in ["Potential", "Discontinued", "Blocked"]:
+        if supplier_item.supplier and supplier_item.substitute_status not in ["Potential", "Special", "Discontinued", "Blocked"]:
             for default in item.get("item_defaults"):
                 if data.get("company") and default.company == data.get("company"):
                     default.default_supplier = supplier_item.supplier
