@@ -44,7 +44,15 @@ def make_quotation(contact_name):
     doc.sales_manager = customer.account_manager
     invoice_to = customer.invoice_to
     doc.customer_address = frappe.get_value('Contact', invoice_to, 'address')
-    doc.shipping_address_name = frappe.get_value('Contact', doc.contact_person, 'address')
+    # Use preferred shipping address from Webshop Address if available
+    shipping_contact = None
+    webshop_address = frappe.get_doc("Webshop Address", contact_name)
+    if webshop_address and webshop_address.addresses:
+        for addr in webshop_address.addresses:
+            if addr.is_default_shipping:
+                shipping_contact = addr.contact
+                break
+    doc.shipping_address_name = frappe.get_value('Contact', shipping_contact or doc.contact_person, 'address')
     # Prevent inserting Contact.source or Address.source to the Quotation.source field
     doc.source = None
     doc.quotation_type = None
