@@ -6,7 +6,6 @@ from __future__ import unicode_literals
 import json
 import frappe
 from frappe import _
-from microsynth.qms.signing import check_approval_password, sign
 
 
 def get_columns():

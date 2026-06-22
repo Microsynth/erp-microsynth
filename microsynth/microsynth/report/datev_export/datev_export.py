@@ -263,11 +263,11 @@ def download_pdf(path, dt, dn, allow_attachment_repair=True):
                 if dn in (a.get('file_name') or ""):
                     source_path = a['file_url']
                     break
-                    
+
             if not source_path:
                 # fallback to first entry if file is not found
                 source_path = attachments[0]['file_url']
-                
+
         source_file = os.path.join(frappe.utils.get_bench_path(), "sites", frappe.utils.get_site_path()[2:], source_path[1:])
         if "\"" in source_file:
             frappe.log_error(f"This file name is less than suboptimal: {dt} {dn}: {source_file}", "datev_export.download_pdf file issue")

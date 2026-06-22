@@ -10,7 +10,7 @@ from datetime import datetime
 import socket
 from frappe import _
 import frappe
-from frappe.utils import formatdate, now_datetime, cstr
+from frappe.utils import formatdate
 from frappe.model.document import Document
 from microsynth.qms.doctype.qm_instrument.qm_instrument import get_due_qualifications, is_gmp
 from microsynth.qms.signing import sign
@@ -215,8 +215,9 @@ def import_log_book_entries_from_file(path, BASE_PATH=None, verbose=False, print
         raise Exception("No data rows")
 
     for line in lines[1:]:
+        # TODO: Deal with tabs in the description column. For now, we assume that the description does not contain tabs.
         parts = line.split("\t")
-        if len(parts) < 7:
+        if len(parts) != 7:
             raise Exception(f"Invalid row: {line}")
 
         instrument_id, date_str, entry_type, description, target_status_logbook_entry, target_status_instrument, pdf_name = parts
