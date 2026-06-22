@@ -91,10 +91,12 @@ frappe.query_reports["Material Request Overview"] = {
                 let row = target.getAttribute("data-row-index");
                 let column = target.getAttribute("data-col-index");
                 if (row == null || column == null) return;
-                let target_column_number = 14;
+                let target_column_number = 15;
                 let my_filters = frappe.query_report.get_filter_values();
                 if (my_filters.mode === "To Order") {
                     target_column_number = 11;
+                } else if (my_filters.mode === "All Material Requests") {
+                    target_column_number = 16;
                 }
                 if (parseInt(column) === target_column_number) {
                     let rowData = frappe.query_report.data[row];

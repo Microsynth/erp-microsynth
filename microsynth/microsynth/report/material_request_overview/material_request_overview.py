@@ -225,6 +225,15 @@ def get_data(filters):
                             AND `tabPurchase Receipt Item`.`material_request_item` = `tabMaterial Request Item`.`name`
                     ) AS `received_qty`,
                     (
+                        SELECT `tabPurchase Receipt Item`.`parent`
+                        FROM `tabPurchase Receipt Item`
+                        WHERE
+                            `tabPurchase Receipt Item`.`docstatus` = 1
+                            AND `tabPurchase Receipt Item`.`material_request_item` = `tabMaterial Request Item`.`name`
+                        ORDER BY `tabPurchase Receipt Item`.`creation` DESC
+                        LIMIT 1
+                    ) AS `receipt`,
+                    (
                         SELECT `tabPurchase Order Item`.`parent`
                         FROM `tabPurchase Order Item`
                         WHERE
