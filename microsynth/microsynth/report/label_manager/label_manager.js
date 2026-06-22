@@ -149,7 +149,7 @@ frappe.query_reports["Label Manager"] = {
                                 'freeze': true,
                                 'freeze_message': __('Locking ' + frappe.query_report.data.length + ' Labels ...'),
                                 'callback': function(r) {
-                                    if (r.message.success) {
+                                    if (r && r.message && r.message.success) {
                                         frappe.show_alert('Locked Labels');
                                         frappe.click_button('Refresh');
                                     } else {
@@ -167,17 +167,19 @@ frappe.query_reports["Label Manager"] = {
 
         report.page.add_inner_button( __("Set Labels unused"), function() {
             if (frappe.query_report.data.length == 0) {
-                frappe.msgprint("No Labels to set unused.");
+                frappe.msgprint("No Labels to set unused. Please select at least one Label with the filters.");
             } else if (frappe.query_report.data.length > 100) {
-                frappe.msgprint("Unable to set more than 100 Labels at once to unused.");
+                frappe.msgprint("Unable to set more than 100 Labels at once to unused. Please select at most 100 Labels with the filters.");
             } else {
+                var source_status = new Set([frappe.query_report.data[0].status]);
                 var labels_to_set_unused = [];
-                // check that all labels are locked
-                var all_labels_locked = true;
+                // check that all labels are either locked, submitted, or received
+                var allowed_to_set_unused = true;
                 for (var i = 0; i < frappe.query_report.data.length; i++) {
-                    if (frappe.query_report.data[i].status != "locked") {
+                    source_status.add(frappe.query_report.data[i].status);
+                    if (!['locked', 'submitted', 'received'].includes(frappe.query_report.data[i].status)) {
                         frappe.msgprint("The Sequencing Label " + frappe.query_report.data[i].name + " with Barcode " + frappe.query_report.data[i].label_id + " has Status " + frappe.query_report.data[i].status + ". Unable to set status to 'unused'. No Label status was changed. Please contact IT App if you have a valid use case.");
-                        all_labels_locked = false;
+                        allowed_to_set_unused = false;
                         break;
                     }
                     labels_to_set_unused.push({
@@ -185,7 +187,11 @@ frappe.query_reports["Label Manager"] = {
                         'item_code': frappe.query_report.data[i].item_code
                     });
                 }
-                if (all_labels_locked) {
+                if (source_status.size > 1) {
+                    frappe.msgprint("Multiple different source statuses found in the selected Labels: " + Array.from(source_status).join(", ") + ". Unable to set status to 'unused'. Please select Labels with the same source status.");
+                    allowed_to_set_unused = false;
+                }
+                if (allowed_to_set_unused) {
                     // ask for a reason
                     frappe.prompt(
                         [
@@ -223,12 +229,13 @@ frappe.query_reports["Label Manager"] = {
                                     'content_str': {'labels': labels_to_set_unused},
                                     'filters': my_filters,
                                     'reason': values.reason,
-                                    'description': values.description || ''
+                                    'description': values.description || '',
+                                    'source_status': Array.from(source_status)[0]
                                 },
                                 'freeze': true,
                                 'freeze_message': __('Setting ' + frappe.query_report.data.length + ' Labels to unused ...'),
                                 'callback': function(r) {
-                                    if (r.message.success) {
+                                    if (r && r.message && r.message.success) {
                                         frappe.show_alert('Set Labels to unused');
                                         frappe.click_button('Refresh');
                                     } else {
