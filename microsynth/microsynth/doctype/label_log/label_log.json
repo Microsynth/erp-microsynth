@@ -97,7 +97,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Reason",
-   "options": "\nPayment of additional reactions\nLost\nArrived at Customer after considered lost",
+   "options": "\nPayment of additional reactions\nLost\nArrived at Customer after considered lost\nPunchout error, order pending, reorder needed\nCustomer input error - partial processing prevents cancellation",
    "reqd": 1
   },
   {

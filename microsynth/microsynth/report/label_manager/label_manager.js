@@ -207,7 +207,7 @@ frappe.query_reports["Label Manager"] = {
                                 'fieldname': 'reason',
                                 'fieldtype': 'Select',
                                 'label': __('Reason'),
-                                'options': 'Arrived at Customer after considered lost',
+                                'options': '\nArrived at Customer after considered lost\nPunchout error, order pending, reorder needed\nCustomer input error - partial processing prevents cancellation',
                                 'description': 'Please contact IT App if additional reasons are required.',
                                 'reqd': 1
                             },
