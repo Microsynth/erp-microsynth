@@ -7,7 +7,9 @@
   "label_printers",
   "label_export_path",
   "sec_flags",
-  "flag_picking_labels"
+  "flag_picking_labels",
+  "section_break_5",
+  "item_user_guides"
  ],
  "fields": [
   {
@@ -33,11 +35,21 @@
    "fieldtype": "Datetime",
    "hidden": 1,
    "label": "Label Picking in Progress"
+  },
+  {
+   "fieldname": "section_break_5",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "item_user_guides",
+   "fieldtype": "Table",
+   "label": "Item User Guides",
+   "options": "Item User Guide"
   }
  ],
  "issingle": 1,
- "modified": "2025-04-17 09:19:53.508245",
- "modified_by": "rolf.suter@microsynth.ch",
+ "modified": "2026-06-23 12:10:18.225922",
+ "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "Sequencing Settings",
  "owner": "Administrator",
