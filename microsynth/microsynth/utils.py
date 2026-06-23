@@ -3038,6 +3038,44 @@ def check_sales_order(sales_order, event):
         frappe.throw("The following fields are mandatory to submit:<ul><li>Billing Address Name</li><li>Shipping Address Name</li><li>Invoice To</li><li>Contact Person</li></ul>Please check the section <b>Address and Contact</b>.")
 
 
+def send_label_order_confirmation_email(sales_order):
+    """
+    Check if the Sales Order contains an Item with an Item User Guide table entry, has a web_order_id and a contact_person with an email address.
+    If yes, use the Email Template "Barcode Label Order Confirmation" to send an email to the contact_person.
+    """
+    try:
+        if not sales_order.product_type == "Labels":
+            return
+        if not sales_order.web_order_id:
+            return
+        if not sales_order.contact_email:
+            return
+        item_user_guide_entries = frappe.get_all("Item User Guide", filters={'item_code': ['in', [item.item_code for item in sales_order.items]]}, fields=['name', 'item_code', 'user_guide_name', 'user_guide_url'])
+        if not item_user_guide_entries:
+            return
+
+        link_list = "<ul>"
+        for iug in item_user_guide_entries:
+            link_list += f"<li><a href={iug.user_guide_url}>{iug.user_guide_name}</a></li>"
+        link_list += "</ul>"
+
+        email_template = frappe.get_doc("Email Template", "Barcode Label Order Confirmation")
+        rendered_subject = frappe.render_template(email_template.subject, {'company': sales_order.company, 'web_order_id': sales_order.web_order_id})
+        rendered_content = frappe.render_template(email_template.response, {'links': link_list})  # TODO: Footer with company address and contact info
+        #frappe.log_error(f"DEBUG: Going to send email to {sales_order.contact_email}\nSubject: {rendered_subject}\n\nContent:\n{rendered_content}", "send_label_order_confirmation_email")
+        send_email_from_template(email_template, rendered_content, rendered_subject=rendered_subject, recipients=sales_order.contact_email)
+    except Exception as e:
+        frappe.log_error(f"Error in send_label_order_confirmation_email for Sales Order {sales_order.name}: {str(e)}", "send_label_order_confirmation_email")
+
+
+def sales_order_on_submit(sales_order, event):
+    """
+    Triggered on Sales Order submission.
+    """
+    check_sales_order(sales_order, event)
+    send_label_order_confirmation_email(sales_order)
+
+
 def validate_sales_order_items(sales_order_doc, event=None):
     """
     Validate the Sales Order (server-side validation trigger).
