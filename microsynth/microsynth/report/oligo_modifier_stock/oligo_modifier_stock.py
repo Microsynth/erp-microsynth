@@ -8,7 +8,7 @@ from frappe import _
 
 def get_columns():
 	return [
-		{"label": _("Location"), "fieldname": "location", "fieldtype": "Link", "options": "Location", "width": 365},
+		{"label": _("Location"), "fieldname": "location", "fieldtype": "Data", "width": 365},
 		{"label": _("Item"), "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 340},
 		{"label": _("Pack Size"), "fieldname": "pack_size", "fieldtype": "Float", "precision": 2, "width": 75},
 		{"label": _("Pack UOM"), "fieldname": "pack_uom", "fieldtype": "Link", "options": "UOM", "width": 80},
@@ -23,7 +23,7 @@ def get_columns():
 	]
 
 
-def get_data():
+def get_data(filters=None):
 	query = """
 		SELECT DISTINCT
 			`tabLocation`.`name` AS `location`,
@@ -124,8 +124,59 @@ def get_data():
 		ORDER BY `tabLocation`.`name` ASC, `tabItem`.`name` ASC
 	"""
 	data = frappe.db.sql(query, as_dict=True)
+	if should_include_empty_locations(filters):
+		data.extend(get_empty_locations())
+		sort_rows_by_location_and_item(data)
 	set_full_location_path(data)
 	return data
+
+
+def get_empty_locations():
+	query = """
+		SELECT
+			`tabLocation`.`name` AS `location`
+		FROM `tabLocation` AS `tabBase Location`
+		INNER JOIN `tabLocation`
+			ON `tabLocation`.`lft` > `tabBase Location`.`lft`
+			AND `tabLocation`.`rgt` < `tabBase Location`.`rgt`
+		WHERE
+			`tabBase Location`.`name` = '11-03 Oligo Synthesis'
+			AND IFNULL(`tabLocation`.`is_group`, 0) = 0
+			AND NOT EXISTS (
+				SELECT 1
+				FROM `tabLocation Link`
+				WHERE
+					`tabLocation Link`.`location` = `tabLocation`.`name`
+					AND `tabLocation Link`.`parenttype` = 'Item'
+					AND `tabLocation Link`.`parentfield` = 'storage_locations'
+			)
+		ORDER BY `tabLocation`.`name` ASC
+	"""
+	rows = frappe.db.sql(query, as_dict=True)
+	for row in rows:
+		row.setdefault("item_code", None)
+		row.setdefault("pack_size", None)
+		row.setdefault("pack_uom", None)
+		row.setdefault("material_code", None)
+		row.setdefault("stock_qty", None)
+		row.setdefault("requested_qty", None)
+		row.setdefault("ordered_qty", None)
+		row.setdefault("stock_uom", None)
+		row.setdefault("shelf_life_in_months", None)
+		row.setdefault("supplier_item_code", None)
+		row.setdefault("substitute_status", None)
+	return rows
+
+
+def should_include_empty_locations(filters):
+	if not filters:
+		return False
+	value = filters.get("include_empty_locations")
+	return value in (1, "1", True, "true", "True")
+
+
+def sort_rows_by_location_and_item(data):
+	data.sort(key=lambda row: ((row.get("location") or ""), (row.get("item_code") or "")))
 
 
 def set_full_location_path(data):
@@ -162,5 +213,5 @@ def set_full_location_path(data):
 
 def execute(filters=None):
 	columns = get_columns()
-	data = get_data()
+	data = get_data(filters)
 	return columns, data
