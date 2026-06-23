@@ -1,14 +1,16 @@
-// Copyright (c) 2016, Microsynth, libracore and contributors and contributors
+// Copyright (c) 2026, Microsynth
 // For license information, please see license.txt
 /* eslint-disable */
 
 frappe.query_reports["Oligo Modifier Stock"] = {
 	"filters": [
 		{
-			"fieldname": "include_empty_locations",
-			"label": __("Include empty locations"),
-			"fieldtype": "Check",
-			"default": 0,
+			"fieldname": "mode",
+			"label": __("Mode"),
+			"fieldtype": "Select",
+			"options": "Filled Locations\nEmpty Locations\nAll Locations",
+			"default": "Filled Locations",
+			"reqd": 1,
 		}
 	],
 	"onload": (report) => {

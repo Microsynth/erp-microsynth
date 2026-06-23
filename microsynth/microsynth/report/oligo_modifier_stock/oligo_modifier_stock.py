@@ -8,11 +8,11 @@ from frappe import _
 
 def get_columns():
 	return [
+		{"label": _("Material Code"), "fieldname": "material_code", "fieldtype": "Data", "width": 95, "align": "left"},
 		{"label": _("Location"), "fieldname": "location", "fieldtype": "Data", "width": 365},
 		{"label": _("Item"), "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 340},
 		{"label": _("Pack Size"), "fieldname": "pack_size", "fieldtype": "Float", "precision": 2, "width": 75},
 		{"label": _("Pack UOM"), "fieldname": "pack_uom", "fieldtype": "Link", "options": "UOM", "width": 80},
-		{"label": _("Material Code"), "fieldname": "material_code", "fieldtype": "Data", "width": 95},
 		{"label": _("Stock Qty"), "fieldname": "stock_qty", "fieldtype": "Int", "width": 85},
 		{"label": _("Requested Qty"), "fieldname": "requested_qty", "fieldtype": "Int", "width": 100},
 		{"label": _("Ordered Qty"), "fieldname": "ordered_qty", "fieldtype": "Int", "width": 90},
@@ -24,6 +24,21 @@ def get_columns():
 
 
 def get_data(filters=None):
+	mode = get_mode(filters)
+	if mode == "Empty Locations":
+		data = get_empty_locations()
+	elif mode == "All Locations":
+		data = get_filled_locations()
+		data.extend(get_empty_locations())
+	else:
+		data = get_filled_locations()
+
+	sort_rows_by_location_and_item(data)
+	set_full_location_path(data)
+	return data
+
+
+def get_filled_locations():
 	query = """
 		SELECT DISTINCT
 			`tabLocation`.`name` AS `location`,
@@ -121,14 +136,9 @@ def get_data(filters=None):
 		WHERE
 			`tabBase Location`.`name` = '11-03 Oligo Synthesis'
 			AND `tabItem`.`disabled` = 0
-		ORDER BY `tabLocation`.`name` ASC, `tabItem`.`name` ASC
+		ORDER BY LOWER(`tabItem`.`material_code`), `tabLocation`.`name` ASC, `tabItem`.`name` ASC
 	"""
-	data = frappe.db.sql(query, as_dict=True)
-	if should_include_empty_locations(filters):
-		data.extend(get_empty_locations())
-		sort_rows_by_location_and_item(data)
-	set_full_location_path(data)
-	return data
+	return frappe.db.sql(query, as_dict=True)
 
 
 def get_empty_locations():
@@ -168,15 +178,17 @@ def get_empty_locations():
 	return rows
 
 
-def should_include_empty_locations(filters):
+def get_mode(filters):
 	if not filters:
-		return False
-	value = filters.get("include_empty_locations")
-	return value in (1, "1", True, "true", "True")
+		return "Filled Locations"
+	mode = filters.get("mode")
+	if mode not in ("Filled Locations", "Empty Locations", "All Locations"):
+		return "Filled Locations"
+	return mode
 
 
 def sort_rows_by_location_and_item(data):
-	data.sort(key=lambda row: ((row.get("location") or ""), (row.get("item_code") or "")))
+	data.sort(key=lambda row: ((row.get("material_code") or "").lower(), (row.get("location") or ""), (row.get("item_code") or "")))
 
 
 def set_full_location_path(data):
