@@ -37,6 +37,7 @@ doctype_js = {
     "Contact" :           "public/js/contact.js",
     "Customer" :          "public/js/customer.js",
     "Delivery Note":      "public/js/delivery_note.js",
+    "Employee":           "public/js/employee.js",
     "File":               "public/js/file.js",
     "Item Group":         "public/js/item_group.js",
     "Item Price":         "public/js/item_price.js",
