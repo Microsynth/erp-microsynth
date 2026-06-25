@@ -17,13 +17,14 @@ PROMO_CAMPAIGNS = {
 def get_columns():
     return [
         {"label": "Person ID", "fieldname": "person_id", "fieldtype": "Link", "options": "Contact", "width": 80},
-        {"label": "Full Name", "fieldname": "full_name", "fieldtype": "Data", "width": 150},
+        {"label": "Full Name", "fieldname": "full_name", "fieldtype": "Data", "width": 140},
+        {"label": "Institute Key", "fieldname": "institute_key", "fieldtype": "Data", "width": 95},
         {"label": "Credit Account", "fieldname": "credit_account", "fieldtype": "Link", "options": "Credit Account", "width": 100},
         {"label": "CA Status", "fieldname": "status", "fieldtype": "Data", "width": 80},
         {"label": "Expiry Date", "fieldname": "expiry_date", "fieldtype": "Date", "width": 85},
         {"label": "Customer ID", "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 90},
         {"label": "Customer Name", "fieldname": "customer_name", "fieldtype": "Data", "width": 240},
-        {"label": "Territory", "fieldname": "territory", "fieldtype": "Link", "options": "Territory", "width": 150},
+        {"label": "Territory", "fieldname": "territory", "fieldtype": "Link", "options": "Territory", "width": 140},
         {"label": "Given Promo Credits", "fieldname": "given_credits", "fieldtype": "Currency", "options": "currency", "width": 135},
         {"label": "Used Promo Credits", "fieldname": "used_credits", "fieldtype": "Currency", "options": "currency", "width": 130},
         {"label": "Remaining Valid Promo Credits", "fieldname": "remaining_valid_credits", "fieldtype": "Currency", "options": "currency", "width": 190},
@@ -93,6 +94,10 @@ def get_data(filters):
             FROM `tabContact`
             WHERE `tabContact`.`name` = `tabCredit Account`.`contact_person`
             LIMIT 1) AS `contact_display`,
+            (SELECT `tabContact`.`institute_key`
+            FROM `tabContact`
+            WHERE `tabContact`.`name` = `tabCredit Account`.`contact_person`
+            LIMIT 1) AS `institute_key`,
             SUM(`tabSales Invoice Item`.`net_amount`) AS `amount`,
             `tabCredit Account`.`currency`
         FROM `tabSales Invoice`
@@ -185,6 +190,7 @@ def get_data(filters):
         data.append({
             "person_id": d.contact_person,
             "full_name": d.contact_display,
+            "institute_key": d.institute_key,
             "credit_account": d.credit_account,
             "status": d.status,
             "expiry_date": d.expiry_date,
