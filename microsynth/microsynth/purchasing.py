@@ -1668,9 +1668,8 @@ def check_supplier_shop_password(password):
 
 def mark_purchase_invoice_as_proposed(purchase_invoice):
     """
-    bench execute microsynth.microsynth.purchasing.mark_purchase_invoices_as_proposed --kwargs "{'payment_proposal_id':'e9b1a13027'}"
+    bench execute microsynth.microsynth.purchasing.mark_purchase_invoice_as_proposed --kwargs "{'purchase_invoice':'PI-2601134'}"
     """
-
     pi = frappe.get_doc("Purchase Invoice", purchase_invoice)
     pi.is_proposed = True
     pi.save()
@@ -2645,6 +2644,87 @@ def get_items_using_supplier(supplier):
             `tabItem Supplier`.`supplier` = %(supplier)s
             AND `tabItem`.`disabled` = 0
     """, {"supplier": supplier}, as_dict=True)
+
+
+@frappe.whitelist()
+def get_open_purchase_invoices(supplier):
+    """
+    Return open submitted Purchase Invoices of a supplier that may still land on future Payment Proposals.
+
+    bench execute microsynth.microsynth.purchasing.get_open_purchase_invoices --kwargs "{'supplier': 'S-00015'}"
+    """
+    return frappe.db.sql(
+        """
+        SELECT
+            `tabPurchase Invoice`.`name`,
+            `tabPurchase Invoice`.`bill_no`,
+            `tabPurchase Invoice`.`posting_date`,
+            `tabPurchase Invoice`.`due_date`,
+            `tabPurchase Invoice`.`currency`,
+            `tabPurchase Invoice`.`outstanding_amount`
+        FROM `tabPurchase Invoice`
+        WHERE
+            `tabPurchase Invoice`.`supplier` = %(supplier)s
+            AND `tabPurchase Invoice`.`docstatus` = 1
+            AND `tabPurchase Invoice`.`outstanding_amount` > 0
+            AND IFNULL(`tabPurchase Invoice`.`is_proposed`, 0) = 0
+        ORDER BY
+            `tabPurchase Invoice`.`due_date` ASC,
+            `tabPurchase Invoice`.`name` ASC
+        """,
+        {"supplier": supplier},
+        as_dict=True,
+    )
+
+
+@frappe.whitelist()
+def exclude_purchase_invoices_from_future_payment_proposals(purchase_invoices):
+    """
+    Set is_proposed = 1 for a list of Purchase Invoices to exclude them from future Payment Proposals.
+
+    bench execute microsynth.microsynth.purchasing.exclude_purchase_invoices_from_future_payment_proposals --kwargs "{'purchase_invoices': ['PINV-0001', 'PINV-0002']}"
+    """
+    if isinstance(purchase_invoices, str):
+        try:
+            purchase_invoices = json.loads(purchase_invoices)
+        except Exception:
+            purchase_invoices = [purchase_invoices]
+
+    if not isinstance(purchase_invoices, list):
+        purchase_invoices = [purchase_invoices]
+
+    purchase_invoices = [
+        purchase_invoice.strip()
+        for purchase_invoice in purchase_invoices
+        if isinstance(purchase_invoice, str) and purchase_invoice.strip()
+    ]
+
+    if not purchase_invoices:
+        return {"updated_count": 0, "updated_invoices": []}
+
+    purchase_invoices_to_update = frappe.db.sql(
+        """
+        SELECT
+            `tabPurchase Invoice`.`name`
+        FROM `tabPurchase Invoice`
+        WHERE
+            `tabPurchase Invoice`.`name` IN %(purchase_invoices)s
+            AND `tabPurchase Invoice`.`docstatus` = 1
+            AND `tabPurchase Invoice`.`outstanding_amount` > 0
+            AND IFNULL(`tabPurchase Invoice`.`is_proposed`, 0) = 0
+        """,
+        {"purchase_invoices": tuple(purchase_invoices)},
+        as_dict=True,
+    )
+    purchase_invoices_to_update = [row["name"] for row in purchase_invoices_to_update]
+
+    for purchase_invoice in purchase_invoices_to_update:
+        mark_purchase_invoice_as_proposed(purchase_invoice)
+
+    return {
+        "updated_count": len(purchase_invoices_to_update),
+        "updated_invoices": purchase_invoices_to_update,
+    }
 
 
 @frappe.whitelist()
