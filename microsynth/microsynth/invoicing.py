@@ -2885,7 +2885,7 @@ def create_cn_and_invoice_draft(sales_invoice_id):
             "message": f"Credit note {credit_note_id} created and submitted, invoice draft {invoice_draft_id} created for Sales Invoice {sales_invoice_id}."
         }
     except Exception as e:
-        frappe.log_error(f"Error creating credit note and invoice draft for Sales Invoice {sales_invoice_id}: {traceback.format_exc()}\n{e}")
+        #frappe.log_error(f"Error creating credit note and invoice draft for Sales Invoice {sales_invoice_id}: {traceback.format_exc()}\n{e}")
         return {
             "success": False,
             "credit_note_id": None,
