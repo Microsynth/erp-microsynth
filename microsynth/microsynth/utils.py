@@ -1688,9 +1688,12 @@ def determine_territory(address_id):
         elif address.country == "Poland":
             return frappe.get_doc("Territory", "Rest of Europe (PL)")
 
-        elif address.country in ("Åland Islands", "Andorra", "Belgium", "Denmark", "Faroe Islands", "Finland", "Gibraltar", "Greenland", "Guernsey",
-                                 "Holy See (Vatican City State)", "Iceland", "Ireland", "Isle of Man", "Italy", "Jersey", "Luxembourg", "Monaco",
-                                 "Netherlands", "Norway", "Portugal", "San Marino", "Spain", "Sweden", "United Kingdom"):
+        elif address.country in ("Åland Islands", "Denmark", "Faroe Islands", "Finland", "Greenland", "Guernsey",
+                                 "Iceland", "Ireland", "Isle of Man", "Jersey", "Norway", "Sweden", "United Kingdom"):
+            return frappe.get_doc("Territory", "Rest of Europe (North)")
+
+        elif address.country in ("Andorra", "Belgium", "Gibraltar", "Holy See (Vatican City State)", "Italy",
+                                 "Luxembourg", "Monaco", "Netherlands", "Portugal", "San Marino", "Spain"):
             return frappe.get_doc("Territory", "Rest of Europe (West)")
 
         elif address.country in ("Albania", "Armenia", "Belarus", "Bosnia and Herzegovina", "Bulgaria", "Croatia", "Cyprus", "Czech Republic",
@@ -3059,7 +3062,7 @@ def send_label_order_confirmation_email(sales_order):
             link_list += f"<li><a href={iug.user_guide_url}>{iug.user_guide_name}</a></li>"
         link_list += "</ul>"
 
-        email_template = frappe.get_doc("Email Template", "Barcode Label Order Confirmation")
+        email_template = frappe.get_doc("Email Template", f"Barcode Label Order Confirmation {sales_order.company}")
         rendered_subject = frappe.render_template(email_template.subject, {'company': sales_order.company, 'web_order_id': sales_order.web_order_id})
         rendered_content = frappe.render_template(email_template.response, {'links': link_list})  # TODO: Footer with company address and contact info
         #frappe.log_error(f"DEBUG: Going to send email to {sales_order.contact_email}\nSubject: {rendered_subject}\n\nContent:\n{rendered_content}", "send_label_order_confirmation_email")
