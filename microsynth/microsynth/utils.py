@@ -1567,6 +1567,91 @@ def set_territory(customer):
         customer.save()
 
 
+def set_territory_for_customers(customer_ids, new_territory, verbose=True, dry_run=False):
+    """
+    Set the given territory for the given customers.
+
+    customer_ids can be a list/tuple/set of customer IDs, a JSON list string, or a single customer ID string.
+
+    bench execute microsynth.microsynth.utils.set_territory_for_customers --kwargs "{'customer_ids': ['8003', '832188'], 'new_territory': 'Rest of Europe (North)', 'verbose': True, 'dry_run': True}"
+    """
+    if isinstance(customer_ids, str):
+        cleaned = customer_ids.strip()
+        if cleaned.startswith("["):
+            customer_ids = frappe.parse_json(cleaned)
+        elif cleaned:
+            customer_ids = [cleaned]
+        else:
+            customer_ids = []
+
+    if not isinstance(customer_ids, (list, tuple, set)):
+        frappe.throw("customer_ids must be a list/tuple/set, JSON list string, or a single customer ID string.")
+
+    if not frappe.db.exists("Territory", new_territory):
+        frappe.throw(f"Territory '{new_territory}' does not exist.")
+
+    customer_ids = [str(c) for c in customer_ids if c is not None and str(c).strip() != ""]
+    total = len(customer_ids)
+    summary = {
+        'total': total,
+        'updated': 0,
+        'unchanged': 0,
+        'missing': 0,
+        'failed': 0,
+        'dry_run': bool(dry_run),
+    }
+    if total == 0:
+        print("No customer IDs provided. Nothing to do.")
+        return summary
+
+    for index, customer_id in enumerate(customer_ids):
+        progress = int((index / total) * 100)
+
+        if verbose:
+            print(f"[{progress:3d}%] Processing Customer '{customer_id}'...")
+
+        if not frappe.db.exists("Customer", customer_id):
+            summary['missing'] += 1
+            print(f"  -> Customer '{customer_id}' not found. Skipping.")
+            continue
+        try:
+            customer = frappe.get_doc("Customer", customer_id)
+            previous_territory = customer.territory
+            if customer.territory == new_territory:
+                summary['unchanged'] += 1
+                print(f"  -> Territory already set to '{new_territory}'.")
+                continue
+
+            if dry_run:
+                summary['updated'] += 1
+                if verbose:
+                    print(f"  -> Would change Territory from '{previous_territory}' to '{new_territory}'.")
+                continue
+
+            customer.territory = new_territory
+            customer.save()
+            summary['updated'] += 1
+            if verbose:
+                print(f"  -> Changed Territory from '{previous_territory}' to '{new_territory}'.")
+
+        except Exception as err:
+            summary['failed'] += 1
+            frappe.log_error(
+                f"Could not set territory '{new_territory}' for customer '{customer_id}':\n{err}",
+                "utils.set_territory_for_customers"
+            )
+            print(f"  -> Failed to update Customer '{customer_id}': {err}")
+
+    if not dry_run and summary['updated'] > 0:
+        frappe.db.commit()
+    print(
+        f"Finished set_territory_for_customers: {summary['updated']} updated, "
+        f"{summary['unchanged']} unchanged, {summary['missing']} missing, "
+        f"{summary['failed']} failed (total={summary['total']}, dry_run={summary['dry_run']})."
+    )
+    return summary
+
+
 def determine_territory(address_id):
     """
     Determine the territory from an address id.
