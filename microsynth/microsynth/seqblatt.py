@@ -12,7 +12,7 @@ from frappe.utils import get_url_to_form
 from erpnext.selling.doctype.sales_order.sales_order import make_delivery_note
 
 from microsynth.microsynth.naming_series import get_naming_series
-from microsynth.microsynth.utils import validate_sales_order, has_items_delivered_by_supplier
+from microsynth.microsynth.utils import validate_sales_order_status, has_items_delivered_by_supplier
 
 
 def check_and_get_label(label):
@@ -348,15 +348,39 @@ def processed_labels(content):
     return set_status("processed", content.get("labels"))
 
 
-#@frappe.whitelist(allow_guest=True)
-#def unlock_labels(content):
-#    """
-#    Set label status to 'locked'. Labels must be a list of dictionaries
-#    (see `set_status` function).
-#    """
-#    if type(content) == str:
-#        content = json.loads(content)
-#    return set_status("unknown", content.get("labels"))
+def validate_sales_order(sales_order):
+    """
+    Checks if the customer is enabled, the sales order is submitted, has an allowed
+    status, has the tax template set and there are no delivery notes in status draft, submitted.
+
+    run
+    bench execute microsynth.microsynth.utils.validate_sales_order --kwargs "{'sales_order': ''}"
+    """
+
+    if not validate_sales_order_status(sales_order):
+        return False
+
+    # Check if delivery notes exists. consider also deliver notes with the same web_order_id
+    web_order_id = frappe.get_value("Sales Order", sales_order, "web_order_id")
+    if web_order_id:
+        web_order_id_condition = f" OR `tabDelivery Note`.`web_order_id` = '{web_order_id}' "
+    else:
+        web_order_id_condition = ""
+
+    delivery_notes = frappe.db.sql(f"""
+        SELECT `tabDelivery Note Item`.`parent`
+        FROM `tabDelivery Note Item`
+        LEFT JOIN `tabDelivery Note` ON `tabDelivery Note`.`name` = `tabDelivery Note Item`.`parent`
+        WHERE `tabDelivery Note Item`.`docstatus` < 2
+            AND (`tabDelivery Note Item`.`against_sales_order` = '{sales_order}'
+                {web_order_id_condition});
+        """, as_dict=True)
+
+    if len(delivery_notes) > 0:
+        # frappe.log_error("Order '{0}' has already Delivery Notes. Cannot create a delivery note.".format(sales_order), "utils.validate_sales_order")
+        return False
+
+    return True
 
 
 def check_sales_order_completion():

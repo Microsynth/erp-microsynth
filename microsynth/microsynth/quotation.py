@@ -6,7 +6,7 @@ from datetime import datetime
 import frappe
 from frappe.model.mapper import get_mapped_doc
 from erpnextswiss.erpnextswiss.finance import get_exchange_rate
-from microsynth.microsynth.utils import get_customer
+from microsynth.microsynth.utils import validate_contact_customer_consistency
 
 
 @frappe.whitelist()
@@ -194,20 +194,6 @@ def validate_default_company(doc, event=None):
     if has_invoice_by_default_company:
         if doc.company != customer.default_company:
             frappe.throw(f"Customer {doc.customer} requires Quotations to be issued by its Default Company {customer.default_company}.")
-
-
-def validate_contact_customer_consistency(doc, event=None):
-    """
-    Validate that the contact_person linked to the Quotation belongs to the same Customer as the Quotation.
-    """
-    if not doc.contact_person:
-        frappe.throw("Contact Person must be set.")
-    contact_customer = get_customer(doc.contact_person)
-    if not contact_customer:
-        frappe.throw(f"Contact <b>{doc.contact_person}</b> is not linked to any Customer.")
-    if contact_customer != doc.party_name:
-        frappe.throw(f"Contact <b>{doc.contact_person}</b> belongs to Customer <b>{contact_customer}</b> but Quotation belongs to Customer <b>{doc.party_name}</b>.<br>"\
-                     f"Please choose another Customer, link the Contact to the correct Customer or choose another Contact.")
 
 
 def validate_quotation(doc, event=None):

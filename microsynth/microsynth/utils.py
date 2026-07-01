@@ -750,41 +750,6 @@ def validate_sales_order_status(sales_order):
     return True
 
 
-def validate_sales_order(sales_order):
-    """
-    Checks if the customer is enabled, the sales order is submitted, has an allowed
-    status, has the tax template set and there are no delivery notes in status draft, submitted.
-
-    run
-    bench execute microsynth.microsynth.utils.validate_sales_order --kwargs "{'sales_order': ''}"
-    """
-
-    if not validate_sales_order_status(sales_order):
-        return False
-
-    # Check if delivery notes exists. consider also deliver notes with the same web_order_id
-    web_order_id = frappe.get_value("Sales Order", sales_order, "web_order_id")
-    if web_order_id:
-        web_order_id_condition = f" OR `tabDelivery Note`.`web_order_id` = '{web_order_id}' "
-    else:
-        web_order_id_condition = ""
-
-    delivery_notes = frappe.db.sql(f"""
-        SELECT `tabDelivery Note Item`.`parent`
-        FROM `tabDelivery Note Item`
-        LEFT JOIN `tabDelivery Note` ON `tabDelivery Note`.`name` = `tabDelivery Note Item`.`parent`
-        WHERE `tabDelivery Note Item`.`docstatus` < 2
-            AND (`tabDelivery Note Item`.`against_sales_order` = '{sales_order}'
-                {web_order_id_condition});
-        """, as_dict=True)
-
-    if len(delivery_notes) > 0:
-        # frappe.log_error("Order '{0}' has already Delivery Notes. Cannot create a delivery note.".format(sales_order), "utils.validate_sales_order")
-        return False
-
-    return True
-
-
 def clean_up_delivery_notes(sales_order_id):
     """
     Deletes all delivery notes in draft mode but the latest one.
@@ -3201,6 +3166,37 @@ def validate_sales_order_items(sales_order_doc, event=None):
             frappe.log_error(f"The Webshop tried to save Sales Order {sales_order_doc.name} with invalid items: {invalid_items}", "Invalid Items on Webshop Sales Order")
             return
         frappe.throw(html, title="Invalid Items")
+
+
+def validate_contact_customer_consistency(doc, event=None):
+    """
+    Validate that the contact_person linked to the Quotation belongs to the same Customer as the Quotation.
+    """
+    if not doc.contact_person:
+        frappe.throw("Contact Person must be set.")
+    contact_customer = get_customer(doc.contact_person)
+    if not contact_customer:
+        frappe.throw(f"Contact <b>{doc.contact_person}</b> is not linked to any Customer.")
+    if doc.order_customer:
+        return  # Skip validation if order_customer is set (Customer mismatch is allowed in the distributor workflow)
+    msg = f"Contact <b>{doc.contact_person}</b> belongs to Customer <b>{contact_customer}</b>, but {doc.doctype} belongs to Customer "\
+          f"<b>{doc.party_name if doc.doctype == 'Quotation' else doc.customer}</b>.<br>"\
+          f"Please choose another Customer, link the Contact to the correct Customer or choose another Contact."
+    if doc.doctype == "Quotation":
+        if contact_customer != doc.party_name:
+            frappe.throw(msg)
+    else:
+        if contact_customer != doc.customer:
+            frappe.throw(msg)
+
+
+def validate_sales_order(sales_order_doc, event=None):
+    """
+    Validate the Sales Order (server-side validation trigger).
+    Validate that no Item on the Sales Order has Sales Status "In Preparation" or "Discontinued".
+    """
+    validate_sales_order_items(sales_order_doc, event)
+    validate_contact_customer_consistency(sales_order_doc, event)
 
 
 def report_therapeutic_oligo_sales(from_date=None, to_date=None):
