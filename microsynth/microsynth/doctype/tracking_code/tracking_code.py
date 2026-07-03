@@ -202,31 +202,61 @@ def parse_dhl_file(file_id, expected_line_length=15):
 
 
 @frappe.whitelist()
-def parse_ups_file(file_id, expected_line_length=78):
+def parse_ups_file(file_id):
     """
     bench execute microsynth.microsynth.doctype.tracking_code.tracking_code.parse_ups_file --kwargs "{'file_id': '0f69f96ed0'}"
     """
     file_path = prepare_tracking_log(file_id)
     error_str = ""
     counter = 0
-    with open(file_path) as file:
-        csv_reader = csv.reader((x.replace('\0', '') for x in file), delimiter=',')  # replace NULL bytes (throwing an error)
-        next(csv_reader)  # skip header
-        for line in csv_reader:
-            if len(line) != expected_line_length:
-                msg = f"Line '{line}' has length {len(line)}, but expected length {expected_line_length}."
-                return {'success': False, 'message': msg}
-            tracking_number = line[0]
-            status = line[2]
-            if status != 'Delivered':
-                # skip if shipment is not yet delivered
+
+    with open(file_path, encoding="utf-8-sig") as file:
+        csv_reader = csv.DictReader(
+            (x.replace('\0', '') for x in file),  # replace NULL bytes (throwing an error)
+            delimiter=','
+        )
+        required_columns = [
+            "Tracking Number",
+            "Status",
+            "Delivery Date",
+            "Estimated Time"
+        ]
+        missing_columns = [
+            field for field in required_columns
+            if field not in csv_reader.fieldnames
+        ]
+        if missing_columns:
+            return {
+                "success": False,
+                "message": f"Missing required column(s): {', '.join(missing_columns)}"
+            }
+
+        for row in csv_reader:
+            tracking_number = row.get("Tracking Number")
+            status = (row.get("Status") or "").strip()
+            delivery_date_str = (row.get("Delivery Date") or "").strip()
+
+            if status and status != "Delivered":
                 continue
-            date_str = line[13]
-            if not date_str:
+
+            if not delivery_date_str:
                 continue
-            delivery_date = datetime.strptime(date_str, '%m/%d/%Y')
-            time_str = line[15]
-            time_str = time_str.replace('.', '')  # Remove periods
+            try:
+                delivery_date = datetime.strptime(
+                    delivery_date_str,
+                    "%m/%d/%Y"
+                )
+            except Exception:
+                error_str += (
+                    f"<br>Invalid delivery date "
+                    f"'{delivery_date_str}' for tracking number "
+                    f"'{tracking_number}'"
+                )
+                continue
+
+            time_str = row.get("Estimated Time", "")
+            time_str = time_str.replace(".", "")
+
             try:
                 delivery_time = datetime.strptime(time_str, '%I:%M %p')
             except Exception:
