@@ -12,9 +12,9 @@ from erpnext.selling.doctype.sales_order.sales_order import (
 )
 import frappe
 from microsynth.microsynth.labels import print_raw
+from microsynth.microsynth.seqblatt import validate_sales_order
 from microsynth.microsynth.utils import (
     get_export_category,
-    validate_sales_order,
     has_items_delivered_by_supplier
 )
 from microsynth.microsynth.naming_series import get_naming_series
