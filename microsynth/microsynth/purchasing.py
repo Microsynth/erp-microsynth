@@ -2499,7 +2499,7 @@ def add_location_to_item(item, location):
         return
 
     doc.append("storage_locations", {"location": location})
-    doc.save()
+    doc.save(ignore_permissions=True)
 
 
 @frappe.whitelist()
@@ -2615,7 +2615,7 @@ def link_items_symmetrically(item_a, item_b):
             new_row = item_doc.append("linked_items", {})
             new_row.item = other_item
             # item_name, pack_size, pack_uom auto-populate via fetch_from
-            item_doc.save()
+            item_doc.save(ignore_permissions=True)
 
     # Add A → B and B → A
     add_link_if_missing(doc_a, item_b)
