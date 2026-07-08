@@ -128,6 +128,13 @@ def get_data():
                         "label": _("Oligo envelope sizes (CH)"),
                         "doctype": "Delivery Note",
                         "is_query_report": True
+                    },
+                    {
+                        "type": "report",
+                        "name": "Oligo Modifier Stock",
+                        "label": _("Oligo Modifier Stock"),
+                        "doctype": "Item",
+                        "is_query_report": True
                     }
             ]
         },
