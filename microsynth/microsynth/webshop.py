@@ -839,7 +839,7 @@ def address_exists(address):
 @frappe.whitelist(allow_guest=False)
 def request_quote(content, client="webshop"):
     """
-    Request quote will create a new Oligo quote (and open the required oligos, if provided)
+    Request quote will create a new quote (and open the required oligos, if provided)
     """
     # prepare parameters
     if isinstance(content, str):
@@ -882,7 +882,7 @@ def request_quote(content, client="webshop"):
         'quotation_to': "Customer",
         'company': company,
         'party_name': content['customer'],
-        'product_type': "Oligos" if content.get('oligos') else None,
+        'product_type': content.get('product_type'),
         'customer_address': content['invoice_address'],
         'shipping_address_name': content['delivery_address'],
         'contact_person': content['contact'],
@@ -928,31 +928,27 @@ def request_quote(content, client="webshop"):
             'item_code': i['item_code'],
             'qty': i['qty']
         })
-    # insert shipping item
-    shipping_address = frappe.get_doc("Address", content['delivery_address'])
-    express_shipping = get_express_shipping_item(content['customer'], shipping_address.country)
-    if not express_shipping:
-        frappe.log_error(f"Found no express shipping item for Customer {content['customer']} and Country {shipping_address.country} in currency {customer_doc.default_currency}.", "webshop.request_quote")
-        if 'shipping_contact' in content and content['shipping_contact']:
-            shipping_contact = content['shipping_contact']
-        else:
-            shipping_contact = content['contact']
-        shipping_items = get_contact_shipping_items(shipping_contact)
-        for item in shipping_items:
-            if item.get('preferred_express'):
-                express_shipping = item
-                break
-    #     if shipping_items and not express_shipping:
-    #         express_shipping = shipping_items[0]
-    #     elif not express_shipping:
-    #         frappe.throw("Unable to fetch an express_shipping item.")
-    # if express_shipping:
-    qtn_doc.append('items', {
-        'item_code': express_shipping.item,
-        'item_name': express_shipping.item_name,
-        'qty': 1,
-        'rate': express_shipping.rate
-    })
+    # insert shipping item only if there are Oligos or if the product type is Oligos or Material
+    if (content.get('oligos') and len(content['oligos']) > 0) or content.get('product_type') in ["Oligos", "Material"]:
+        shipping_address = frappe.get_doc("Address", content['delivery_address'])
+        express_shipping = get_express_shipping_item(content['customer'], shipping_address.country)
+        if not express_shipping:
+            frappe.log_error(f"Found no express shipping item for Customer {content['customer']} and Country {shipping_address.country} in currency {customer_doc.default_currency}.", "webshop.request_quote")
+            if 'shipping_contact' in content and content['shipping_contact']:
+                shipping_contact = content['shipping_contact']
+            else:
+                shipping_contact = content['contact']
+            shipping_items = get_contact_shipping_items(shipping_contact)
+            for item in shipping_items:
+                if item.get('preferred_express'):
+                    express_shipping = item
+                    break
+        qtn_doc.append('items', {
+            'item_code': express_shipping.item,
+            'item_name': express_shipping.item_name,
+            'qty': 1,
+            'rate': express_shipping.rate
+        })
     # append taxes
     category = "Service"
     if 'oligos' in content and len(content['oligos']) > 0:
