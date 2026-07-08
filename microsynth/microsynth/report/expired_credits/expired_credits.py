@@ -13,17 +13,19 @@ from microsynth.microsynth.report.customer_credits.customer_credits import get_d
 def get_columns():
     return [
         {"label": "Credit Account", "fieldname": "name", "fieldtype": "Link", "options": "Credit Account", "width": 100},
-        {"label": "Account Name", "fieldname": "account_name", "fieldtype": "Data", "width": 280},
+        {"label": "Account Name", "fieldname": "account_name", "fieldtype": "Data", "width": 230},
         {"label": "Type", "fieldname": "account_type", "fieldtype": "Data", "width": 100},
         {"label": "Customer", "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 80},
-        {"label": "Customer Name", "fieldname": "customer_name", "fieldtype": "Data", "width": 230},
+        {"label": "Customer Name", "fieldname": "customer_name", "fieldtype": "Data", "width": 220},
         {"label": "Contact", "fieldname": "contact_person", "fieldtype": "Link", "options": "Contact", "width": 80},
-        {"label": "Company", "fieldname": "company", "fieldtype": "Link", "options": "Company", "width": 150},
+        {"label": "Company", "fieldname": "company", "fieldtype": "Link", "options": "Company", "width": 155},
         {"label": "Currency", "fieldname": "currency", "fieldtype": "Link", "options": "Currency", "width": 70},
+        {"label": "Given amount", "fieldname": "given_amount", "fieldtype": "Currency", "options": "currency", "width": 100},
+        {"label": "Remaining amount", "fieldname": "remaining_amount", "fieldtype": "Currency", "options": "currency", "width": 125},
         {"label": "Expiry Date", "fieldname": "expiry_date", "fieldtype": "Date", "width": 85},
         {"label": "Status", "fieldname": "status", "fieldtype": "Data", "width": 75},
-        {"label": "Created by", "fieldname": "owner", "fieldtype": "Link", "options": "User", "width": 180},
-        {"label": "Cancel", "fieldname": "cancel_action", "fieldtype": "HTML", "width": 75},
+        {"label": "Created by", "fieldname": "owner", "fieldtype": "Link", "options": "User", "width": 150},
+        {"label": "Cancel", "fieldname": "cancel_action", "fieldtype": "HTML", "width": 65},
     ]
 
 
@@ -64,25 +66,75 @@ def get_data(filters):
         ORDER BY `expiry_date` ASC
     """, filters, as_dict=True)
 
+    if not rows:
+        return []
+
+    credit_item_code = frappe.get_value("Microsynth Settings", "Microsynth Settings", "credit_item")
+    if not credit_item_code:
+        frappe.throw("Please define a credit item in the Microsynth Settings.")
+
+    credit_accounts = [row.name for row in rows]
+
+    deposit_rows = frappe.db.sql(f"""
+        SELECT
+            `tabSales Invoice`.`credit_account`,
+            SUM(`tabSales Invoice Item`.`net_amount`) AS `amount`
+        FROM `tabSales Invoice`
+        INNER JOIN `tabSales Invoice Item`
+            ON `tabSales Invoice Item`.`parent` = `tabSales Invoice`.`name`
+        WHERE
+            `tabSales Invoice`.`docstatus` = 1
+            AND `tabSales Invoice`.`credit_account` IN ({",".join(["%s"] * len(credit_accounts))})
+            AND `tabSales Invoice Item`.`item_code` = %s
+        GROUP BY `tabSales Invoice`.`credit_account`
+    """, tuple(credit_accounts + [credit_item_code]), as_dict=True)
+    given_map = {d.credit_account: d.amount for d in deposit_rows}
+
+    allocation_rows = frappe.db.sql(f"""
+        SELECT
+            `deposit_invoice`.`credit_account`,
+            SUM(
+                IF(`tabSales Invoice`.`is_return` = 1, 1, -1)
+                * `tabSales Invoice Customer Credit`.`allocated_amount`
+            ) AS `amount`
+        FROM `tabSales Invoice Customer Credit`
+        INNER JOIN `tabSales Invoice`
+            ON `tabSales Invoice Customer Credit`.`parent` = `tabSales Invoice`.`name`
+        INNER JOIN `tabSales Invoice` AS `deposit_invoice`
+            ON `deposit_invoice`.`name` = `tabSales Invoice Customer Credit`.`sales_invoice`
+        WHERE
+            `tabSales Invoice`.`docstatus` = 1
+            AND `deposit_invoice`.`docstatus` = 1
+            AND `deposit_invoice`.`credit_account` IN ({",".join(["%s"] * len(credit_accounts))})
+        GROUP BY `deposit_invoice`.`credit_account`
+    """, tuple(credit_accounts), as_dict=True)
+    used_map = {a.credit_account: abs(a.amount or 0) for a in allocation_rows}
+
     data = []
     for r in rows:
-        data.append({
-            "name": r.name,
-            "account_name": r.account_name,
-            "account_type": r.account_type,
-            "customer": r.customer,
-            "customer_name": r.customer_name,
-            "contact_person": r.contact_person,
-            "company": r.company,
-            "currency": r.currency,
-            "expiry_date": r.expiry_date,
-            "status": r.status,
-            "owner": r.owner,
-            "cancel_action": (
-                "<button class='btn btn-danger btn-xs cancel-credit' "
-                f"data-ca='{r.name}' data-exp='{r.expiry_date}'>Cancel</button>"
-            ),
-        })
+        given_amount = given_map.get(r.name, 0) or 0
+        used_amount = used_map.get(r.name, 0) or 0
+        remaining_amount = given_amount - used_amount
+        if remaining_amount > 0:
+            data.append({
+                "name": r.name,
+                "account_name": r.account_name,
+                "account_type": r.account_type,
+                "customer": r.customer,
+                "customer_name": r.customer_name,
+                "contact_person": r.contact_person,
+                "company": r.company,
+                "currency": r.currency,
+                "given_amount": given_amount,
+                "remaining_amount": remaining_amount,
+                "expiry_date": r.expiry_date,
+                "status": r.status,
+                "owner": r.owner,
+                "cancel_action": (
+                    "<button class='btn btn-danger btn-xs cancel-credit' "
+                    f"data-ca='{r.name}' data-exp='{r.expiry_date}'>Cancel</button>"
+                ),
+            })
     return data
 
 
