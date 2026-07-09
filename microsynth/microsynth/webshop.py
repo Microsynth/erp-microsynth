@@ -1617,7 +1617,8 @@ def place_dropship_order(sales_order, intercompany_customer_name, supplier_compa
     #    shipping_address.overwrite_company = original_order.customer_name
     #    shipping_address.save()
 
-    dropship_order = frappe.get_doc({
+    dropship_order = frappe.new_doc("Sales Order")
+    dropship_order.update({
         'doctype': "Sales Order",
         'company': supplier_company,
         'naming_series': get_naming_series("Sales Order", supplier_company),
