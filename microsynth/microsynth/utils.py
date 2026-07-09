@@ -3407,6 +3407,7 @@ def send_email_from_template(email_template, rendered_content, rendered_subject=
     make(
             recipients = recipients if recipients else email_template.recipients,
             cc = email_template.cc_recipients,
+            bcc = email_template.bcc_recipients,
             sender = email_template.sender,
             sender_full_name = email_template.sender_full_name,
             subject = rendered_subject if rendered_subject else email_template.subject,
