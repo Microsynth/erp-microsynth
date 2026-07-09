@@ -1320,7 +1320,8 @@ def place_order(content, client="webshop"):
     # create sales order
     transaction_date = date.today()
     delivery_date = transaction_date + timedelta(days=3)
-    so_doc = frappe.get_doc({
+    so_doc = frappe.new_doc("Sales Order")
+    so_doc.update({
         'doctype': "Sales Order",
         'company': company,
         'naming_series': naming_series,
