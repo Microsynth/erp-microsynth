@@ -72,14 +72,23 @@ def get_data(filters):
         """
 
     raw_data = frappe.db.sql(sql_query, as_dict=True)
-    rows = {}
+    all_scales = frappe.db.sql(
+        """
+        SELECT DISTINCT `scale`
+        FROM `tabOligo`
+        WHERE IFNULL(`scale`, '') != ''
+        ORDER BY `scale`
+        """,
+        as_dict=True,
+    )
+    rows = {entry["scale"]: {} for entry in all_scales}
     total_row = {"scale": "Total"}
     data = []
 
     for entry in raw_data:
         month_key = f"month{entry['month']}"
         scale = entry['scale'] if entry['scale'] else 'unknown'
-        if not scale in rows:
+        if scale not in rows:
             rows[scale] = {}
         rows[scale][month_key] = entry['oligo_count']
         if not month_key in total_row:
@@ -90,14 +99,14 @@ def get_data(filters):
     for scale, months in rows.items():
         if scale:
             row = {"scale": scale}
-            positive_count = False
+            has_month_value = False
             for m in range (1, 13):
                 month_key = f"month{m}"
                 if month_key in months:
                     count = months[month_key]
                     row[month_key] = count
-                    positive_count = count > 0 or positive_count
-            if positive_count:
+                    has_month_value = count > 0 or has_month_value
+            if scale != 'unknown' or has_month_value:
                 data.append(row)
 
     data.sort(key=lambda row: row['scale'])
