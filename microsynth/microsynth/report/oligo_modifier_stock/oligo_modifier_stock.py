@@ -8,8 +8,8 @@ from frappe import _
 
 def get_columns():
 	return [
-		{"label": _("Material Code"), "fieldname": "material_code", "fieldtype": "Data", "width": 95, "align": "left"},
-		{"label": _("Location"), "fieldname": "location", "fieldtype": "Data", "width": 365},
+		{"label": _("Material Code"), "fieldname": "material_code", "fieldtype": "Data", "width": 100, "align": "left"},
+		{"label": _("Location"), "fieldname": "location", "fieldtype": "Link", "options": "Location", "width": 80},
 		{"label": _("Item"), "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 340},
 		{"label": _("Pack Size"), "fieldname": "pack_size", "fieldtype": "Float", "precision": 2, "width": 75},
 		{"label": _("Pack UOM"), "fieldname": "pack_uom", "fieldtype": "Link", "options": "UOM", "width": 80},
@@ -18,7 +18,7 @@ def get_columns():
 		{"label": _("Ordered Qty"), "fieldname": "ordered_qty", "fieldtype": "Int", "width": 90},
 		{"label": _("Stock UOM"), "fieldname": "stock_uom", "fieldtype": "Link", "options": "UOM", "width": 80},
 		{"label": _("Shelf Life (m)"), "fieldname": "shelf_life_in_months", "fieldtype": "Int", "width": 100},
-		{"label": _("Supplier Item Code"), "fieldname": "supplier_item_code", "fieldtype": "Data", "width": 140},
+		{"label": _("Supplier Item Code"), "fieldname": "supplier_item_code", "fieldtype": "Data", "width": 160},
 		{"label": _("Substitute Status"), "fieldname": "substitute_status", "fieldtype": "Data", "width": 120, "align": "left"},
 	]
 
@@ -34,7 +34,6 @@ def get_data(filters=None):
 		data = get_filled_locations()
 
 	sort_rows_by_location_and_item(data)
-	set_full_location_path(data)
 	return data
 
 
@@ -135,6 +134,7 @@ def get_filled_locations():
 			ON `tabItem Stock`.`item_code` = `tabItem`.`name`
 		WHERE
 			`tabBase Location`.`name` = '11-03 Oligo Synthesis'
+			AND `tabLocation`.`name` != 'L08 Laborschublade'
 			AND `tabItem`.`disabled` = 0
 		ORDER BY LOWER(`tabItem`.`material_code`), `tabLocation`.`name` ASC, `tabItem`.`name` ASC
 	"""
@@ -152,6 +152,7 @@ def get_empty_locations():
 		WHERE
 			`tabBase Location`.`name` = '11-03 Oligo Synthesis'
 			AND IFNULL(`tabLocation`.`is_group`, 0) = 0
+			AND `tabLocation`.`name` != 'L08 Laborschublade'
 			AND NOT EXISTS (
 				SELECT 1
 				FROM `tabLocation Link`
@@ -189,38 +190,6 @@ def get_mode(filters):
 
 def sort_rows_by_location_and_item(data):
 	data.sort(key=lambda row: ((row.get("material_code") or "").lower(), (row.get("location") or ""), (row.get("item_code") or "")))
-
-
-def set_full_location_path(data):
-	location_names = list({row.get("location") for row in data if row.get("location")})
-	if not location_names:
-		return
-
-	paths = frappe.db.sql(
-		"""
-			SELECT
-				`tabChild`.`name` AS `location`,
-				GROUP_CONCAT(`tabAncestor`.`name` ORDER BY `tabAncestor`.`lft` SEPARATOR ' / ') AS `location_path`
-			FROM `tabLocation` AS `tabChild`
-			INNER JOIN `tabLocation` AS `tabAncestor`
-				ON `tabAncestor`.`lft` <= `tabChild`.`lft`
-				AND `tabAncestor`.`rgt` >= `tabChild`.`rgt`
-			WHERE `tabChild`.`name` IN %(location_names)s
-			GROUP BY `tabChild`.`name`
-		""",
-		{"location_names": tuple(location_names)},
-		as_dict=True,
-	)
-
-	path_by_location = {row["location"]: row.get("location_path") for row in paths}
-
-	for row in data:
-		location = row.get("location")
-		path = path_by_location.get(location)
-		if path and path.startswith("All Locations / "):
-			row["location"] = path[len("All Locations / "):]
-		elif path:
-			row["location"] = path
 
 
 def execute(filters=None):
