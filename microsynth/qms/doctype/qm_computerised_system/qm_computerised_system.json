@@ -80,6 +80,7 @@
    "in_standard_filter": 1,
    "label": "Status",
    "options": "Unapproved\nValidated\nDecommissioned",
+   "read_only": 1,
    "reqd": 1
   },
   {
@@ -123,7 +124,7 @@
    "options": "QMCS-.#####"
   }
  ],
- "modified": "2026-07-10 10:58:06.433845",
+ "modified": "2026-07-10 11:30:09.694175",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Computerised System",

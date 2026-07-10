@@ -14,7 +14,7 @@ frappe.ui.form.on('QM Log Book', {
             }
         }
         if (frm.doc.__islocal && !frm.doc.document_name) {
-            frm.dashboard.add_comment(__("Please create this Log Book Entry from the QM Instrument."), "red", true);
+            frm.dashboard.add_comment(__("Please create this Log Book Entry from a QM Instrument or QM Computerised System."), "red", true);
         }
         if (!frm.doc.__islocal && frm.doc.document_type && frm.doc.document_name) {
             // do not allow to relink the log book entry to another document after it has been created
@@ -79,7 +79,7 @@ frappe.ui.form.on('QM Log Book', {
             }
         }
 
-        if (frm.doc.status === "To Review" || frm.doc.status === "Closed") {
+        if (frm.doc.document_type === "QM Instrument" && (frm.doc.status === "To Review" || frm.doc.status === "Closed")) {
             // show button "Print Label"
             frm.add_custom_button('Print Label', function() {
                 frappe.call({

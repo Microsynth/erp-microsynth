@@ -36,6 +36,14 @@ class QMLogBook(Document):
                 self.status = "Closed"
             self.save()
             frappe.db.commit()
+        elif self.document_type and self.document_name and self.document_type == "QM Computerised System":
+            cs_doc = frappe.get_doc(self.document_type, self.document_name)
+            if cs_doc.regulatory_classification == 'GMP':
+                self.status = "To Review"
+            else:
+                self.status = "Closed"
+            self.save()
+            frappe.db.commit()
 
     def on_cancel(self):
         self.status = "Cancelled"
@@ -56,9 +64,17 @@ def get_next_due_date(log_book_entry_id):
 @frappe.whitelist()
 def is_user_process_owner(log_book_id, user):
     log_book = frappe.get_doc("QM Log Book", log_book_id)
-    instrument_doc = frappe.get_doc(log_book.document_type, log_book.document_name)
-    company = SITE_COMPANY_MAP.get(instrument_doc.site)
-    qm_process = instrument_doc.qm_process
+    linked_doc = frappe.get_doc(log_book.document_type, log_book.document_name)
+
+    if linked_doc.doctype == "QM Instrument":
+        company = SITE_COMPANY_MAP.get(linked_doc.site)
+    elif linked_doc.doctype == "QM Computerised System":
+        company = linked_doc.company
+    else:
+        company = None
+
+    qm_process = getattr(linked_doc, "qm_process", None)
+
     if company and qm_process:
         process_owners = frappe.get_all("QM Process Owner", filters={"company": company, "qm_process": qm_process}, fields=["process_owner"])
         return any(owner.process_owner == user for owner in process_owners)
@@ -149,7 +165,7 @@ def approve_and_close_log_book(dn, approval_password=None, expected_modified=Non
         frappe.throw(
             _("This Log Book Entry was modified after you opened it. Please reload and try again.")
         )
-    gmp = is_gmp(doc.document_name)
+    gmp = doc.document_type == "QM Instrument" and is_gmp(doc.document_name)
 
     if gmp:
         if not approval_password:
@@ -191,7 +207,7 @@ def safe_join_path(base, *paths):
 
 def import_log_book_entries_from_file(path, BASE_PATH=None, verbose=False, print_label=False):
     """
-    bench execute microsynth.qms.doctype.qm_log_book.qm_log_book.import_log_book_entries_from_file --kwargs "{'path': '/mnt/erp_share/Quality_Management/certificates_to_import/ERPImportFile.txt', 'BASE_PATH': '/mnt/erp_share/Quality_Management/certificates_to_import', 'verbose': True, 'print_label': False}"
+    bench execute microsynth.qms.doctype.qm_log_book.qm_log_book.import_log_book_entries_from_file --kwargs "{'path': '/mnt/erp_share/Migration/QM_Instruments/260612_Kühlgeräte_Log_Books_v05.txt', 'verbose': True, 'print_label': False}"
     """
 
     def _attach_file(doc, path):
