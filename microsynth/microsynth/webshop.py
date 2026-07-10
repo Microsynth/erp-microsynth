@@ -87,6 +87,21 @@ def parse_date(date_str):
     return None
 
 
+def get_quotation_type(product_type):
+    """
+    Map product_type to quotation_type.
+    """
+    if product_type == 'Oligos':
+        return 'Synthesis'
+    if product_type == 'Labels':
+        return 'Labels'
+    if product_type == 'Sequencing':
+        return 'Sanger Sequencing'
+    if product_type in ['Genetic Analysis', 'NGS', 'FLA', 'Project', 'Material', 'Service']:
+        return 'Genetic Analysis'
+    return ''
+
+
 def update_child_table(parent, table_fieldname, new_data, match_keys):
     """
     Update a child table with minimal changes.
@@ -883,6 +898,7 @@ def request_quote(content, client="webshop"):
         'company': company,
         'party_name': content['customer'],
         'product_type': content.get('product_type'),
+        'quotation_type': get_quotation_type(content.get('product_type')),
         'customer_address': content['invoice_address'],
         'shipping_address_name': content['delivery_address'],
         'contact_person': content['contact'],
