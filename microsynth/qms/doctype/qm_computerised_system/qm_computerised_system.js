@@ -86,7 +86,9 @@ function get_allowed_transitions(frm, isProcessOwner) {
 
 function add_custom_buttons(frm, isProcessOwner) {
     frm.clear_custom_buttons();
-
+	if (frm.doc.__islocal) {
+		return;
+	}
     const transitions = get_allowed_transitions(frm, isProcessOwner);
     const labels = {
         'Unapproved|Validated': 'Validate',
@@ -94,7 +96,6 @@ function add_custom_buttons(frm, isProcessOwner) {
         'Decommissioned|Validated': 'Validate',
         'Validated|Unapproved': 'Set Unapproved'
     };
-
     transitions.forEach(([from, to]) => {
         const label = labels[`${from}|${to}`] || to;
         const color = (to === 'Validated') ? 'btn-success' : 'btn-danger';
@@ -105,14 +106,27 @@ function add_custom_buttons(frm, isProcessOwner) {
         }).addClass(color);
     });
 
-    if (!frm.doc.__islocal) {
-        frm.add_custom_button(__('Log Book Entry'), function() {
-            frappe.new_doc('QM Log Book', {
-                document_type: frm.doc.doctype,
-                document_name: frm.doc.name
-            });
-        }, __('Create'));
-    }
+	frm.add_custom_button(__('New Version'), function() {
+		frappe.call({
+			'method': 'microsynth.qms.doctype.qm_computerised_system.qm_computerised_system.create_new_version',
+			'args': {
+				'doc': frm.doc.name,
+				'user': frappe.session.user
+			},
+			'callback': function(r) {
+				if (r.message && r.message.name) {
+					frappe.set_route('Form', 'QM Computerised System', r.message.name);
+				}
+			}
+		});
+	}, __('Create'));
+
+	frm.add_custom_button(__('Log Book Entry'), function() {
+		frappe.new_doc('QM Log Book', {
+			document_type: frm.doc.doctype,
+			document_name: frm.doc.name
+		});
+	}, __('Create'));
 }
 
 
