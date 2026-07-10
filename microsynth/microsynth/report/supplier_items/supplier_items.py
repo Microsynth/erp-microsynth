@@ -7,6 +7,7 @@ import frappe
 from frappe import _
 from frappe.utils import flt
 from microsynth.microsynth.purchasing import get_location_path_string
+from microsynth.microsynth.utils import user_has_role
 
 
 def get_columns():
@@ -236,9 +237,28 @@ def update_supplier_item(data):
     if not item_code:
         frappe.throw(_("Missing item_code"))
 
-    # Check permissions
-    if not frappe.has_permission("Item", "write", item_code):
-        frappe.throw(_("Not permitted to edit this Item"))
+    user = frappe.session.user
+    can_write_item = frappe.permissions.has_permission(
+        "Item", "write", doc=item_code, user=user, raise_exception=False
+    )
+    is_stock_user = user_has_role(user, "Stock User") or user_has_role(user, "Stock Manager")
+
+    # Stock User may only update a restricted subset when Item write permission is missing.
+    if not can_write_item:
+        if not is_stock_user:
+            frappe.throw(_("Not permitted to edit this Item"))
+
+        allowed_for_stock_user = {
+            "item_code",
+            "supplier",
+            # "pack_size",
+            # "pack_uom",
+            "material_code",
+            "safety_stock",
+            "shelf_life_in_years",
+            "substitute_status"
+        }
+        data = {k: v for k, v in data.items() if k in allowed_for_stock_user}
 
     # Numeric checks
     numeric_fields = {
@@ -263,12 +283,13 @@ def update_supplier_item(data):
 
     item = frappe.get_doc("Item", item_code)
 
-    conversion_factor = flt(data.get("conversion_factor", 1))
-    stock_uom = data.get("stock_uom") or item.stock_uom
-    purchase_uom = data.get("purchase_uom") or item.purchase_uom
-    if stock_uom and purchase_uom and stock_uom != purchase_uom:
-        if abs(conversion_factor) < 0.0001 or abs(conversion_factor - 1) < 0.0001:
-            frappe.throw(_("Conversion Factor must not be 0 or 1 when Purchase unit differs from Stock unit."))
+    if any(key in data for key in ["conversion_factor", "stock_uom", "purchase_uom"]):
+        conversion_factor = flt(data.get("conversion_factor", 1))
+        stock_uom = data.get("stock_uom") or item.stock_uom
+        purchase_uom = data.get("purchase_uom") or item.purchase_uom
+        if stock_uom and purchase_uom and stock_uom != purchase_uom:
+            if abs(conversion_factor) < 0.0001 or abs(conversion_factor - 1) < 0.0001:
+                frappe.throw(_("Conversion Factor must not be 0 or 1 when Purchase unit differs from Stock unit."))
 
     # If conversion_factor and purchase_uom are given, check if UOM Conversion entry exists, else create it
     if data.get("conversion_factor") and data.get("purchase_uom"):
@@ -356,5 +377,6 @@ def update_supplier_item(data):
                 if data.get("company") and default.company == data.get("company"):
                     default.default_supplier = supplier_item.supplier
                     break
-    item.save()
+
+    item.save(ignore_permissions=is_stock_user)
     return item.name
