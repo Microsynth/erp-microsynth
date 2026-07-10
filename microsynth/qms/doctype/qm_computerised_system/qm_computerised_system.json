@@ -1,0 +1,172 @@
+{
+ "autoname": "naming_series:",
+ "creation": "2026-07-10 10:51:54.987873",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "cs_name",
+  "cs_type",
+  "gamp5_class",
+  "regulatory_classification",
+  "primary_version_control_method",
+  "column_break_6",
+  "version",
+  "status",
+  "qm_process",
+  "company",
+  "responsible_user",
+  "section_break_12",
+  "description",
+  "naming_series"
+ ],
+ "fields": [
+  {
+   "fieldname": "cs_name",
+   "fieldtype": "Data",
+   "label": "Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "cs_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Type",
+   "options": "\nModule\nExcel\nExecutable Code\nStandalone\nApplication Script\nSponsor Tool",
+   "reqd": 1
+  },
+  {
+   "fieldname": "gamp5_class",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "GAMP5 Class",
+   "options": "\n1: Infrastructure\n3: Non-Configurable\n4: Configurable\n5: Custom",
+   "reqd": 1
+  },
+  {
+   "fieldname": "regulatory_classification",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Regulatory Classification",
+   "options": "\nGMP\nnon-GMP",
+   "reqd": 1
+  },
+  {
+   "fieldname": "primary_version_control_method",
+   "fieldtype": "Select",
+   "in_standard_filter": 1,
+   "label": "Primary Version Control Method",
+   "options": "\nVersion Control Tool\nQM Document\nLogbook / Controlled Version Register\nManual Controlled Record\nBuilt-in Version History\nSupplier Release Records",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_6",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "version",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Version"
+  },
+  {
+   "default": "Unapproved",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Unapproved\nValidated\nDecommissioned",
+   "reqd": 1
+  },
+  {
+   "fieldname": "qm_process",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Process",
+   "options": "QM Process",
+   "reqd": 1
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Company",
+   "options": "Company"
+  },
+  {
+   "fieldname": "responsible_user",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Responsible User",
+   "options": "User"
+  },
+  {
+   "fieldname": "section_break_12",
+   "fieldtype": "Section Break"
+  },
+  {
+   "description": "High level description of the computerised system including intended use",
+   "fieldname": "description",
+   "fieldtype": "Text",
+   "label": "Description",
+   "reqd": 1
+  },
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Naming Series",
+   "options": "QMCS-.#####"
+  }
+ ],
+ "modified": "2026-07-10 10:58:06.433845",
+ "modified_by": "jens.petermann@microsynth.ch",
+ "module": "QMS",
+ "name": "QM Computerised System",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "QAU",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Board Member"
+  },
+  {
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Microsynth User"
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "title_field": "cs_name",
+ "track_changes": 1
+}
