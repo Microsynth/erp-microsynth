@@ -16,6 +16,7 @@ frappe.ui.form.on('QM Log Book', {
         if (frm.doc.__islocal && !frm.doc.document_name) {
             frm.dashboard.add_comment(__("Please create this Log Book Entry from a QM Instrument or QM Computerised System."), "red", true);
         }
+        apply_entry_type_options(frm);
         if (!frm.doc.__islocal && frm.doc.document_type && frm.doc.document_name) {
             // do not allow to relink the log book entry to another document after it has been created
             frm.set_df_property("document_name", "read_only", true);
@@ -98,7 +99,52 @@ frappe.ui.form.on('QM Log Book', {
             });
         }
     }
+    ,
+    document_type: function(frm) {
+        apply_entry_type_options(frm);
+    }
 });
+
+
+function get_allowed_entry_types(document_type) {
+    if (document_type === "QM Computerised System") {
+        return [
+            "Bugfix",
+            "Update",
+            "(Re-)Validation",
+            "Audit Trail Review",
+            "Other"
+        ];
+    }
+    if (document_type === "QM Instrument") {
+        return [
+            "Maintanance",
+            "Service",
+            "Function Control",
+            "Crash/Error",
+            "(Re-)Qualification",
+            "Verification",
+            "Calibration",
+            "Software",
+            "Other"
+        ];
+    }
+    return [];
+}
+
+
+function apply_entry_type_options(frm) {
+    const allowed = get_allowed_entry_types(frm.doc.document_type);
+    if (!allowed.length) {
+        return;
+    }
+
+    frm.set_df_property("entry_type", "options", [""].concat(allowed).join("\n"));
+
+    if (frm.doc.docstatus === 0 && frm.doc.entry_type && !allowed.includes(frm.doc.entry_type)) {
+        frm.set_value("entry_type", "");
+    }
+}
 
 
 function allow_write_access(frm) {

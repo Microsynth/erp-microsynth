@@ -26,6 +26,9 @@ SITE_COMPANY_MAP = {
 
 class QMLogBook(Document):
 
+    def validate(self):
+        validate_entry_type_for_document_type(self.document_type, self.entry_type)
+
     def on_submit(self):
         if self.document_type and self.document_name and self.document_type == "QM Instrument":
             instrument_doc = frappe.get_doc(self.document_type, self.document_name)
@@ -59,6 +62,38 @@ def get_next_due_date(log_book_entry_id):
         if event['qualification_type'] == log_book.entry_type:
             return event['due_date']
     return None
+
+
+def validate_entry_type_for_document_type(document_type, entry_type):
+    allowed_by_type = {
+        "QM Computerised System": {
+            "Bugfix",
+            "Update",
+            "(Re-)Validation",
+            "Audit Trail Review",
+            "Other"
+        },
+        "QM Instrument": {
+            "Maintanance",
+            "Service",
+            "Function Control",
+            "Crash/Error",
+            "(Re-)Qualification",
+            "Verification",
+            "Calibration",
+            "Software",
+            "Other"
+        }
+    }
+
+    if not document_type or not entry_type:
+        return
+
+    allowed = allowed_by_type.get(document_type)
+    if allowed and entry_type not in allowed:
+        frappe.throw(
+            _("Entry Type '{0}' is not allowed for document type '{1}'.").format(entry_type, document_type)
+        )
 
 
 @frappe.whitelist()
