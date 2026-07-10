@@ -23,16 +23,16 @@ frappe.ui.form.on('QM Computerised System', {
                 'callback': function(r) {
                     const isProcessOwner = (r.message || []).includes(frappe.session.user);
                     if (isProcessOwner) {
-                        // apply_field_permissions(frm, true);
+                        apply_field_permissions(frm, true);
                         add_custom_buttons(frm, true);
                     } else {
-                        // apply_field_permissions(frm, false);
+                        apply_field_permissions(frm, false);
                         add_custom_buttons(frm, false);
                     }
                 }
             });
         } else {
-			// apply_field_permissions(frm, false);
+			apply_field_permissions(frm, false);
             add_custom_buttons(frm, false);
         }
 	}
@@ -112,5 +112,80 @@ function add_custom_buttons(frm, isProcessOwner) {
                 document_name: frm.doc.name
             });
         }, __('Create'));
+    }
+}
+
+
+function unlock_fields(frm, fields) {
+    fields.forEach(field => {
+        frm.set_df_property(field, 'read_only', 0);
+    });
+}
+
+
+function lock_fields(frm, fields) {
+    fields.forEach(field => {
+        frm.set_df_property(field, 'read_only', 1);
+    });
+}
+
+
+function apply_field_permissions(frm, isProcessOwner) {
+    const status = frm.doc.status;
+    const user = frappe.session.user;
+    const roles = frappe.user_roles;
+
+    const is_qau = roles.includes('QAU');
+    const is_responsible_user = frm.doc.responsible_user === user;
+    const is_owner_or_responsible_user = isProcessOwner || is_responsible_user;
+
+    const fields_in_scope = [
+        'cs_name',
+        'description',
+        'qm_process',
+        'company',
+        'gamp5_class',
+        'regulatory_classification',
+        'cs_type',
+        'primary_version_control_method',
+        'version',
+        'responsible_user'
+    ];
+
+    // Start from unlocked, then apply matrix-based locks.
+    unlock_fields(frm, fields_in_scope);
+
+    // Decommissioned: all listed fields are locked for all roles.
+    if (status === 'Decommissioned') {
+        lock_fields(frm, fields_in_scope);
+        return;
+    }
+
+    // Validated:
+    // - QAU: only version is locked.
+    // - QM Process Owner / Responsible User: all listed fields except responsible_user are locked.
+    if (status === 'Validated') {
+        if (is_qau) {
+            lock_fields(frm, ['version']);
+            return;
+        }
+
+        if (is_owner_or_responsible_user) {
+            lock_fields(frm, [
+                'cs_name',
+                'description',
+                'qm_process',
+                'company',
+                'gamp5_class',
+                'regulatory_classification',
+                'cs_type',
+                'primary_version_control_method',
+                'version'
+            ]);
+            return;
+        }
+
+        // Non-target roles should not edit these fields once validated.
+        lock_fields(frm, fields_in_scope);
     }
 }
