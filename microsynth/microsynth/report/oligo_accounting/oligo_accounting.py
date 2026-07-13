@@ -22,6 +22,24 @@ MONTHS = {
     12: _("December"),
 }
 
+PREFERRED_SCALE_ORDER = [
+    "Genomics",
+    "0.04 µmol",
+    "0.2 µmol",
+    "1.0 µmol",
+    "15 µmol",
+]
+PREFERRED_SCALE_MAP = {
+    scale: index for index, scale in enumerate(PREFERRED_SCALE_ORDER)
+}
+
+
+def _scale_sort_key(row):
+    scale = row.get("scale") or ""
+    if scale in PREFERRED_SCALE_MAP:
+        return (0, PREFERRED_SCALE_MAP[scale], "")
+    return (1, 0, scale.lower())
+
 
 def get_columns(filters):
     columns = [
@@ -109,7 +127,7 @@ def get_data(filters):
             if scale != 'unknown' or has_month_value:
                 data.append(row)
 
-    data.sort(key=lambda row: row['scale'])
+    data.sort(key=_scale_sort_key)
     data.append(total_row)
     return data
 
