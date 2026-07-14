@@ -125,6 +125,14 @@ def get_raw_data(filters):
 			ON `tabSales Invoice`.`name` = `tabSales Invoice Item`.`parent`
 			AND `tabSales Invoice Item`.`parenttype` = 'Sales Invoice'
 		WHERE `tabSales Invoice`.`docstatus` = 1
+			AND `tabSales Invoice`.`is_return` = 0
+			AND NOT EXISTS (
+				SELECT 1
+				FROM `tabSales Invoice` `cn`
+				WHERE `cn`.`docstatus` = 1
+					AND `cn`.`is_return` = 1
+					AND `cn`.`return_against` = `tabSales Invoice`.`name`
+			)
 			{where_clause}
 			AND `tabSales Invoice Item`.`item_code` IN ({item_code_placeholders})
 		GROUP BY MONTH(`tabSales Invoice`.`posting_date`), `tabSales Invoice Item`.`item_code`
