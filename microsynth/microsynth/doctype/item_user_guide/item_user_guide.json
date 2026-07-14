@@ -19,7 +19,7 @@
    "reqd": 1
   },
   {
-   "columns": 3,
+   "columns": 2,
    "fieldname": "user_guide_name",
    "fieldtype": "Data",
    "in_list_view": 1,
@@ -27,7 +27,7 @@
    "reqd": 1
   },
   {
-   "columns": 5,
+   "columns": 6,
    "fieldname": "user_guide_url",
    "fieldtype": "Data",
    "in_list_view": 1,
@@ -36,8 +36,8 @@
   }
  ],
  "istable": 1,
- "modified": "2026-06-23 12:14:01.771305",
- "modified_by": "Administrator",
+ "modified": "2026-07-14 17:40:57.167165",
+ "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "Item User Guide",
  "owner": "jens.petermann@microsynth.ch",
