@@ -24,34 +24,29 @@ MONTHS = {
 
 
 FAST_LANE_ROWS = [
-	{"label": "Easy Run (3050)", "item_codes": ["3050"], "is_plate": False},
+	{"label": "Easy Run (3050)", "item_codes": ["3050"]},
 	{
 		"label": "Economy Run (0901, 3000)",
 		"item_codes": ["0901", "3000"],
-		"is_plate": False,
 	},
-	{"label": "ENS (3200, 3237)", "item_codes": ["3200", "3237"], "is_plate": False},
-	{"label": "FPS (3260, 3264)", "item_codes": ["3260", "3264"], "is_plate": False},
-	{"label": "Premium (0903)", "item_codes": ["0903"], "is_plate": False},
+	{"label": "ENS (3200, 3237)", "item_codes": ["3200", "3237"]},
+	{"label": "FPS (3260, 3264)", "item_codes": ["3260", "3264"]},
+	{"label": "Premium (0903)", "item_codes": ["0903"]},
 	{
 		"label": "Economy Plate (3120, 3130, 3131)",
 		"item_codes": ["3120", "3130", "3131"],
-		"is_plate": True,
 	},
 	{
 		"label": "Economy Plus Plate (3100, 3110)",
 		"item_codes": ["3100", "3110"],
-		"is_plate": True,
 	},
 	{
 		"label": "ENS Plate (3240, 3252, 3254)",
 		"item_codes": ["3240", "3252", "3254"],
-		"is_plate": True,
 	},
 	{
 		"label": "FPS Plate (3265, 3266)",
 		"item_codes": ["3265", "3266"],
-		"is_plate": True,
 	},
 ]
 
@@ -62,11 +57,18 @@ SPECIAL_ITEM_MULTIPLIERS = {
 }
 
 
+PLATE_96_ITEM_CODES = {
+	"3100",
+	"3120",
+	"3240",
+}
+
+
 def get_item_config():
 	item_config = {}
 	for row in FAST_LANE_ROWS:
-		default_multiplier = 96 if row["is_plate"] else 1
 		for item_code in row["item_codes"]:
+			default_multiplier = 96 if item_code in PLATE_96_ITEM_CODES else 1
 			item_config[item_code] = {
 				"label": row["label"],
 				"multiplier": SPECIAL_ITEM_MULTIPLIERS.get(item_code, default_multiplier),
