@@ -40,8 +40,8 @@ FAST_LANE_ROWS = [
 		"item_codes": ["3120", "3130", "3131"],
 	},
 	{
-		"label": "Economy Plus Plate (3100, 3110)",
-		"item_codes": ["3100", "3110"],
+		"label": "Economy Plus Plate (3100)",
+		"item_codes": ["3100"],
 	},
 	{
 		"label": "ENS Plate (3240, 3252, 3254)",
