@@ -5,6 +5,7 @@ from __future__ import unicode_literals
 import frappe
 from frappe import _
 from frappe.utils import cint, flt
+from microsynth.microsynth.utils import get_child_territories
 
 
 MONTHS = {
@@ -101,8 +102,11 @@ def get_raw_data(filters):
 	params = []
 
 	if filters.get("territory"):
-		conditions.append("`tabSales Invoice`.`territory` = %s")
-		params.append(filters.get("territory"))
+		child_territories = get_child_territories(filters.get("territory"))
+		if child_territories:
+			territory_placeholders = ", ".join(["%s"] * len(child_territories))
+			conditions.append(f"`tabSales Invoice`.`territory` IN ({territory_placeholders})")
+			params.extend(child_territories)
 
 	if filters.get("fiscal_year"):
 		conditions.append("YEAR(`tabSales Invoice`.`posting_date`) = %s")
