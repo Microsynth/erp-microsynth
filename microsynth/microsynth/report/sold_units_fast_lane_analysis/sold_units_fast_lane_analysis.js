@@ -17,6 +17,13 @@ frappe.query_reports["Sold Units Fast Lane Analysis"] = {
 			"options": "Fiscal Year",
 			"reqd": 1,
 			"default": frappe.defaults.get_user_default("fiscal_year") || frappe.defaults.get_global_default("fiscal_year")
+		},
+		{
+			"fieldname": "display_mode",
+			"label": __("Display Mode"),
+			"fieldtype": "Select",
+			"options": "Counts\nCounts with Linked References",
+			"default": "Counts"
 		}
 	],
 	"onload": function(report) {

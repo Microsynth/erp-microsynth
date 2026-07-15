@@ -2,6 +2,8 @@
 # For license information, please see license.txt
 
 from __future__ import unicode_literals
+import calendar
+import urllib.parse
 import frappe
 from frappe import _
 from frappe.utils import cint, flt
@@ -77,7 +79,13 @@ def get_item_config():
 	return item_config
 
 
+def is_enhanced_mode(filters):
+	display_mode = (filters or {}).get("display_mode") or ""
+	return display_mode == "Counts with Linked References"
+
+
 def get_columns(filters):
+	fieldtype = "HTML" if is_enhanced_mode(filters) else "Integer"
 	columns = [
 		{"label": _("Fast Lane"), "fieldname": "fast_lane", "fieldtype": "Data", "width": 200}
 	]
@@ -86,12 +94,13 @@ def get_columns(filters):
 			{
 				"label": MONTHS[month],
 				"fieldname": f"month{month}",
-				"fieldtype": "Integer",
+				"fieldtype": fieldtype,
 				"width": 80,
 				"precision": "0",
 				"align": "right",
 			}
 		)
+	columns.append({"label": _("Total"), "fieldname": "total", "fieldtype": fieldtype, "width": 90, "align": "right"})
 	return columns
 
 
@@ -147,8 +156,62 @@ def get_raw_data(filters):
 	return frappe.db.sql(sql_query, tuple(params), as_dict=True)
 
 
+def format_units(value):
+	if flt(value).is_integer():
+		return str(int(flt(value)))
+	return str(flt(value))
+
+
+def encode_list_filter(value):
+	return urllib.parse.quote(str(value).replace("'", '"'))
+
+
+def get_sales_invoice_list_url(filters, item_codes, child_territories, month=None):
+	if not filters.get("fiscal_year"):
+		return ""
+
+	year = cint(filters.get("fiscal_year"))
+	if month:
+		last_day = calendar.monthrange(year, month)[1]
+		date_filter = ["Between", [f"{year}-{month:02d}-01", f"{year}-{month:02d}-{last_day}"]]
+	else:
+		date_filter = ["Between", [f"{year}-01-01", f"{year}-12-31"]]
+	params = [
+		"docstatus=1",
+		"is_return=0",
+		f"status={encode_list_filter(['!=', 'Credit Note Issued'])}",
+		f"posting_date={encode_list_filter(date_filter)}",
+	]
+
+	if item_codes:
+		if len(item_codes) == 1:
+			params.append(f"item_code={item_codes[0]}")
+		else:
+			params.append(f"item_code={encode_list_filter(['in', sorted(item_codes)])}")
+
+	if child_territories:
+		if len(child_territories) == 1:
+			params.append(f"territory={child_territories[0]}")
+		else:
+			params.append(f"territory={encode_list_filter(['in', sorted(child_territories)])}")
+
+	return "desk#List/Sales%20Invoice/List?" + "&".join(params)
+
+
+def get_linked_value(value, url):
+	if not url:
+		return flt(value)
+
+	return f'<a href="{url}" target="_blank">{format_units(value)}</a>'
+
+
 def get_data(filters):
 	item_config = get_item_config()
+	item_codes_by_label = {row["label"]: row["item_codes"] for row in FAST_LANE_ROWS}
+	enhanced_mode = is_enhanced_mode(filters)
+	child_territories = []
+	if filters.get("territory"):
+		child_territories = get_child_territories(filters.get("territory")) or [filters.get("territory")]
 	raw_data = get_raw_data(filters)
 
 	rows = {row["label"]: {} for row in FAST_LANE_ROWS}
@@ -165,24 +228,50 @@ def get_data(filters):
 		units = flt(entry["qty"]) * config["multiplier"]
 		label = config["label"]
 		rows[label][month_key] = flt(rows[label].get(month_key, 0)) + units
+
 		total_row[month_key] = flt(total_row.get(month_key, 0)) + units
 
 	for row in FAST_LANE_ROWS:
 		label = row["label"]
 		month_values = rows[label]
 		output_row = {"fast_lane": label}
+		row_total = 0
 
 		for month in range(1, 13):
 			month_key = f"month{month}"
 			if month_key in month_values:
 				value = month_values[month_key]
-				output_row[month_key] = value
+				row_total += flt(value)
+				url = ""
+				if enhanced_mode:
+					url = get_sales_invoice_list_url(filters, item_codes_by_label.get(label, []), child_territories, month=month)
+				output_row[month_key] = get_linked_value(value, url)
+
+		total_url = ""
+		if enhanced_mode:
+			total_url = get_sales_invoice_list_url(filters, item_codes_by_label.get(label, []), child_territories)
+		output_row["total"] = get_linked_value(row_total, total_url)
 
 		data.append(output_row)
+
+	total_row_sum = 0
+	for month in range(1, 13):
+		month_key = f"month{month}"
+		if month_key in total_row:
+			total_row_sum += flt(total_row[month_key])
+			url = ""
+			if enhanced_mode:
+				url = get_sales_invoice_list_url(filters, sorted(item_config.keys()), child_territories, month=month)
+			total_row[month_key] = get_linked_value(total_row[month_key], url)
+	total_total_url = ""
+	if enhanced_mode:
+		total_total_url = get_sales_invoice_list_url(filters, sorted(item_config.keys()), child_territories)
+	total_row["total"] = get_linked_value(total_row_sum, total_total_url)
 
 	data.append(total_row)
 	return data
 
 def execute(filters=None):
-	columns, data = get_columns(filters), get_data(filters or {})
+	safe_filters = filters or {}
+	columns, data = get_columns(safe_filters), get_data(safe_filters)
 	return columns, data
