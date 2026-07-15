@@ -56,7 +56,7 @@ def get_data(filters):
     conditions = ''
 
     if 'territory' in filters and filters.get("territory"):
-        conditions += "AND `tabDelivery Note`.`territory` IN ('{0}')".format("', '".join(get_child_territories(filters.get("territory"))))
+        conditions += "AND `tabCustomer`.`territory` IN ('{0}')".format("', '".join(get_child_territories(filters.get("territory"))))
 
     if filters.get("fiscal_year"):  # mandatory
         conditions += f"AND YEAR(`tabDelivery Note`.`posting_date`) = {filters.get('fiscal_year')}"
@@ -74,6 +74,7 @@ def get_data(filters):
             `tabOligo`.`scale` AS `scale`
 
             FROM `tabDelivery Note`
+            LEFT JOIN `tabCustomer` ON `tabCustomer`.`name` = `tabDelivery Note`.`customer`
 
             LEFT JOIN `tabOligo Link` AS `tOL` ON `tabDelivery Note`.`name` = `tOL`.`parent`
                                                 AND `tOL`.`parenttype` = "Delivery Note"
