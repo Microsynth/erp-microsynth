@@ -797,7 +797,7 @@ function open_mail_dialog(frm){
                             'replace_template': true
                         });
                         // note: once the mail is sent, a communication record is created and this will trigger setting the invoice_sent_on (see hooks.py, doc_events Communication on_insert)
-                    }, 300);
+                    }, 1000);
                 } else {
                     frappe.show_alert(__('Unexpected error: could not prepare email sending. Please contact IT App.'));
                 }
