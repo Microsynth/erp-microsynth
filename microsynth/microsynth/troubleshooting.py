@@ -57,8 +57,9 @@ def get_foreign_currency_balance(account, date):
 
 def check_sales_order_item_prices(sales_order):
     """
-    run
+    Checks the item prices of a sales order against the webshop prices. Returns True if all prices match, False otherwise.
 
+    run
     bench execute microsynth.microsynth.troubleshooting.check_sales_order_item_prices --kwargs "{'sales_order':'SO-BAL-26028114'}"
     """
     from microsynth.microsynth.webshop import get_item_prices
@@ -103,21 +104,22 @@ def check_sales_order_item_prices(sales_order):
     return return_value
 
 
-def check_sales_orders_item_prices():
+def check_sales_orders_item_prices(start_date, end_date):
     """
-    run
+    Checks the item prices of all sales orders created between start_date and end_date against the webshop prices. Lists the mismatches and errors in the console.
 
-    bench execute microsynth.microsynth.troubleshooting.check_sales_orders_item_prices
+    run
+    bench execute microsynth.microsynth.troubleshooting.check_sales_orders_item_prices --kwargs "{'start_date':'2026-07-16 20:00', 'end_date':'2026-07-17 20:00'}"
     """
 
     query = """
         SELECT `name`
         FROM `tabSales Order`
-        WHERE '2025-07-16 20:00' < `creation` AND `creation` < '2025-07-17 20:00'
+        WHERE %(start_date)s < `creation` AND `creation` < %(end_date)s
         AND `docstatus` = 1
         ORDER BY `creation` ASC
         """
-    sales_orders = frappe.db.sql(query, as_dict=True)
+    sales_orders = frappe.db.sql(query, {'start_date': start_date, 'end_date': end_date}, as_dict=True)
 
     for so in sales_orders:
         check_sales_order_item_prices(so.get('name'))
