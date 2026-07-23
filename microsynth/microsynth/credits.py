@@ -948,6 +948,7 @@ def change_si_credit_accounts(sales_invoice, new_credit_accounts):
     new_si.customer_credits = []
     new_si.remaining_customer_credit = None
     new_si.credit_account = None
+    new_si.discount_amount =  si_doc.discount_amount - si_doc.total_customer_credit     # reset the discount amount
     # TODO: Set the no_copy flag for fields customer_credits and credit_account on DocType Sales Invoice?
     # TODO: check date and payment due date
 
