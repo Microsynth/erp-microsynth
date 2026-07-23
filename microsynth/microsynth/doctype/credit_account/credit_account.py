@@ -6,6 +6,7 @@ import json
 import frappe
 from frappe.model.document import Document
 
+from microsynth.microsynth.utils import user_has_role
 
 class CreditAccount(Document):
     def validate(self):
@@ -37,7 +38,7 @@ class CreditAccount(Document):
             if self.currency != original.currency:
                 frappe.throw("Cannot change Currency of Credit Account with existing transactions.")
 
-            if self.account_type != original.account_type:
+            if self.account_type != original.account_type and not user_has_role(frappe.session.user, "System Manager"):
                 frappe.throw("Cannot change Account Type of Credit Account with existing transactions.")
 
 
