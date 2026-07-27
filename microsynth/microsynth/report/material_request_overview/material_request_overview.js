@@ -65,6 +65,12 @@ frappe.query_reports["Material Request Overview"] = {
             fieldname: "comment",
             label: __("Comment"),
             fieldtype: "Data"
+        },
+        {
+            fieldname: "requested_by",
+            label: __("Requested By"),
+            fieldtype: "Link",
+            options: "User"
         }
     ],
     "onload": (report) => {

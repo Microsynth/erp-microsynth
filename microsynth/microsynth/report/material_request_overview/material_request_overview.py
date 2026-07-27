@@ -112,6 +112,9 @@ def get_data(filters):
     if filters and filters.get("comment"):
         conditions += " AND IFNULL(`tabMaterial Request`.`comment`, '') LIKE CONCAT('%%', %(comment)s, '%%')"
         item_request_conditions += " AND IFNULL(`tabItem Request`.`comment`, '') LIKE CONCAT('%%', %(comment)s, '%%')"
+    if filters and filters.get("requested_by"):
+        conditions += " AND IFNULL(`tabMaterial Request`.`requested_by`, `tabMaterial Request`.`owner`) = %(requested_by)s"
+        item_request_conditions += " AND `tabItem Request`.`owner` = %(requested_by)s"
 
     if mode == "All Material Requests":
         data = frappe.db.sql(f"""
