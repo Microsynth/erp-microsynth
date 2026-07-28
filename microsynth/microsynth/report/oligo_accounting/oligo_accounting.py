@@ -74,7 +74,7 @@ def get_data(filters):
             `tabOligo`.`scale` AS `scale`
 
             FROM `tabDelivery Note`
-            LEFT JOIN `tabCustomer` ON `tabCustomer`.`name` = `tabDelivery Note`.`customer`
+            LEFT JOIN `tabCustomer` ON `tabCustomer`.`name` = IFNULL(`tabDelivery Note`.`order_customer`, `tabDelivery Note`.`customer`)
 
             LEFT JOIN `tabOligo Link` AS `tOL` ON `tabDelivery Note`.`name` = `tOL`.`parent`
                                                 AND `tOL`.`parenttype` = "Delivery Note"
