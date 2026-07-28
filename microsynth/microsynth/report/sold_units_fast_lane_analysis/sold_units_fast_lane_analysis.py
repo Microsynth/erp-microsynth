@@ -48,8 +48,8 @@ FAST_LANE_ROWS = [
 		"item_codes": ["3240", "3252", "3254"],
 	},
 	{
-		"label": "FPS Plate (3265, 3266)",
-		"item_codes": ["3265", "3266"],
+		"label": "FPS Plate (3265, 3266, 3269, 3288)",
+		"item_codes": ["3265", "3266", "3269", "3288"],
 	},
 ]
 
@@ -57,6 +57,9 @@ FAST_LANE_ROWS = [
 SPECIAL_ITEM_MULTIPLIERS = {
 	"3130": 24,
 	"3254": 24,
+	"3266": 24,
+	"3269": 24,
+	"3288": 24,
 }
 
 
