@@ -7,7 +7,7 @@
  "doctype": "Report",
  "idx": 0,
  "is_standard": "Yes",
- "modified": "2026-07-29 17:08:23.867609",
+ "modified": "2026-07-30 13:41:02.004269",
  "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Procurement Prices",
@@ -28,6 +28,9 @@
   },
   {
    "role": "Board Member"
+  },
+  {
+   "role": "Project Product Manager"
   }
  ]
 }
