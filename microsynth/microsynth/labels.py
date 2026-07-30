@@ -401,6 +401,11 @@ def print_instrument_label(qm_instrument_id, acquisition_date):
         # check if there is a user-specific printer
         if frappe.db.exists("User Printer", user):
             printer_name = frappe.get_value("User Printer", user, "purchase_label_printer")
+            if not printer_name:
+                return {
+                    "success": False,
+                    "message": f"No user-specific printer found for user '{user}'. Please contact IT App."
+                }
             printer = frappe.get_doc("Brady Printer", printer_name)
         else:
             return {
