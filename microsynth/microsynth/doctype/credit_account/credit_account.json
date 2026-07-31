@@ -9,6 +9,7 @@
   "customer",
   "customer_name",
   "contact_person",
+  "low_balance_warning",
   "product_types",
   "product_types_locked",
   "column_break_3",
@@ -16,6 +17,8 @@
   "company",
   "currency",
   "status",
+  "threshold",
+  "last_notification_sent",
   "expiry_date",
   "section_break_10",
   "description",
@@ -135,9 +138,25 @@
    "label": "Contact",
    "options": "Contact",
    "reqd": 1
+  },
+  {
+   "fieldname": "low_balance_warning",
+   "fieldtype": "Select",
+   "label": "Low Balance Warning",
+   "options": "\nDaily\nWeekly\nMonthly"
+  },
+  {
+   "fieldname": "threshold",
+   "fieldtype": "Currency",
+   "label": "Balance Warning Threshold"
+  },
+  {
+   "fieldname": "last_notification_sent",
+   "fieldtype": "Datetime",
+   "label": "Last Balance Warning Sent"
   }
  ],
- "modified": "2025-12-18 14:03:52.442736",
+ "modified": "2026-07-31 13:46:56.173272",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "Credit Account",
