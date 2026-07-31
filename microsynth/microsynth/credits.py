@@ -1250,3 +1250,214 @@ def delivery_note_on_submit(delivery_note, event):
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "delivery_note_on_submit")
         print(f"Error in delivery_note_on_submit for Delivery Note {delivery_note.name}: {str(e)}")
+
+
+def get_credit_accounts_for_balance_warning():
+    """
+    Fetch Credit Accounts that have balance warning enabled and all required data to evaluate/send warnings.
+
+    bench execute microsynth.microsynth.credits.get_credit_accounts_for_balance_warning
+    """
+    return frappe.db.sql(
+        """
+        SELECT
+            `tabCredit Account`.`name`,
+            `tabCredit Account`.`account_name`,
+            `tabCredit Account`.`company`,
+            `tabCredit Account`.`currency`,
+            `tabCredit Account`.`customer`,
+            `tabCredit Account`.`contact_person`,
+            `tabCredit Account`.`threshold`,
+            `tabCredit Account`.`low_balance_warning`,
+            `tabCredit Account`.`last_notification_sent`
+        FROM `tabCredit Account`
+        WHERE
+            `tabCredit Account`.`status` = 'Active'
+            AND `tabCredit Account`.`low_balance_warning` IN ('Daily', 'Weekly', 'Monthly')
+            AND COALESCE(`tabCredit Account`.`threshold`, 0) > 0
+            AND (
+                `tabCredit Account`.`expiry_date` IS NULL
+                OR `tabCredit Account`.`expiry_date` = ''
+                OR `tabCredit Account`.`expiry_date` >= %(today)s
+            )
+        ORDER BY `tabCredit Account`.`name` ASC
+        """,
+        {"today": nowdate()},
+        as_dict=True,
+    )
+
+
+def get_credit_account_forecast_balance(credit_account_id, debug=False):
+    """
+    Return forecast balance for a Credit Account.
+    Forecast = current balance - unbilled Sales Orders + unpaid deposit invoices.
+
+    bench execute microsynth.microsynth.credits.get_credit_account_forecast_balance --kwargs "{'credit_account_id': 'CA-000990', 'debug': True}"
+    """
+    from microsynth.microsynth.api.webshop.credit_account import get_open_sales_orders, get_unpaid_deposit_invoices
+
+    current_balance = get_credit_account_balance(credit_account_id)
+    open_sales_orders = get_open_sales_orders(credit_account_id)
+    unpaid_deposit_invoices = get_unpaid_deposit_invoices(credit_account_id)
+
+    total_open_sales_order_amount = sum(flt(entry.get("unbilled_amount")) for entry in open_sales_orders)
+    total_unpaid_deposit_amount = sum(flt(entry.get("unbilled_amount")) for entry in unpaid_deposit_invoices)
+
+    forecast_balance = current_balance - total_open_sales_order_amount + total_unpaid_deposit_amount
+    if debug:
+        print(f"Credit Account ID: {credit_account_id}")
+        print(f"Current Balance: {current_balance}")
+        print(f"Total Open Sales Order Amount: {total_open_sales_order_amount}")
+        print(f"Total Unpaid Deposit Amount: {total_unpaid_deposit_amount}")
+        print(f"Forecast Balance: {forecast_balance}")
+    return round(forecast_balance, 2)
+
+
+def is_balance_warning_due(credit_account):
+    """
+    Return True if the warning cadence is due based on low_balance_warning and last_notification_sent.
+
+    bench execute microsynth.microsynth.credits.is_balance_warning_due --kwargs "{'credit_account': {'name': 'CA-000990', 'low_balance_warning': 'Weekly', 'last_notification_sent': '2024-09-20'}}"
+    """
+    last_notification_sent = credit_account.get("last_notification_sent")
+    if not last_notification_sent:
+        return True
+
+    warning_frequency_days = {
+        "Daily": 1,
+        "Weekly": 7,
+        "Monthly": 30,
+    }
+    days_until_next_warning = warning_frequency_days.get(credit_account.get("low_balance_warning"), 0)
+    if days_until_next_warning <= 0:
+        return False
+
+    last_sent_date = getdate(last_notification_sent)
+    if not last_sent_date:
+        return True
+
+    return (getdate(nowdate()) - last_sent_date).days >= days_until_next_warning
+
+
+def should_send_balance_warning(credit_account, forecast_balance):
+    """
+    Return True if a warning should be sent for the given Credit Account and forecast balance.
+
+    bench execute microsynth.microsynth.credits.should_send_balance_warning --kwargs "{'credit_account': {'name': 'CA-000990', 'threshold': 100}, 'forecast_balance': 50}"
+    """
+    threshold = flt(credit_account.get("threshold"))
+    if forecast_balance > threshold:
+        return False
+    return True
+
+
+def send_credit_account_balance_warning(credit_account, forecast_balance, email_template_name):
+    """
+    Send a low balance warning to the Credit Account contact and update last_notification_sent.
+    TODO: Add balance sheet attachment to the email.
+
+    bench execute microsynth.microsynth.credits.send_credit_account_balance_warning --kwargs "{'credit_account': {'name': 'CA-000990', 'account_name': 'Test Account', 'company': 'Microsynth AG', 'currency': 'CHF', 'customer': '840931', 'contact_person': '103039', 'threshold': 100}, 'forecast_balance': 50}"
+    """
+    recipient = frappe.get_value("Contact", credit_account.get("contact_person"), "email_id")
+    if not recipient:
+        frappe.log_error(
+            f"Could not send low balance warning for Credit Account '{credit_account.get('name')}': "
+            f"Contact '{credit_account.get('contact_person')}' has no email_id.",
+            "credits.send_credit_account_balance_warning",
+        )
+        return False
+
+    email_template = frappe.get_doc("Email Template", email_template_name)
+    context = {
+        "credit_account_id": credit_account.get("name"),
+        "credit_account_name": credit_account.get("account_name"),
+        "threshold": flt(credit_account.get("threshold")),
+        "forecast_balance": flt(forecast_balance),
+        "currency": credit_account.get("currency"),
+        "company": credit_account.get("company"),
+        "customer": credit_account.get("customer"),
+        "contact": credit_account.get("contact_person"),
+    }
+    rendered_subject = frappe.render_template(email_template.subject, context)
+    rendered_content = frappe.render_template(email_template.response, context)
+    send_email_from_template(
+        email_template,
+        rendered_content,
+        rendered_subject=rendered_subject,
+        recipients=recipient,
+    )
+
+    frappe.db.set_value("Credit Account", credit_account.get("name"), "last_notification_sent", datetime.now())
+    return True
+
+
+def report_credit_account_low_balance_warnings(email_template_name="Credit Account Low Balance Warning"):
+    """
+    Check active Credit Accounts with warning settings and notify the account contact when forecast balance is below threshold.
+
+    Forecast includes open Sales Orders and unpaid deposit invoices.
+
+    Should be run by a daily cronjob, e.g.:
+    25 16 * * * cd /home/frappe/frappe-bench && /usr/local/bin/bench --site erp.microsynth.local execute microsynth.microsynth.credits.report_credit_account_low_balance_warnings
+
+    bench execute microsynth.microsynth.credits.report_credit_account_low_balance_warnings
+    """
+    credit_accounts = get_credit_accounts_for_balance_warning()
+    sent = []
+    skipped = []
+
+    for credit_account in credit_accounts:
+        try:
+            if not is_balance_warning_due(credit_account):
+                skipped.append({
+                    "credit_account": credit_account.get("name"),
+                    "reason": "frequency not due",
+                })
+                continue
+
+            forecast_balance = get_credit_account_forecast_balance(credit_account.get("name"))
+            if not should_send_balance_warning(credit_account, forecast_balance):
+                skipped.append({
+                    "credit_account": credit_account.get("name"),
+                    "reason": "threshold not reached",
+                    "forecast_balance": forecast_balance,
+                })
+                continue
+
+            warning_sent = send_credit_account_balance_warning(
+                credit_account,
+                forecast_balance,
+                email_template_name=email_template_name,
+            )
+            if warning_sent:
+                sent.append({
+                    "credit_account": credit_account.get("name"),
+                    "forecast_balance": forecast_balance,
+                    "threshold": flt(credit_account.get("threshold")),
+                    "currency": credit_account.get("currency"),
+                })
+            else:
+                skipped.append({
+                    "credit_account": credit_account.get("name"),
+                    "reason": "warning email could not be sent",
+                    "forecast_balance": forecast_balance,
+                })
+        except Exception as err:
+            msg = f"Error while processing Credit Account '{credit_account.get('name')}': {err}"
+            frappe.log_error(f"{msg}\n\n{frappe.get_traceback()}", "credits.report_credit_account_low_balance_warnings")
+            skipped.append({
+                "credit_account": credit_account.get("name"),
+                "reason": str(err),
+            })
+
+    if len(sent) > 0:
+        frappe.db.commit()
+
+    return {
+        "success": True,
+        "checked": len(credit_accounts),
+        "sent": len(sent),
+        "skipped": len(skipped),
+        "sent_accounts": sent,
+        "skipped_accounts": skipped,
+    }
