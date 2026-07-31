@@ -7,7 +7,7 @@
  "doctype": "Report",
  "idx": 0,
  "is_standard": "Yes",
- "modified": "2026-06-10 16:45:19.382440",
+ "modified": "2026-07-31 11:20:54.407743",
  "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Oligo Modifier Stock",
@@ -28,6 +28,9 @@
   },
   {
    "role": "Stock Manager"
+  },
+  {
+   "role": "Oligo Lab User"
   }
  ]
 }
