@@ -3174,7 +3174,7 @@ def assess_income_account_matrix(from_date, to_date, auto_correct=0):
         doc = frappe.get_doc("Sales Invoice", invoice.get('name'))
         if doc.base_grand_total > 0:        # skip returns and 0-sums
 
-            correct_accounts = get_income_accounts(doc.shipping_address_name, doc.currency, doc.items)
+            correct_accounts = get_income_accounts(doc.customer, doc.shipping_address_name, doc.currency, doc.items)
 
             for i in range(0, len(doc.items)):
                 if doc.items[i].income_account != correct_accounts[i]:
@@ -3247,7 +3247,7 @@ def correct_income_account(sales_invoice):
     new_doc.amended_from = old_doc.name
 
     # correct income accounts
-    correct_accounts = get_income_accounts(new_doc.shipping_address_name, new_doc.currency, new_doc.items)
+    correct_accounts = get_income_accounts(new_doc.customer, new_doc.shipping_address_name, new_doc.currency, new_doc.items)
     for i in range(0, len(new_doc.items)):
         new_doc.items[i].income_account = correct_accounts[i]
 
@@ -3280,7 +3280,7 @@ def correct_income_account(sales_invoice):
             new_cn.return_against = new_doc.name
 
             # correct income accounts
-            correct_accounts = get_income_accounts(new_cn.shipping_address_name, new_cn.currency, new_cn.items)
+            correct_accounts = get_income_accounts(new_cn.customer, new_cn.shipping_address_name, new_cn.currency, new_cn.items)
             for i in range(0, len(new_cn.items)):
                 new_cn.items[i].income_account = correct_accounts[i]
             new_cn.insert()
@@ -3599,7 +3599,7 @@ def export_abacus_file_with_account_matrix(abacus_export_file, output_file, vali
             # optional: validate according to assessment
             if validate:
                 # fetch all corrected income accounts
-                correct_accounts = get_income_accounts(si.shipping_address_name, si.currency, si.items)
+                correct_accounts = get_income_accounts(si.customer, si.shipping_address_name, si.currency, si.items)
                 # check if all accounts are in the correct income accounts
                 for a in t.get("against_singles"):
                     if get_account_by_number(a.get('account'), si.company) not in correct_accounts:
@@ -6428,13 +6428,16 @@ def get_total_outstanding_credits(credit_data):
     return total
 
 
-def create_legacy_credit_account(customer_id, company, credit_type, credit_data, verbose_level=0, contact_id=None, dry_run=False, contact_replacement_map={}):
+def create_legacy_credit_account(customer_id, company, credit_type, credit_data, verbose_level=0, contact_id=None, dry_run=False, contact_replacement_map=None):
     """
     Create a Legacy Credit Account for the given customer/company/credit_type if not already existing.
     Use credit_data to find the latest deposit Sales Invoice of type "Credit" to base the Credit Account on.
     If contact_id is given, use it as contact for the Credit Account, otherwise use the contact_person from the Sales Invoice.
     If dry_run=True, no data will be written to the database — all create/save operations will be simulated and logged instead.
     """
+    if contact_replacement_map is None:
+        contact_replacement_map = {}
+
     def log(level, message):
         # level examples: INFO, WARNING, ERROR, DRY-RUN
         print(f"{level};{customer_id};{company};{credit_type};{message}")
@@ -6620,7 +6623,7 @@ def create_legacy_credit_account(customer_id, company, credit_type, credit_data,
         pass  # errors already printed above
 
 
-def create_legacy_credit_accounts(limit=None, verbose_level=1, dry_run=False, contact_replacement_map={}):
+def create_legacy_credit_accounts(limit=None, verbose_level=1, dry_run=False, contact_replacement_map=None):
     """
     Create Legacy Credit Accounts for all Customers with outstanding credits according to the Customer Credits report.
     The parameter 'limit' can be used to limit the number of Customers processed (for testing).
@@ -6629,6 +6632,9 @@ def create_legacy_credit_accounts(limit=None, verbose_level=1, dry_run=False, co
     bench execute microsynth.microsynth.migration.create_legacy_credit_accounts --kwargs "{'verbose_level': 2, 'dry_run': False, 'contact_replacement_map': {'103257': '233464', '212799': '240974', '3016274': '208158', '216049': '215228', '210106': '243942', '225107': '217154'}}"
     """
     from microsynth.microsynth.report.customer_credits.customer_credits import get_data as get_customer_credits
+
+    if contact_replacement_map is None:
+        contact_replacement_map = {}
 
     processed_customers = 0
     print("\nLevel;Customer;Company;Credit Type;Message")
@@ -7198,16 +7204,16 @@ def _employee_import_attach_picture(employee_doc, picture_folder, picture_filena
 
 def import_employees(filename, dry_run=False, update_existing=True, picture_folder=None):
     """
-    Import or update Employee records from a TSV file.
+    Import or update Employee records from a tab separated values file.
 
-    Required TSV headers:
+    Required headers:
     Company, Vorname, Nachname, Company Email
 
     Supported optional headers:
     Gender, Date of Birth, Date of Joining, Emergency Phone, Emergency Contact,
     User ID, Abacus Nr. (External Employee ID), Department, Visa, Status, Bild
 
-    bench execute microsynth.microsynth.migration.import_employees --kwargs "{'filename': '/home/libracore/Desktop/2026-07-28_Employees.tsv', 'dry_run': True}"
+    bench execute microsynth.microsynth.migration.import_employees --kwargs "{'filename': '/mnt/erp_share/Migration/2026-07-29_Employee_List.txt', 'dry_run': True, 'update_existing': True, 'picture_folder': '/mnt/erp_share/Migration/employee_pictures'}"
     """
     required_headers = {"Company", "Vorname", "Nachname", "Company Email"}
     meta = frappe.get_meta("Employee")

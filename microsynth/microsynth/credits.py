@@ -75,14 +75,14 @@ def get_applicable_customer_credits(customer, company, credit_accounts):
     """
     raw_customer_credits = get_customer_credits({'customer': customer, 'company': company, 'credit_accounts': credit_accounts, 'exclude_unpaid_deposits': True})
 
-    credits = []
+    applicable_credits = []
 
     for credit in reversed(raw_customer_credits):  # raw_customer_credits are sorted newest to oldest. We want to allocate oldest credits first.
         if 'outstanding' in credit and flt(credit['outstanding']) >= 0.01:
             if credit['credit_account'] in credit_accounts:
-                credits.append(credit)
+                applicable_credits.append(credit)
 
-    return credits
+    return applicable_credits
 
 
 def get_credit_account_balance(credit_account_id):

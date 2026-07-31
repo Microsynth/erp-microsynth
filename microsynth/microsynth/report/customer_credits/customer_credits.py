@@ -372,12 +372,15 @@ def download_pdf(company, customer, credit_account=None):
     frappe.local.response.type = "download"
 
 
-def build_transactions_with_running_balance(filters, type_mapping={'Allocation': 'Charge', 'Credit': 'Deposit'}):
+def build_transactions_with_running_balance(filters, type_mapping=None):
     """
     Takes customer credits (list of dictonaries as returned by the get_data function of the Customer Credits report),
     an opening_balance and optionally a type mapping dictionary.
     Returns transactions (list of dictionaries) containing the balance.
     """
+    if type_mapping is None:
+        type_mapping = {'Allocation': 'Charge', 'Credit': 'Deposit'}
+
     customer_credits = get_data(filters, add_print_format=False)
 
     # Sort chronologically according to first the posting date and then the creation date to compute running balance beginning with oldest transaction.
