@@ -9,7 +9,6 @@
   "customer",
   "customer_name",
   "contact_person",
-  "low_balance_warning",
   "product_types",
   "product_types_locked",
   "column_break_3",
@@ -17,11 +16,14 @@
   "company",
   "currency",
   "status",
-  "threshold",
-  "last_notification_sent",
   "expiry_date",
   "section_break_10",
   "description",
+  "balance_warning_section",
+  "low_balance_warning",
+  "threshold",
+  "column_break_16",
+  "last_notification_sent",
   "has_transactions",
   "naming_series"
  ],
@@ -154,9 +156,18 @@
    "fieldname": "last_notification_sent",
    "fieldtype": "Datetime",
    "label": "Last Balance Warning Sent"
+  },
+  {
+   "fieldname": "balance_warning_section",
+   "fieldtype": "Section Break",
+   "label": "Balance Warning"
+  },
+  {
+   "fieldname": "column_break_16",
+   "fieldtype": "Column Break"
   }
  ],
- "modified": "2026-07-31 13:46:56.173272",
+ "modified": "2026-08-10 15:55:11.777141",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "Credit Account",
