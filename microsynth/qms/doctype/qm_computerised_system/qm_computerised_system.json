@@ -124,7 +124,7 @@
    "options": "QMCS-.#####"
   }
  ],
- "modified": "2026-07-10 11:30:09.694175",
+ "modified": "2026-08-10 13:42:32.345904",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Computerised System",
@@ -160,10 +160,12 @@
    "role": "Board Member"
   },
   {
+   "create": 1,
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "Microsynth User"
+   "role": "Microsynth User",
+   "write": 1
   }
  ],
  "sort_field": "modified",
