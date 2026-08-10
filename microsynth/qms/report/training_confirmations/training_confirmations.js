@@ -29,6 +29,13 @@ frappe.query_reports["Training Confirmations"] = {
             "options": "QM Document"
         },
         {
+            "fieldname": "qm_document_list",
+            "label": __("QM Document List"),
+            "fieldtype": "Data",
+            "length": 1000,
+            "description": __("Comma separated QM Document prefixes")
+        },
+        {
             "fieldname": "limit_to_valid",
             "label": __("Limit to valid Documents"),
             "fieldtype": "Check"

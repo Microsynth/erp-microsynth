@@ -24,16 +24,31 @@ def get_columns(filters):
 def get_data(filters):
 
     filter_conditions = ''
+    query_values = {}
 
     if filters:
         if filters.get('user'):
-            filter_conditions += f"AND `tabQM Training Record`.`trainee` = '{filters.get('user')}'"
+            filter_conditions += "AND `tabQM Training Record`.`trainee` = %(user)s"
+            query_values['user'] = filters.get('user')
         if filters.get('qm_process'):
-            filter_conditions += f"AND `tabQM Document`.`qm_process` = '{filters.get('qm_process')}'"
+            filter_conditions += "AND `tabQM Document`.`qm_process` = %(qm_process)s"
+            query_values['qm_process'] = filters.get('qm_process')
         if filters.get('qm_document'):
-            filter_conditions += f"AND `tabQM Training Record`.`document_name` = '{filters.get('qm_document')}'"
+            filter_conditions += "AND `tabQM Training Record`.`document_name` = %(qm_document)s"
+            query_values['qm_document'] = filters.get('qm_document')
+        if filters.get('qm_document_list'):
+            qm_document_prefixes = [
+                entry.strip() for entry in filters.get('qm_document_list').replace('\n', ',').split(',') if entry.strip()
+            ]
+            if qm_document_prefixes:
+                list_conditions = []
+                for i, prefix in enumerate(qm_document_prefixes):
+                    key = f'qm_document_prefix_{i}'
+                    list_conditions.append(f"`tabQM Training Record`.`document_name` LIKE %({key})s")
+                    query_values[key] = f"{prefix}%"
+                filter_conditions += "AND ({conditions})".format(conditions=" OR ".join(list_conditions))
         if filters.get('limit_to_valid'):
-            filter_conditions += f"AND `tabQM Document`.`status` = 'Valid'"
+            filter_conditions += "AND `tabQM Document`.`status` = 'Valid'"
         if filters.get('training_status'):
             training_status_map = {
                 'Unsigned': 0,
@@ -42,7 +57,8 @@ def get_data(filters):
             }
             mapped_status = training_status_map.get(filters.get('training_status'))
             if mapped_status is not None:
-                filter_conditions += f"AND `tabQM Training Record`.`docstatus` = {mapped_status}"
+                filter_conditions += "AND `tabQM Training Record`.`docstatus` = %(training_status)s"
+                query_values['training_status'] = mapped_status
 
         query = """
             SELECT `tabQM Training Record`.`name`,
@@ -67,7 +83,7 @@ def get_data(filters):
                 {filter_conditions}
         """.format(filter_conditions=filter_conditions)
 
-        return frappe.db.sql(query, as_dict=True)
+        return frappe.db.sql(query, query_values, as_dict=True)
     else:
         return None
 
