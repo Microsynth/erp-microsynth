@@ -144,7 +144,7 @@ def compute_total_quantity_by_item(material_request_rows):
     return totals
 
 
-def select_quotation_for_item(item_code, consolidated_total_qty, supplier_doc, currency, today_date, original_rate, company):
+def select_quotation_for_item(item_code, consolidated_total_qty, supplier_doc, currency, today_date, original_rate, company, requested_uom=None):
     """Select cheapest valid Supplier Quotation Item or fallback to price list rate.
 
     Returns a dict: {
@@ -170,6 +170,7 @@ def select_quotation_for_item(item_code, consolidated_total_qty, supplier_doc, c
             `tabSupplier Quotation`.`name` AS `supplier_quotation`,
             `tabSupplier Quotation`.`external_reference` AS `external_reference`,
             `tabSupplier Quotation Item`.`name` AS `supplier_quotation_item`,
+            `tabSupplier Quotation Item`.`uom` AS `uom`,
             IFNULL(`tabSupplier Quotation Item`.`qty`, 0) AS `min_qty`,
             IFNULL(`tabSupplier Quotation Item`.`rate`, 0) AS `rate`,
             IFNULL(`tabSupplier Quotation`.`valid_from`, '1900-01-01') AS `valid_from`,
@@ -205,8 +206,25 @@ def select_quotation_for_item(item_code, consolidated_total_qty, supplier_doc, c
         else:
             expired_quotation_items.append(sq_row)
 
-    if valid_quotation_items:
+    quote_candidates = valid_quotation_items
+    requested_uom_value = (requested_uom or '').strip()
+    if requested_uom_value:
+        quote_candidates = []
+        mismatching_uoms = set()
         for item in valid_quotation_items:
+            quote_uom = (item.get('uom') or '').strip()
+            if quote_uom == requested_uom_value:
+                quote_candidates.append(item)
+            else:
+                mismatching_uoms.add(quote_uom or '<empty>')
+
+        if valid_quotation_items and not quote_candidates:
+            selection['warnings'].append(
+                f"Item {item_code}: found valid Supplier Quotations with incompatible UOM ({', '.join(sorted(mismatching_uoms))}); requested UOM is '{requested_uom_value}'."
+            )
+
+    if quote_candidates:
+        for item in quote_candidates:
             selection['rate'] = flt(item.get('rate') or selection['rate'])
             selection['supplier_quotation'] = item.get('supplier_quotation')
             selection['supplier_quotation_item'] = item.get('supplier_quotation_item')
@@ -278,12 +296,14 @@ def create_po_document_for_items(material_request_rows, total_quantity_by_item_c
     for original_row in rows_sorted:
         original_item_code = original_row.get('item_code')
         item_code_key = original_item_code or '-'
+        requested_uom = original_row.get('uom')
+        quotation_choice_key = (item_code_key, requested_uom or '')
         consolidated_total_qty = flt(total_quantity_by_item_code.get(item_code_key, 0.0))
         original_rate = flt(original_row.get('rate') or 0.0)
 
         # reuse cached selection or compute it
-        if item_code_key in quotation_choice_cache:
-            selection = quotation_choice_cache[item_code_key]
+        if quotation_choice_key in quotation_choice_cache:
+            selection = quotation_choice_cache[quotation_choice_key]
             if selection.get('external_reference'):
                 used_supplier_quotations.append(
                     f"{selection.get('supplier_quotation')} ({selection.get('external_reference')})"
@@ -292,9 +312,9 @@ def create_po_document_for_items(material_request_rows, total_quantity_by_item_c
                 purchase_warnings.extend(selection.get('warnings'))
         else:
             selection = select_quotation_for_item(
-                item_code_key, consolidated_total_qty, supplier_doc, currency, today_date, original_rate, company
+                item_code_key, consolidated_total_qty, supplier_doc, currency, today_date, original_rate, company, requested_uom=requested_uom
             )
-            quotation_choice_cache[item_code_key] = selection
+            quotation_choice_cache[quotation_choice_key] = selection
             if selection.get('external_reference'):
                 used_supplier_quotations.append(
                     f"{selection.get('supplier_quotation')} ({selection.get('external_reference')})"
@@ -353,13 +373,13 @@ def create_po_document_for_items(material_request_rows, total_quantity_by_item_c
             'external_quotation_reference': selection.get('external_reference')
         }
         # set supplier quotation link only once because the core validation checks that a purchase order does not have multiple items (same item code) linked against the same quotation.
-        already_used_sq_item = quotation_choice_cache[item_code_key].get('sq_item_used')
+        already_used_sq_item = quotation_choice_cache[quotation_choice_key].get('sq_item_used')
         if not already_used_sq_item:
             po_item_row.update({
                 'supplier_quotation': selection.get('supplier_quotation'),
                 'supplier_quotation_item': selection.get('supplier_quotation_item')
             })
-            quotation_choice_cache[item_code_key]['sq_item_used'] = True
+            quotation_choice_cache[quotation_choice_key]['sq_item_used'] = True
 
         po_doc.append('items', po_item_row)
 
