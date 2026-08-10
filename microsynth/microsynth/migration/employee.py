@@ -1,11 +1,9 @@
 import os
-
-import pandas as pd
-
-from datetime import datetime, timedelta
 import sys
 import csv
 csv.field_size_limit(sys.maxsize)
+from datetime import datetime
+import frappe
 
 
 def _employee_import_clean(value):
