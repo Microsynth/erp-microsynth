@@ -13,13 +13,15 @@ def get_columns():
 		{"label": _("Item"), "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 340},
 		{"label": _("Pack Size"), "fieldname": "pack_size", "fieldtype": "Float", "precision": 2, "width": 75},
 		{"label": _("Pack UOM"), "fieldname": "pack_uom", "fieldtype": "Link", "options": "UOM", "width": 80},
-		{"label": _("Stock Qty"), "fieldname": "stock_qty", "fieldtype": "Int", "width": 85},
+		{"label": _("Substitute Status"), "fieldname": "substitute_status", "fieldtype": "Data", "width": 115, "align": "left"},
+		{"label": _("Stock Qty"), "fieldname": "stock_qty", "fieldtype": "Int", "width": 80},
 		{"label": _("Requested Qty"), "fieldname": "requested_qty", "fieldtype": "Int", "width": 100},
 		{"label": _("Ordered Qty"), "fieldname": "ordered_qty", "fieldtype": "Int", "width": 90},
-		{"label": _("Stock UOM"), "fieldname": "stock_uom", "fieldtype": "Link", "options": "UOM", "width": 80},
+		{"label": _("Supplier Item Code"), "fieldname": "supplier_item_code", "fieldtype": "Data", "width": 150},
+		{"label": _("Supplier"), "fieldname": "supplier", "fieldtype": "Link", "options": "Supplier", "width": 70},
+		{"label": _("Supplier Name"), "fieldname": "supplier_name", "fieldtype": "Data", "width": 200},
 		{"label": _("Shelf Life (m)"), "fieldname": "shelf_life_in_months", "fieldtype": "Int", "width": 100},
-		{"label": _("Supplier Item Code"), "fieldname": "supplier_item_code", "fieldtype": "Data", "width": 160},
-		{"label": _("Substitute Status"), "fieldname": "substitute_status", "fieldtype": "Data", "width": 120, "align": "left"},
+		{"label": _("Stock UOM"), "fieldname": "stock_uom", "fieldtype": "Link", "options": "UOM", "width": 90},
 	]
 
 
@@ -60,6 +62,30 @@ def get_filled_locations():
 					)
 				LIMIT 1
 			) AS `supplier_item_code`,
+			(
+				SELECT `tabItem Default`.`default_supplier`
+				FROM `tabItem Default`
+				WHERE
+					`tabItem Default`.`parent` = `tabItem`.`name`
+					AND IFNULL(`tabItem Default`.`default_supplier`, '') != ''
+				ORDER BY `tabItem Default`.`idx` ASC
+				LIMIT 1
+			) AS `supplier`,
+			(
+				SELECT `tabSupplier`.`supplier_name`
+				FROM `tabSupplier`
+				WHERE
+					`tabSupplier`.`name` = (
+						SELECT `tabItem Default`.`default_supplier`
+						FROM `tabItem Default`
+						WHERE
+							`tabItem Default`.`parent` = `tabItem`.`name`
+							AND IFNULL(`tabItem Default`.`default_supplier`, '') != ''
+						ORDER BY `tabItem Default`.`idx` ASC
+						LIMIT 1
+					)
+				LIMIT 1
+			) AS `supplier_name`,
 			`tabItem`.`item_name` AS `item_name`,
 			`tabItem`.`material_code` AS `material_code`,
 			IFNULL(FLOOR(`tabItem`.`shelf_life_in_days` * 12 / 365), 0) AS `shelf_life_in_months`,
@@ -175,6 +201,8 @@ def get_empty_locations():
 		row.setdefault("stock_uom", None)
 		row.setdefault("shelf_life_in_months", None)
 		row.setdefault("supplier_item_code", None)
+		row.setdefault("supplier", None)
+		row.setdefault("supplier_name", None)
 		row.setdefault("substitute_status", None)
 	return rows
 
