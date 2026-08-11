@@ -172,7 +172,7 @@ def import_employees(filename, dry_run=False, update_existing=True, picture_fold
     Gender, Date of Birth, Date of Joining, Emergency Phone, Emergency Contact,
     User ID, Abacus Nr. (External Employee ID), Department, Visa, Status, Bild
 
-    bench execute microsynth.microsynth.migration.import_employees --kwargs "{'filename': '/mnt/erp_share/Migration/2026-07-29_Employee_List.txt', 'dry_run': True, 'update_existing': True, 'picture_folder': '/mnt/erp_share/Migration/employee_pictures'}"
+    bench execute microsynth.microsynth.migration.employee.import_employees --kwargs "{'filename': '/mnt/erp_share/Migration/2026-07-29_Employee_List.txt', 'dry_run': True, 'update_existing': True, 'picture_folder': '/mnt/erp_share/Migration/employee_pictures'}"
     """
     required_headers = {"Company", "Vorname", "Nachname", "Company Email"}
     meta = frappe.get_meta("Employee")
