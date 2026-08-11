@@ -289,6 +289,10 @@ def async_create_invoices(mode, company, customer, is_monthly_collective_run=Fal
                 so_id, dn_doc = fetch_sales_order_id(dn.get('delivery_note'))
                 so_status = frappe.get_value("Sales Order", so_id, "status")
                 if so_status == 'Closed':
+                    if dn_doc.grand_total == 0:
+                        # close the Delivery Note
+                        dn_doc.update_status('Closed')
+                        continue  # skip invoicing for Delivery Notes with grand total 0 that are linked to a Closed Sales Order.
                     allowed_items = ['0969', '0975']
                     # Check if Delivery Note contains Item 0969 or 0975 with a lower quantity than on the Sales Order,
                     # open the Sales Order before invoicing and close it again afterwards.
