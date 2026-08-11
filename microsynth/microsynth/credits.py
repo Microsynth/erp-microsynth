@@ -2,6 +2,7 @@
 # License: GNU General Public License v3. See license.txt
 
 import json
+import base64
 from datetime import date, datetime, timedelta
 import frappe
 from frappe import _
@@ -1354,7 +1355,6 @@ def should_send_balance_warning(credit_account, forecast_balance):
 def send_credit_account_balance_warning(credit_account, forecast_balance, email_template_name):
     """
     Send a low balance warning to the Credit Account contact and update last_notification_sent.
-    TODO: Add balance sheet attachment to the email.
 
     bench execute microsynth.microsynth.credits.send_credit_account_balance_warning --kwargs "{'credit_account': {'name': 'CA-000990', 'account_name': 'Test Account', 'company': 'Microsynth AG', 'currency': 'CHF', 'customer': '840931', 'contact_person': '103039', 'threshold': 100}, 'forecast_balance': 50}"
     """
@@ -1380,11 +1380,29 @@ def send_credit_account_balance_warning(credit_account, forecast_balance, email_
     }
     rendered_subject = frappe.render_template(email_template.subject, context)
     rendered_content = frappe.render_template(email_template.response, context)
+
+    attachments = None
+    try:
+        from microsynth.microsynth.api.webshop.credit_account import get_balance_sheet_pdf
+
+        balance_sheet_pdf = get_balance_sheet_pdf(credit_account.get("name"))
+        if balance_sheet_pdf.get("success") and balance_sheet_pdf.get("file"):
+            file_data = balance_sheet_pdf.get("file") or {}
+            encoded_content = file_data.get("content_base64")
+            if encoded_content:
+                attachments = [{
+                    "fname": file_data.get("file_name") or f"Balance_Sheet_{credit_account.get('name')}.pdf",
+                    "fcontent": base64.b64decode(encoded_content),
+                }]
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "credits.send_credit_account_balance_warning.attach_balance_sheet")
+
     send_email_from_template(
         email_template,
         rendered_content,
         rendered_subject=rendered_subject,
-        recipients=recipient,
+        recipients=None,  # None will fall back to the recipients on the Email Template. TODO: Replace "None" by "recipient" once testing is done.
+        attachments=attachments,
     )
 
     frappe.db.set_value("Credit Account", credit_account.get("name"), "last_notification_sent", datetime.now())
