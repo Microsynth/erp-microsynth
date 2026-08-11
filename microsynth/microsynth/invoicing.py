@@ -2872,9 +2872,26 @@ def create_cn_and_invoice_draft(sales_invoice_id):
     Returns the name of the created Sales Invoice draft.
     """
     try:
+        original_invoice_doc = frappe.get_doc("Sales Invoice", sales_invoice_id)
         credit_note_id = create_full_return(sales_invoice_id)
         invoice_draft_id = exact_copy_sales_invoice(sales_invoice_id)
         invoice_draft_doc = frappe.get_doc("Sales Invoice", invoice_draft_id)
+
+        # Keep the copied item links/prices identical to the original invoice to avoid
+        # re-pricing (e.g. losing quotation-based prices) when recalculating totals.
+        item_fields_to_preserve = [
+            "sales_order", "so_detail", "delivery_note", "dn_detail",
+            "price_list_rate", "base_price_list_rate", "rate", "base_rate",
+            "discount_percentage", "discount_amount", "margin_type",
+            "margin_rate_or_amount", "rate_with_margin"
+        ]
+        # Iterate original and copied rows in lockstep so each draft row receives
+        # the exact fields from its corresponding original row.
+        for original_item, draft_item in zip(original_invoice_doc.items, invoice_draft_doc.items):
+            for fieldname in item_fields_to_preserve:
+                if hasattr(original_item, fieldname):
+                    draft_item.set(fieldname, original_item.get(fieldname))
+
         invoice_draft_doc.prev_invoice_returned = 1
         invoice_draft_doc.calculate_taxes_and_totals()
         invoice_draft_doc.save()
