@@ -7,7 +7,7 @@
  "doctype": "Report",
  "idx": 0,
  "is_standard": "Yes",
- "modified": "2026-07-30 13:41:02.004269",
+ "modified": "2026-08-12 15:56:16.577445",
  "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Procurement Prices",
@@ -24,13 +24,16 @@
    "role": "Purchase Manager"
   },
   {
-   "role": "Stock User"
+   "role": "Stock Manager"
+  },
+  {
+   "role": "Pricing Analyst"
+  },
+  {
+   "role": "Product Manager"
   },
   {
    "role": "Board Member"
-  },
-  {
-   "role": "Project Product Manager"
   }
  ]
 }
