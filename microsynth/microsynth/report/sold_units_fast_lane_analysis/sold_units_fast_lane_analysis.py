@@ -90,7 +90,7 @@ def is_enhanced_mode(filters):
 def get_columns(filters):
 	fieldtype = "HTML" if is_enhanced_mode(filters) else "Integer"
 	columns = [
-		{"label": _("Fast Lane"), "fieldname": "fast_lane", "fieldtype": "Data", "width": 200}
+		{"label": _("Fast Lane"), "fieldname": "fast_lane", "fieldtype": "Data", "width": 205}
 	]
 	for month in range(1, 13):
 		columns.append(
@@ -144,6 +144,11 @@ def get_raw_data(filters):
 			AND `tabSales Invoice Item`.`parenttype` = 'Sales Invoice'
 		WHERE `tabSales Invoice`.`docstatus` = 1
 			AND `tabSales Invoice`.`is_return` = 0
+			AND `tabSales Invoice`.`customer` NOT IN (
+				SELECT `customer`
+				FROM `tabIntercompany Settings Company`
+				WHERE COALESCE(`customer`, '') != ''
+			)
 			AND NOT EXISTS (
 				SELECT 1
 				FROM `tabSales Invoice` `cn`
@@ -273,6 +278,7 @@ def get_data(filters):
 
 	data.append(total_row)
 	return data
+
 
 def execute(filters=None):
 	safe_filters = filters or {}
