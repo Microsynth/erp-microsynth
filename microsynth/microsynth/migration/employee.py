@@ -172,7 +172,7 @@ def import_employees(filename, dry_run=False, update_existing=True, picture_fold
     Gender, Date of Birth, Date of Joining, Emergency Phone, Emergency Contact,
     User ID, Abacus Nr. (External Employee ID), Department, Visa, Status, Bild
 
-    bench execute microsynth.microsynth.migration.employee.import_employees --kwargs "{'filename': '/mnt/erp_share/Migration/2026-07-29_Employee_List.txt', 'dry_run': True, 'update_existing': True, 'picture_folder': '/mnt/erp_share/Migration/employee_pictures'}"
+    sudo bench --site erp-test.microsynth.local execute microsynth.microsynth.migration.employee.import_employees --kwargs "{'filename': '/mnt/erp_share/Migration/2026-07-29_Employee_List.txt', 'dry_run': True, 'update_existing': True, 'picture_folder': '/mnt/erp_share/Migration/employee_pictures'}"
     """
     required_headers = {"Company", "Vorname", "Nachname", "Company Email"}
     meta = frappe.get_meta("Employee")
@@ -209,7 +209,8 @@ def import_employees(filename, dry_run=False, update_existing=True, picture_fold
             company = row.get("Company")
             first_name = row.get("Vorname")
             last_name = row.get("Nachname")
-            company_email = row.get("Company Email")
+            company_email = row.get("Company Email") if 'microsynth' in row.get("Company Email", "").lower() else None
+            personal_email = row.get("Company Email") if 'microsynth' not in row.get("Company Email", "").lower() else None
             external_employee_id = row.get("Abacus Nr. (External Employee ID)")
             user_id_from_file = row.get("User ID")
             department = row.get("Department")
@@ -289,7 +290,8 @@ def import_employees(filename, dry_run=False, update_existing=True, picture_fold
             )
             if company_email and meta.has_field("company_email"):
                 employee_doc.company_email = company_email
-
+            if personal_email and meta.has_field("personal_email"):
+                employee_doc.personal_email = personal_email
             if external_employee_id and meta.has_field("external_employee_id"):
                 employee_doc.external_employee_id = external_employee_id
 
