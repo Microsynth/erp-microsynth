@@ -1347,7 +1347,7 @@ def should_send_balance_warning(credit_account, forecast_balance):
     bench execute microsynth.microsynth.credits.should_send_balance_warning --kwargs "{'credit_account': {'name': 'CA-000990', 'threshold': 100}, 'forecast_balance': 50}"
     """
     threshold = flt(credit_account.get("threshold"))
-    if forecast_balance > threshold:
+    if forecast_balance >= threshold:
         return False
     return True
 
@@ -1418,7 +1418,7 @@ def report_credit_account_low_balance_warnings(email_template_name="Credit Accou
     Should be run by a daily cronjob, e.g.:
     25 16 * * * cd /home/frappe/frappe-bench && /usr/local/bin/bench --site erp.microsynth.local execute microsynth.microsynth.credits.report_credit_account_low_balance_warnings
 
-    bench execute microsynth.microsynth.credits.report_credit_account_low_balance_warnings
+    sudo bench execute microsynth.microsynth.credits.report_credit_account_low_balance_warnings
     """
     credit_accounts = get_credit_accounts_for_balance_warning()
     sent = []
