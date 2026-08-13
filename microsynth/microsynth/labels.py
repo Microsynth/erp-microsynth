@@ -4,6 +4,7 @@
 
 import re
 import json
+import os
 import traceback
 import unicodedata  # part of standard library, no installation required
 import socket
@@ -21,6 +22,11 @@ from microsynth.microsynth.utils import send_email_from_template
 
 NOVEXX_PRINTER_TEMPLATE = "microsynth/templates/includes/address_label_novexx.html"
 BRADY_PRINTER_TEMPLATE = "microsynth/templates/includes/address_label_brady.html"
+
+UPS_BATCH_FILES_BASE_DIR = "/mnt/erp_share/UPS_batch_files"
+UPS_WORLDSHIP_IMPORT_DIR = os.path.join(UPS_BATCH_FILES_BASE_DIR, "UPS Worldship Batch File Import")
+# Fixed filename for the non-Poland WorldShip import (must stay unchanged).
+UPS_WORLDSHIP_FILENAME = "ups_world_ship_batch.csv"
 
 
 def print_raw(ip, port, content):
@@ -225,7 +231,7 @@ def print_oligo_order_labels(sales_orders):
 
     bench execute "microsynth.microsynth.labels.print_oligo_order_labels" --kwargs "{'sales_orders': ['SO-BAL-22011340']}"
     """
-    create_ups_batch_file(sales_orders)
+    #create_ups_batch_file(sales_orders)
 
     settings = frappe.get_doc("Flushbox Settings", "Flushbox Settings")
 
@@ -297,12 +303,33 @@ def sanitize_text(text):
 @frappe.whitelist()
 def create_ups_batch_file(sales_orders):
     """
-    This functionality is included in the button "Print Shipping Labels" on the report "Oligo Orders Export".
+    Deprecated: This functionality was included in the button "Print Shipping Labels" on the report "Oligo Orders Export".
 
     bench execute "microsynth.microsynth.labels.create_ups_batch_file" --kwargs "{'sales_orders': ['SO-BAL-24045626']}"
     """
-    lines_to_write = []
+    if isinstance(sales_orders, str):
+        sales_orders = json.loads(sales_orders)
+
+    non_poland_lines, world_ship_lines, poland_lines, _ = _prepare_ups_batch_lines(sales_orders)
+    lines_to_write = non_poland_lines + poland_lines
+
+    if len(lines_to_write) > 0:
+        with open(f"{UPS_BATCH_FILES_BASE_DIR}/{datetime.now().strftime('%Y-%m-%d_%H-%M')}_ups_batch.csv", mode='w') as file:  # TODO: Move file path to Microsynth Settings
+            for line in lines_to_write:
+                file.write(line)
+        with open(f"{UPS_BATCH_FILES_BASE_DIR}/{datetime.now().strftime('%Y-%m-%d_%H-%M')}_ups_world_ship_batch.csv", mode='w') as ws_file:
+            for ws_line in world_ship_lines:
+                ws_file.write(ws_line)
+
+
+def _prepare_ups_batch_lines(sales_orders):
+    # Non-Poland lines feed the WorldShip import; Poland lines go to a separate file.
+    non_poland_lines = []
+    poland_lines = []
     world_ship_lines = ["Contact_Name,Company_or_Name,Country,Address_1,City,Postal_Code,Telephone,Consignee_Email,Packaging_Type,Weight,Length,Width,Height,Description_of_Goods,Service,Reference_1,Anzahl_Pakete,Transportkosten,Steuern_Zoll\n"]
+    # Mark only successfully prepared UPS orders as exported.
+    exported_sales_orders = []
+
     for o in sales_orders:
         sales_order = frappe.get_doc("Sales Order", o)
         label_data = get_label_data(sales_order)
@@ -333,10 +360,11 @@ def create_ups_batch_file(sales_orders):
         if not address.pincode:
             notify_ups_batchfile_error(f"Pincode missing for Address '{address.name}' on Sales Order {sales_order.name}", "create_ups_batch_file")
             continue
+        raw_phone = sales_order.contact_phone
         if not sales_order.contact_phone:
             notify_ups_batchfile_error(f"contact_phone missing on Sales Order {sales_order.name}, taking 0041717228333 instead", "create_ups_batch_file")
-            phone = '0041717228333'  # default phone number
-        phone = re.sub('[ \+.,\-\/]', '', sales_order.contact_phone.replace('+', '00').replace('(0)', ''))[:15]
+            raw_phone = '0041717228333'  # default phone number
+        phone = re.sub('[ \+.,\-\/]', '', raw_phone.replace('+', '00').replace('(0)', ''))[:15]
         if sales_order.contact_phone and not phone:
             notify_ups_batchfile_error(f"contact_phone on Sales Order {sales_order.name} contains only unallowed characters: '{sales_order.contact_phone}', taking 0041717228333 instead", "create_ups_batch_file")
             phone = '0041717228333'  # default phone number
@@ -346,19 +374,91 @@ def create_ups_batch_file(sales_orders):
         weight = '"0,1"'
         customer_name = sanitize_text((address.overwrite_company or sales_order.order_customer_display or sales_order.customer_name).replace(',', '').replace('–', '-'))[:35]
         shipping_contact_full_name = frappe.get_value("Contact", sales_order.shipping_contact or sales_order.contact_person, "full_name")
-        contact_display = sanitize_text(shipping_contact_full_name.replace(',', '').replace('–', '-'))[:35]
+        contact_display_source = (shipping_contact_full_name or sales_order.contact_display or "")
+        contact_display = sanitize_text(contact_display_source.replace(',', '').replace('–', '-'))[:35]
         address_line1 = sanitize_text(address.address_line1.replace(',', ''))[:35]
         city = sanitize_text(address.city.replace(',', ''))[:30]
-        lines_to_write.append(f"{contact_display},{customer_name},{country_code.upper()},{address_line1},,,{city},,{address.pincode.replace(',', '')[:10]},{phone},,,{sales_order.contact_email[:50]},2,,{weight},36,25,2,,Nukleotides,,,,{'65' if is_express else '11'},,,,,,,,{sales_order.web_order_id.replace(',', '')[:35]},,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,\n")
-        world_ship_lines.append(f"{contact_display},{customer_name},{country_code.upper()},{address_line1},{city},{address.pincode.replace(',', '')[:10]},{phone},{sales_order.contact_email[:50]},CP,0.1,36,25,2,Nukleotides,{'SV' if is_express else 'ST'},{sales_order.web_order_id.replace(',', '')[:35]},1,SHP,SHP\n")
+        pincode = (address.pincode or "").replace(',', '')[:10]
+        contact_email = (sales_order.contact_email or "")[:50]
+        web_order_id = (sales_order.web_order_id or "").replace(',', '')[:35]
+        line_to_write = f"{contact_display},{customer_name},{country_code.upper()},{address_line1},,,{city},,{pincode},{phone},,,{contact_email},2,,{weight},36,25,2,,Nukleotides,,,,{'65' if is_express else '11'},,,,,,,,{web_order_id},,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,\n"
+        # Poland must be exported separately; all other countries go to WorldShip.
+        if country_code.upper() == "PL":
+            poland_lines.append(line_to_write)
+        else:
+            non_poland_lines.append(line_to_write)
+            world_ship_lines.append(f"{contact_display},{customer_name},{country_code.upper()},{address_line1},{city},{pincode},{phone},{contact_email},CP,0.1,36,25,2,Nukleotides,{'SV' if is_express else 'ST'},{web_order_id},1,SHP,SHP\n")
+        exported_sales_orders.append(sales_order.name)
 
-    if len(lines_to_write) > 0:
-        with open(f"/mnt/erp_share/UPS_batch_files/{datetime.now().strftime('%Y-%m-%d_%H-%M')}_ups_batch.csv", mode='w') as file:  # TODO: Move file path to Microsynth Settings
-            for line in lines_to_write:
-                file.write(line)
-        with open(f"/mnt/erp_share/UPS_batch_files/{datetime.now().strftime('%Y-%m-%d_%H-%M')}_ups_world_ship_batch.csv", mode='w') as ws_file:
-            for ws_line in world_ship_lines:
-                ws_file.write(ws_line)
+    return non_poland_lines, world_ship_lines, poland_lines, exported_sales_orders
+
+
+def create_daily_ups_batch_files(lookback_hours=24):
+    """
+    Generate two UPS batch files once per day based on Sales Orders where labels were
+    printed in the last 24 hours and no batch export timestamp is set yet.
+
+    10 11 * * * cd /home/frappe/frappe-bench && /usr/local/bin/bench --site erp.microsynth.local execute microsynth.microsynth.labels.create_daily_ups_batch_files
+
+    bench execute microsynth.microsynth.labels.create_daily_ups_batch_files --kwargs "{'lookback_hours': 24}"
+    """
+    now_dt = frappe.utils.now_datetime()
+
+    hours_raw = lookback_hours
+    try:
+        hours = abs(int(hours_raw))
+    except (TypeError, ValueError):
+        frappe.throw(f"Invalid lookback_hours value: {hours_raw}. Please pass an integer number of hours.")
+
+    since = frappe.utils.add_to_date(now_dt, hours=-hours)
+
+    # Idempotency rule: only orders with a fresh label print and without export timestamp.
+    sales_orders = frappe.db.sql(
+        """
+        SELECT `name`
+        FROM `tabSales Order`
+        WHERE
+            `docstatus` = 1
+            AND `label_printed_on` >= %(since)s
+            AND (`shipping_batch_file_exported_on` IS NULL OR `shipping_batch_file_exported_on` = '')
+        """,
+        {"since": since},
+        as_list=True
+    )
+    sales_orders = [row[0] for row in sales_orders]
+
+    non_poland_lines, world_ship_lines, poland_lines, exported_sales_orders = _prepare_ups_batch_lines(sales_orders)
+
+    os.makedirs(UPS_WORLDSHIP_IMPORT_DIR, exist_ok=True)
+    # Always overwrite the fixed WorldShip filename.
+    with open(os.path.join(UPS_WORLDSHIP_IMPORT_DIR, UPS_WORLDSHIP_FILENAME), mode="w") as ws_file:
+        for ws_line in world_ship_lines:
+            ws_file.write(ws_line)
+
+    os.makedirs(UPS_BATCH_FILES_BASE_DIR, exist_ok=True)
+    poland_file_path = os.path.join(
+        UPS_BATCH_FILES_BASE_DIR,
+        f"{now_dt.strftime('%Y-%m-%d_%H-%M')}_ups_batch_poland.csv"
+    )
+    with open(poland_file_path, mode="w") as file:
+        for line in poland_lines:
+            file.write(line)
+
+    if exported_sales_orders:
+        # Mark all successfully exported UPS sales orders to prevent re-export.
+        exported_on = now_dt.strftime("%Y-%m-%d %H:%M:%S")
+        for so_name in set(exported_sales_orders):
+            so_doc = frappe.get_doc("Sales Order", so_name)
+            so_doc.shipping_batch_file_exported_on = exported_on
+            so_doc.save(ignore_permissions=True)
+        frappe.db.commit()
+
+    frappe.logger().info(
+        "Daily UPS batch generation finished. Non-PL lines: %s, PL lines: %s, exported Sales Orders: %s",
+        len(non_poland_lines),
+        len(poland_lines),
+        len(set(exported_sales_orders))
+    )
 
 
 def prepare_brady_rows(row, username, is_legacy, receipt_date):
