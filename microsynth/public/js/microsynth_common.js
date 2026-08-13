@@ -32,7 +32,7 @@ window.onload = async function () {
     await sleep(1000);
     var navbars = document.getElementsByClassName("navbar");
     if (navbars.length > 0) {
-        if (window.location.hostname.includes("erp-test") || (window.location.hostname.includes("localhost"))) {
+        if (window.location.hostname.includes("erp-test") || (window.location.hostname.includes("localhost")) || (window.location.hostname.includes("192.0.0.90"))) {
             navbars[0].style.backgroundColor = "#e65023";
         }
     }
