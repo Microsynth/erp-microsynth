@@ -188,6 +188,13 @@ def get_data():
                         "label": _("Compare Price Lists"),
                         "doctype": "Price List",
                         "is_query_report": True
+                    },
+                    {
+                        "type": "report",
+                        "name": "Procurement Prices",
+                        "label": _("Procurement Prices"),
+                        "doctype": "Purchase Order",
+                        "is_query_report": True
                     }
             ]
         },
