@@ -9,6 +9,7 @@ def get_columns():
     return [
         {"label": "Item Code", "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 360},
         #{"label": "Item Name", "fieldname": "item_name", "fieldtype": "Data", "width": 350},
+        {"label": "Material Code", "fieldname": "material_code", "fieldtype": "Data", "width": 100},
         {"label": "Stock UOM", "fieldname": "stock_uom", "fieldtype": "Link", "options": "UOM", "width": 95},
         {"label": "Actual Qty", "fieldname": "actual_qty", "fieldtype": "Float", "precision": 2, "width": 85},
         {"label": "Requested Qty", "fieldname": "requested_qty", "fieldtype": "Float", "precision": 2, "width": 105},
@@ -55,6 +56,7 @@ def get_data(filters):
         SELECT
             `tabItem`.`name` AS `item_code`,
             `tabItem`.`item_name`,
+            `tabItem`.`material_code`,
             `tabItem`.`stock_uom`,
 
             IFNULL(`tabBin`.`actual_qty`, 0) AS `actual_qty`,

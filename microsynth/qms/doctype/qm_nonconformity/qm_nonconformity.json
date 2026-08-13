@@ -465,13 +465,12 @@
   {
    "fieldname": "instruments",
    "fieldtype": "Table",
-   "hidden": 1,
    "label": "Instruments",
    "options": "QM Instrument Link"
   }
  ],
  "is_submittable": 1,
- "modified": "2026-04-24 11:34:15.402645",
+ "modified": "2026-06-03 12:31:55.522582",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Nonconformity",

@@ -21,6 +21,7 @@ def get_columns():
 		{"label": "Comment", "fieldname": "ar_comment", "fieldtype": "Data", "width": 100},
 		{"label": "Disclaimer", "fieldname": "disclaimer", "fieldtype": "Data", "width": 100},
 		{"label": "Sample", "fieldname": "sample", "fieldtype": "Link", "options": "Sample", "width": 110},
+		{"label": "Sample Created On", "fieldname": "sample_created_on", "fieldtype": "Datetime", "width": 135},
 		{"label": "Sample Name", "fieldname": "sample_name", "fieldtype": "Data", "width": 150},
 		{"label": "Sample Customer", "fieldname": "sample_customer", "fieldtype": "Link", "options": "Customer", "width": 120},
 		{"label": "Sample Customer Name", "fieldname": "sample_customer_name", "fieldtype": "Data", "width": 150},
@@ -34,6 +35,8 @@ def get_columns():
 		{"label": "Analysis Date", "fieldname": "analysis_date", "fieldtype": "Datetime", "width": 160},
 		{"label": "Deviations", "fieldname": "deviations", "fieldtype": "Data", "width": 160},
 		{"label": "Sample Detail Comment", "fieldname": "detail_comment", "fieldtype": "Data", "width": 160},
+		{"label": "Country", "fieldname": "country", "fieldtype": "Data", "width": 100},
+		{"label": "TAT (h)", "fieldname": "tat_hours", "fieldtype": "Int", "width": 100},
 	]
 
 
@@ -75,6 +78,7 @@ def get_data(filters):
 			`tabAnalysis Report`.`comment` AS `ar_comment`,
 			`tabAnalysis Report`.`disclaimer`,
 			`tabSample`.`name` AS `sample`,
+			`tabSample`.`creation` AS `sample_created_on`,
 			`tabSample`.`sample_name`,
 			`tabSample`.`customer` AS `sample_customer`,
 			`tabSample`.`customer_name` AS `sample_customer_name`,
@@ -87,7 +91,9 @@ def get_data(filters):
 			`tabAnalysis Report Sample Detail`.`reception_date`,
 			`tabAnalysis Report Sample Detail`.`analysis_date`,
 			`tabAnalysis Report Sample Detail`.`deviations`,
-			`tabAnalysis Report Sample Detail`.`comment` AS `detail_comment`
+			`tabAnalysis Report Sample Detail`.`comment` AS `detail_comment`,
+			`tabAddress`.`country` AS `country`,
+			TIMESTAMPDIFF(HOUR, `tabSample`.`creation`, `tabAnalysis Report Sample Detail`.`analysis_date`) AS tat_hours
 		FROM `tabAnalysis Report`
 		INNER JOIN `tabAnalysis Report Sample Detail`
 			ON `tabAnalysis Report Sample Detail`.`parent` = `tabAnalysis Report`.`name`
@@ -107,6 +113,8 @@ def get_data(filters):
 		) AS `newest`
 			ON `newest`.`sample` = `tabAnalysis Report Sample Detail`.`sample`
 			AND `newest`.`max_issue_date` = `tabAnalysis Report`.`issue_date`
+		INNER JOIN `tabAddress`
+			ON `tabAddress`.`name` = `tabAnalysis Report`.`address`
 		WHERE `tabAnalysis Report`.`docstatus` < 2
 		{type_filter_main}
 		{date_filter_main}

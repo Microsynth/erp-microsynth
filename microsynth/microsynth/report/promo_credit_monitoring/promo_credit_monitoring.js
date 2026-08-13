@@ -25,6 +25,12 @@ frappe.query_reports["Promo Credit Monitoring"] = {
             "options": "Customer"
         },
         {
+            "fieldname": "territory",
+            "label": "Territory",
+            "fieldtype": "Link",
+            "options": "Territory"
+        },
+        {
             "fieldname": "from_date",
             "label": "From Date",
             "fieldtype": "Date",

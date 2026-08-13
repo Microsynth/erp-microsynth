@@ -472,13 +472,17 @@ def update_ups_delivery_dates(request_limit: int = None):
             print(f"❌ {error_msg}")
 
 
-def validate_customer_shipping_currencies(doc, method):
+def validate_customer_shipping_items(doc, method):
     if not doc.shipping_items:
         return
 
     for item in doc.shipping_items:
         if item.currency != doc.default_currency:
             frappe.throw(f"Currency mismatch on Customer '{doc.name}' ({doc.customer_name}): Shipping Item {item.item or item.item_name} has currency {item.currency}, but Customer default currency is {doc.default_currency}.")
+
+    preferred_express_shipping_items = [item for item in doc.shipping_items if item.preferred_express]
+    if len(preferred_express_shipping_items) != 1:
+        frappe.throw(f"Customer '{doc.name}' ({doc.customer_name}) has {len(doc.shipping_items)} Shipping Item(s) and must have exactly one Preferred Express Shipping Item, but found {len(preferred_express_shipping_items)}.")
 
 
 def validate_standing_qtn_shipping_currencies(doc, method):

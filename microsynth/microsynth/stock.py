@@ -1,8 +1,5 @@
-
-import json
 import frappe
 from frappe.utils import flt
-from microsynth.microsynth.utils import user_has_role
 from microsynth.microsynth.labels import print_purchasing_labels
 
 def get_purchasing_items(company="Microsynth AG"):
@@ -11,6 +8,7 @@ def get_purchasing_items(company="Microsynth AG"):
 
     bench execute microsynth.microsynth.stock.get_purchasing_items --kwargs '{"company": "Microsynth AG"}'
     """
+    # TODO: what is the purpose of this function? Where is it used?
     query = """
         SELECT
             `tabItem`.`item_code`,
@@ -57,75 +55,10 @@ def issue_material(company, user, items):
 
     bench execute microsynth.microsynth.stock.issue_material --kwargs '{"company": "Microsynth AG", "user": "firstname.lastname@microsynth.ch", "items": [{"item_code": "P007441", "qty": 2, "warehouse": "Stores - BAL", "batch_no": "HMBJ7023-HMBK0735"}]}'
     """
-    try:
-        if isinstance(items, str):
-            items = json.loads(items)
-
-        if not company:
-            frappe.throw("Field 'company' is required.")
-        if not items or not isinstance(items, list):
-            frappe.throw("Field 'items' must be a non-empty list.")
-
-        # Create Stock Entry
-        stock_entry = frappe.new_doc("Stock Entry")
-        stock_entry.stock_entry_type = "Material Issue"
-        stock_entry.company = company
-        stock_entry.owner = user
-
-        # Build child rows
-        for entry in items:
-            item_code = entry.get("item_code")
-            qty = entry.get("qty")
-            warehouse = entry.get("warehouse")
-            batch_no = entry.get("batch_no")
-
-            if not item_code:
-                frappe.throw("Each item requires 'item_code'.")
-            if qty is None:
-                frappe.throw(f"Item {item_code}: field 'qty' is required.")
-            if qty <= 0:
-                frappe.throw(f"Item {item_code}: quantity must be greater than zero.")
-            if not warehouse:
-                frappe.throw(f"Item {item_code}: field 'warehouse' is required.")
-
-            # Check batch requirement
-            has_batch = frappe.db.get_value("Item", item_code, "has_batch_no")
-            if has_batch and not batch_no:
-                frappe.throw(f"Item '{item_code}' requires a batch number, but 'batch_no' was not provided.")
-
-            # Append child row
-            row = {
-                "item_code": item_code,
-                "qty": qty,
-                "s_warehouse": warehouse
-            }
-            if batch_no:
-                row["batch_no"] = batch_no
-
-            stock_entry.append("items", row)
-
-        # Save + submit
-        stock_entry.insert()
-        stock_entry.submit()
-        frappe.db.commit()
-
-        return {
-            "message": {
-                "success": True,
-                "message": "OK",
-                "internal_message": ""
-            }
-        }
-
-    except Exception as e:
-        frappe.local.response.http_status_code = 500
-        return {
-            "message": {
-                "success": False,
-                "message": "Error",
-                "internal_message": str(e) + "\n" + str(frappe.get_traceback())
-            }
-        }
+    # TODO: Deprecate this function and move to api.stock.issue_material
+    from microsynth.microsynth.api.stock import issue_material
+    frappe.log_error(f"Called deprecated 'stock.issue_material' by {frappe.session.user}. Please change to 'api.stock.issue_material'.", "stock.issue_material")
+    return issue_material(company, user, items)
 
 
 def create_stock_entry(item, warehouse, rows, purpose):
@@ -153,10 +86,14 @@ def create_stock_entry(item, warehouse, rows, purpose):
     return doc
 
 
-def create_generic_batch(item_code, batch_no):
+def create_batch(item_code, batch_no, manufacturing_date=None, expiry_date=None):
     doc = frappe.new_doc("Batch")
     doc.item = item_code
     doc.batch_id = batch_no
+    if manufacturing_date:
+        doc.manufacturing_date = manufacturing_date
+    if expiry_date:
+        doc.expiry_date = expiry_date
     doc.insert(ignore_permissions=True)
 
 
@@ -200,38 +137,44 @@ def get_batches_with_qty(item_code, warehouse):
     """
     Get batches for a given item and warehouse along with their current quantities.
     Creates a generic batch if none exist to allow stock correction.
-
-    bench execute microsynth.microsynth.stock.get_batches_with_qty --kwargs '{"item_code": "P002005", "warehouse": "Stores - BAL"}'
     """
-    batches = frappe.db.sql("""
-        SELECT
-            `tabBatch`.`name` AS `batch_no`
-        FROM `tabBatch`
-        WHERE `tabBatch`.`item` = %s
-        ORDER BY `tabBatch`.`creation`
-    """, item_code, as_dict=True)
 
-    # Ensure generic batch exists
+    batches = frappe.get_all(
+        "Batch",
+        filters={"item": item_code},
+        fields=["name", "manufacturing_date", "expiry_date"],
+        order_by="creation"
+    )
+
     generic_batch = f"[NA]-{item_code}"
-    batch_list = [b.batch_no for b in batches]
-    if generic_batch not in batch_list:
-        batch_list.append(generic_batch)
+
+    batch_map = {b.name: b for b in batches}
+
+    if generic_batch not in batch_map:
+        batch_map[generic_batch] = frappe._dict({
+            "name": generic_batch,
+            "manufacturing_date": None,
+            "expiry_date": None
+        })
 
     result = []
 
-    for batch_no in batch_list:
+    for batch_no, batch in batch_map.items():
+
         qty = frappe.db.sql("""
-            SELECT IFNULL(SUM(`actual_qty`), 0)
+            SELECT IFNULL(SUM(actual_qty), 0)
             FROM `tabStock Ledger Entry`
             WHERE
-                `item_code` = %s
-                AND `warehouse` = %s
-                AND `batch_no` = %s
-                AND `is_cancelled` = 0
+                item_code = %s
+                AND warehouse = %s
+                AND batch_no = %s
+                AND is_cancelled = 0
         """, (item_code, warehouse, batch_no))[0][0]
 
         result.append({
             "batch_no": batch_no,
+            "manufacturing_date": batch.manufacturing_date,
+            "expiry_date": batch.expiry_date,
             "current_qty": qty,
             "new_qty": qty
         })
@@ -266,7 +209,6 @@ def correct_stock(item_code, warehouse, rows):
     issue_rows = []
     receipt_rows = []
     label_table = []
-    generic_batch = f"[NA]-{item_code}"
 
     for row in rows:
         batch_no = row.get("batch_no")
@@ -289,19 +231,21 @@ def correct_stock(item_code, warehouse, rows):
 
         current_qty = result[0].qty if result else 0
 
+        if row.get("new_qty") in [None, ""]:
+            frappe.throw(f"New quantity missing for batch {batch_no}")
         try:
-            new_qty = float(row.get("new_qty") or 0)
+            new_qty = flt(row.get("new_qty"))
         except Exception:
-            frappe.throw(f"Invalid quantity for batch {row.get('batch_no')}")
+            frappe.throw(f"Invalid quantity for batch {batch_no}")
         delta = new_qty - current_qty
 
-        delta = flt(new_qty - current_qty, precision=6)
+        delta = flt(new_qty - current_qty, precision=2)  # Round to 2 decimals to avoid issues with very small differences
 
         if not delta:
             continue
 
-        if batch_no == generic_batch and not frappe.db.exists("Batch", generic_batch):
-            create_generic_batch(item_code, generic_batch)
+        if not frappe.db.exists("Batch", batch_no):
+            create_batch(item_code, batch_no, manufacturing_date=row.get("manufacturing_date"), expiry_date=row.get("expiry_date"))
 
         if delta < 0:
             if current_qty + delta < 0:
@@ -334,7 +278,11 @@ def correct_stock(item_code, warehouse, rows):
             })
 
     if not issue_rows and not receipt_rows:
-        return
+        return {
+            "success": False,
+            "changed_batches": 0,
+            "message": "No stock changes detected."
+        }
 
     issue_doc = None
     receipt_doc = None
@@ -347,6 +295,12 @@ def correct_stock(item_code, warehouse, rows):
 
     # Only print if successful
     if receipt_doc and label_table:
-        print_purchasing_labels(json.dumps(label_table), is_legacy=True)
+        print_purchasing_labels(frappe.as_json(label_table), is_legacy=True, use_brady=False)
 
-    return issue_doc.name if issue_doc else None, receipt_doc.name if receipt_doc else None
+    return {
+        "success": True,
+        "changed_batches": len(issue_rows) + len(receipt_rows),
+        "issue_stock_entry": issue_doc.name if issue_doc else None,
+        "receipt_stock_entry": receipt_doc.name if receipt_doc else None,
+        "message": "Stock corrected successfully."
+    }

@@ -3,6 +3,7 @@
 # For license information, please see license.txt
 
 import datetime
+import json
 import frappe
 from frappe.utils import rounded
 
@@ -52,3 +53,73 @@ def get_foreign_currency_balance(account, date):
         """.format(account=account, date=date)
 
     return frappe.db.sql(sql_query, as_dict=True)[0]['balance']
+
+
+def check_sales_order_item_prices(sales_order):
+    """
+    Checks the item prices of a sales order against the webshop prices. Returns True if all prices match, False otherwise.
+
+    run
+    bench execute microsynth.microsynth.troubleshooting.check_sales_order_item_prices --kwargs "{'sales_order':'SO-BAL-26028114'}"
+    """
+    from microsynth.microsynth.webshop import get_item_prices
+
+    so = frappe.get_doc("Sales Order", sales_order)
+
+    query = {}
+    query['customer'] = so.customer
+    query['currency'] = so.currency
+    query['items'] = []
+
+    for item in so.items:
+        query_item = {}
+        query_item['item_code'] = item.item_code
+        query_item['qty'] = item.qty
+        query['items'].append(query_item)
+
+    response = get_item_prices(json.dumps(query))
+    return_value = True
+
+    if response['success']:
+        for so_item in so.items:
+            # if so_item.item_group == "Shipping":
+            #     print (f"{sales_order}: Skipping shipping item {so_item.item_code}")
+            #     continue
+            price_found = False
+            for item_price in response['item_prices']:
+                if so_item.item_code == item_price['item_code'] and so_item.qty == item_price['qty']:
+                    price_found = True
+                    if so_item.rate == item_price['rate']:
+                        print(f"{sales_order}: Price match for {so_item.item_code}: {so_item.rate} == {item_price['rate']}")
+                    else:
+                        shipping_item_text = " (Shipping)" if so_item.item_group == "Shipping" else ""
+                        print(f"{sales_order}: Price mismatch for {so_item.item_code}{shipping_item_text}: {so_item.rate} != {item_price['rate']}{shipping_item_text}")
+                        return_value = False
+            if not price_found:
+                print(f"{sales_order}: Error:No price found for {so_item.item_code} with qty {so_item.qty}")
+                return_value = False
+    else:
+        print(f"Error fetching prices for sales order {sales_order}")
+
+    return return_value
+
+
+def check_sales_orders_item_prices(start_date, end_date):
+    """
+    Checks the item prices of all sales orders created between start_date and end_date against the webshop prices. Lists the mismatches and errors in the console.
+
+    run
+    bench execute microsynth.microsynth.troubleshooting.check_sales_orders_item_prices --kwargs "{'start_date':'2026-07-16 20:00', 'end_date':'2026-07-17 20:00'}"
+    """
+
+    query = """
+        SELECT `name`
+        FROM `tabSales Order`
+        WHERE %(start_date)s < `creation` AND `creation` < %(end_date)s
+        AND `docstatus` = 1
+        ORDER BY `creation` ASC
+        """
+    sales_orders = frappe.db.sql(query, {'start_date': start_date, 'end_date': end_date}, as_dict=True)
+
+    for so in sales_orders:
+        check_sales_order_item_prices(so.get('name'))

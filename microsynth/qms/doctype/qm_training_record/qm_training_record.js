@@ -34,9 +34,8 @@ frappe.ui.form.on('QM Training Record', {
         if (frm.doc.docstatus > 1) {
             frm.dashboard.add_comment( __("<b>Cancelled</b> Training Record, <b>nothing to do</b>."), 'red', true);
         }
-
-        // allow QAU to force cancel Draft
-        if ((!frm.doc.__islocal) && (frm.doc.docstatus === 0) && (frappe.user.has_role('QAU'))) {
+        // allow QAU and owner to force cancel Draft
+        if ((!frm.doc.__islocal) && (frm.doc.docstatus === 0) && (frappe.user.has_role('QAU') || frappe.session.user === frm.doc.owner)) {
             frm.add_custom_button(__("Force Cancel"), function() {
                 force_cancel(cur_frm.doc.doctype, cur_frm.doc.name);
             }).addClass("btn-danger");

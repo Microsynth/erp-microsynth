@@ -8,7 +8,9 @@
   "user",
   "full_name",
   "label_printer",
-  "purchase_label_printer"
+  "purchase_label_printer",
+  "stock_correction_printer",
+  "instr_cert_label_printer"
  ],
  "fields": [
   {
@@ -34,7 +36,7 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Label Printer",
+   "label": "Address Label Printer",
    "options": "Brady Printer"
   },
   {
@@ -44,9 +46,21 @@
    "in_standard_filter": 1,
    "label": "Purchase Label Printer",
    "options": "Brady Printer"
+  },
+  {
+   "fieldname": "stock_correction_printer",
+   "fieldtype": "Link",
+   "label": "Stock Correction Printer",
+   "options": "Brady Printer"
+  },
+  {
+   "fieldname": "instr_cert_label_printer",
+   "fieldtype": "Link",
+   "label": "Instrument Certification Label Printer",
+   "options": "Brady Printer"
   }
  ],
- "modified": "2026-04-30 16:06:55.249930",
+ "modified": "2026-06-05 10:08:17.139412",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "User Printer",

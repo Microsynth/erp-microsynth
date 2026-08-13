@@ -582,6 +582,7 @@ def check_mycoplasma_sales_order_completion(verbose=False):
 def check_submit_mycoplasma_delivery_note(delivery_note, verbose=False):
     """
     Check if the delivery note is eligible for autocompletion and submit it.
+    If the Delivery Note Grand Total is 0 and it has exactly one item, close the related Sales Order since the Delivery Note won't be invoiced.
 
     bench execute microsynth.microsynth.lab_reporting.check_submit_mycoplasma_delivery_note --kwargs "{'delivery_note': 'DN-BAL-24050508', 'verbose': True}"
     """
@@ -666,8 +667,20 @@ def check_submit_mycoplasma_delivery_note(delivery_note, verbose=False):
         if verbose:
             print(f"Submitted Delivery Note {delivery_note.name}.")
 
+        # Check if the related Sales Order can be closed (if the total of the DN is 0 and it has exactly one item, close the Sales Order)
+        if delivery_note.grand_total == 0 and len(delivery_note.items) == 1 and len(sales_orders) == 1:
+            sales_order_id = sales_orders[0]
+            so_doc = frappe.get_doc("Sales Order", sales_order_id)
+            if so_doc.status != "Closed":
+                so_doc.update_status("Closed")
+                if verbose:
+                    print(f"Closed Sales Order {sales_order_id} because the related Delivery Note {delivery_note.name} has a total of 0 and exactly one item.")
+                # add a comment to the sales order about the closing
+                so_doc.add_comment("Comment", f"Sales Order automatically closed because related Delivery Note {delivery_note.name} has a total of 0 and exactly one item.")
+                so_doc.save()
+
     except Exception as err:
-        msg = f"Cannot process Delivery Note '{delivery_note.name}': \n{err}"
+        msg = f"Cannot process Delivery Note '{delivery_note.name}': \n{err}\n\n{traceback.format_exc()}"
         frappe.log_error(msg, "lab_reporting.check_submit_mycoplasma_delivery_note")
         if verbose:
             print(msg)

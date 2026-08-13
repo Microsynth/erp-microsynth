@@ -12,9 +12,9 @@ from erpnext.selling.doctype.sales_order.sales_order import (
 )
 import frappe
 from microsynth.microsynth.labels import print_raw
+from microsynth.microsynth.seqblatt import validate_sales_order
 from microsynth.microsynth.utils import (
     get_export_category,
-    validate_sales_order,
     has_items_delivered_by_supplier
 )
 from microsynth.microsynth.naming_series import get_naming_series
@@ -864,37 +864,6 @@ def get_purchasing_item_details(internal_code):
         'success': True,
         'message': 'OK',
         'item_details': item_details
-    }
-
-
-@frappe.whitelist(allow_guest=True)
-def get_purchasing_items_with_internal_code():
-    """
-    Get a list of all enabled Purchasing Items with an internal code (item_code starting with P00).
-
-    bench execute microsynth.microsynth.production.get_purchasing_items_with_internal_code
-    """
-    items = frappe.db.sql("""
-        SELECT
-            `tabItem`.`name`,
-            `tabItem`.`item_name`,
-            `tabItem`.`item_code`,
-            RIGHT(`tabItem`.`item_code`, 4) AS `internal_code`,
-            `tabItem`.`description`,
-            `tabItem`.`material_code`,
-            `tabItem`.`shelf_life_in_days`
-        FROM `tabItem`
-        WHERE `tabItem`.`disabled` = 0
-            AND `tabItem`.`is_purchase_item` = 1
-            AND `tabItem`.`item_group` = "Purchasing"
-            AND `tabItem`.`item_code` LIKE "P00%"
-        ORDER BY `tabItem`.`internal_code` ASC;
-    """, as_dict=True)
-
-    return {
-        'success': True,
-        'message': 'OK',
-        'items': items
     }
 
 

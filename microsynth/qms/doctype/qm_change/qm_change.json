@@ -322,13 +322,12 @@
   {
    "fieldname": "instruments",
    "fieldtype": "Table",
-   "hidden": 1,
    "label": "Instruments",
    "options": "QM Instrument Link"
   }
  ],
  "is_submittable": 1,
- "modified": "2026-04-22 14:32:01.297980",
+ "modified": "2026-06-03 12:32:09.417255",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Change",

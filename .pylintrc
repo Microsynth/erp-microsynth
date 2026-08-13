@@ -22,6 +22,7 @@ extension-pkg-whitelist=frappe
 # Enable only a specific set of pylint checks (messages).
 # All others will be disabled by the "disable=all" setting below.
 enable=
+    cyclic-import,                  # cyclic imports between files
     undefined-variable,             # Use of variables that haven't been defined
     unused-import,                  # Imported but unused modules
     unused-variable,                # Variables declared but not used

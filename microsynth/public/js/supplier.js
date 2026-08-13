@@ -2,6 +2,10 @@
 
 
 frappe.ui.form.on('Supplier', {
+    onload(frm) {
+        frm._original_direct_debit_enabled = Number(frm.doc.direct_debit_enabled || 0);
+        frm._skip_direct_debit_invoice_prompt = false;
+    },
     refresh(frm) {
         cur_frm.fields_dict['default_item'].get_query = function() {
             return {
@@ -38,6 +42,32 @@ frappe.ui.form.on('Supplier', {
                 );
             }).addClass("btn-primary");
         }
+
+        if (frm._original_direct_debit_enabled === undefined) {
+            frm._original_direct_debit_enabled = Number(frm.doc.direct_debit_enabled || 0);
+        }
+    },
+    before_save(frm) {
+        if (frm.is_new()) {
+            return;
+        }
+
+        if (frm._skip_direct_debit_invoice_prompt) {
+            return;
+        }
+
+        const was_enabled = Number(frm._original_direct_debit_enabled || 0) === 1;
+        const is_enabled = Number(frm.doc.direct_debit_enabled || 0) === 1;
+        if (was_enabled || !is_enabled) {
+            return;
+        }
+
+        frappe.validated = false;
+        prompt_direct_debit_invoice_decision(frm);
+    },
+    after_save(frm) {
+        frm._original_direct_debit_enabled = Number(frm.doc.direct_debit_enabled || 0);
+        frm._skip_direct_debit_invoice_prompt = false;
     },
     disabled: function(frm) {
         if (!frm.doc.disabled) {
@@ -98,6 +128,90 @@ frappe.ui.form.on('Supplier', {
         });
     }
 });
+
+
+function continue_supplier_save(frm) {
+    frm._skip_direct_debit_invoice_prompt = true;
+    frm.save().catch(function() {
+        frm._skip_direct_debit_invoice_prompt = false;
+    });
+}
+
+
+function prompt_direct_debit_invoice_decision(frm) {
+    frappe.call({
+        method: 'microsynth.microsynth.purchasing.get_open_purchase_invoices',
+        args: {
+            supplier: frm.doc.name
+        },
+        callback: function(response) {
+            const invoices = response.message || [];
+
+            if (invoices.length === 0) {
+                continue_supplier_save(frm);
+                return;
+            }
+
+            let html = `
+                <p>
+                    This Supplier still has <b>open Purchase Invoices</b> that can be included in future <b>Payment Proposals</b>.<br><br>
+                    Do you want to <b>exclude all listed invoices</b> from future Payment Proposals now?
+                </p>
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Purchase Invoice</th>
+                            <th>Supplier Invoice No.</th>
+                            <th>Due Date</th>
+                            <th>Outstanding Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            invoices.forEach(function(invoice) {
+                const outstanding = format_currency(invoice.outstanding_amount || 0, invoice.currency);
+                html += `
+                    <tr>
+                        <td>${invoice.name}</td>
+                        <td>${invoice.bill_no || ''}</td>
+                        <td>${invoice.due_date || ''}</td>
+                        <td>${outstanding}</td>
+                    </tr>
+                `;
+            });
+
+            html += '</tbody></table>';
+
+            frappe.confirm(
+                html + '<br><i>(Yes = exclude all listed invoices, No = keep all invoices unchanged)</i>',
+                function() {
+                    frappe.call({
+                        method: 'microsynth.microsynth.purchasing.exclude_purchase_invoices_from_future_payment_proposals',
+                        args: {
+                            purchase_invoices: invoices.map(function(invoice) { return invoice.name; })
+                        },
+                        callback: function(update_response) {
+                            const updated_count = (update_response.message && update_response.message.updated_count) || 0;
+                            frappe.show_alert(`${updated_count} Purchase Invoices were excluded from future Payment Proposals.`);
+                            continue_supplier_save(frm);
+                        },
+                        error: function() {
+                            frappe.msgprint(__('Unable to update Purchase Invoices. Please try again.'));
+                        }
+                    });
+                },
+                function() {
+                    frappe.show_alert(__('Purchase Invoices were left unchanged.'));
+                    continue_supplier_save(frm);
+                }
+            );
+        },
+        error: function() {
+            frappe.msgprint(__('Unable to check open Purchase Invoices. Please try again.'));
+        }
+    });
+}
 
 
 frappe.ui.form.on('Supplier Shop', {

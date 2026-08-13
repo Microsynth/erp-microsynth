@@ -457,7 +457,8 @@ def get_email_ids(contact):
     contact_doc = frappe.get_doc("Contact", contact)
     email_ids = []
     for line in contact_doc.email_ids:
-        email_ids.append(line.email_id)
+        if line.email_id and line.email_id not in email_ids:  # avoid empty and duplicate email_ids
+            email_ids.append(line.email_id)
     return email_ids
 
 
@@ -744,41 +745,6 @@ def validate_sales_order_status(sales_order):
 
     if not so.taxes_and_charges or so.taxes_and_charges == "":
         frappe.log_error(f"Sales Order {so.name} has no Sales Taxes and Charges Template. Cannot create a delivery note.", "utils.validate_sales_order_status")
-        return False
-
-    return True
-
-
-def validate_sales_order(sales_order):
-    """
-    Checks if the customer is enabled, the sales order is submitted, has an allowed
-    status, has the tax template set and there are no delivery notes in status draft, submitted.
-
-    run
-    bench execute microsynth.microsynth.utils.validate_sales_order --kwargs "{'sales_order': ''}"
-    """
-
-    if not validate_sales_order_status(sales_order):
-        return False
-
-    # Check if delivery notes exists. consider also deliver notes with the same web_order_id
-    web_order_id = frappe.get_value("Sales Order", sales_order, "web_order_id")
-    if web_order_id:
-        web_order_id_condition = f" OR `tabDelivery Note`.`web_order_id` = '{web_order_id}' "
-    else:
-        web_order_id_condition = ""
-
-    delivery_notes = frappe.db.sql(f"""
-        SELECT `tabDelivery Note Item`.`parent`
-        FROM `tabDelivery Note Item`
-        LEFT JOIN `tabDelivery Note` ON `tabDelivery Note`.`name` = `tabDelivery Note Item`.`parent`
-        WHERE `tabDelivery Note Item`.`docstatus` < 2
-            AND (`tabDelivery Note Item`.`against_sales_order` = '{sales_order}'
-                {web_order_id_condition});
-        """, as_dict=True)
-
-    if len(delivery_notes) > 0:
-        # frappe.log_error("Order '{0}' has already Delivery Notes. Cannot create a delivery note.".format(sales_order), "utils.validate_sales_order")
         return False
 
     return True
@@ -1341,6 +1307,18 @@ def set_webshop_services(customer_id):
         add_webshop_service(customer_id, 'EcoliNightSeq')
 
 
+def set_po_required(customer_id):
+    """
+    Set the flag "Purchase Order Required" for the given customer if it has a french territory.
+
+    bench execute microsynth.microsynth.utils.set_po_required --kwargs "{'customer_id': '842586'}"
+    """
+    customer = frappe.get_doc('Customer', customer_id)
+    if customer.territory in ['Paris', 'France', 'France (Southeast)', 'France (Northwest)']:
+        customer.po_required = 1
+        customer.save()
+
+
 @frappe.whitelist()
 def configure_customer(customer):
     """
@@ -1365,6 +1343,7 @@ def configure_new_customer(customer):
     set_default_company(customer)
     add_webshop_services_for_italy(customer)
     set_webshop_services(customer)
+    set_po_required(customer)
 
 
 def get_alternative_account(account, currency):
@@ -1553,6 +1532,91 @@ def set_territory(customer):
         customer.save()
 
 
+def set_territory_for_customers(customer_ids, new_territory, verbose=True, dry_run=False):
+    """
+    Set the given territory for the given customers.
+
+    customer_ids can be a list/tuple/set of customer IDs, a JSON list string, or a single customer ID string.
+
+    bench execute microsynth.microsynth.utils.set_territory_for_customers --kwargs "{'customer_ids': ['8003', '832188'], 'new_territory': 'Rest of Europe (North)', 'verbose': True, 'dry_run': True}"
+    """
+    if isinstance(customer_ids, str):
+        cleaned = customer_ids.strip()
+        if cleaned.startswith("["):
+            customer_ids = frappe.parse_json(cleaned)
+        elif cleaned:
+            customer_ids = [cleaned]
+        else:
+            customer_ids = []
+
+    if not isinstance(customer_ids, (list, tuple, set)):
+        frappe.throw("customer_ids must be a list/tuple/set, JSON list string, or a single customer ID string.")
+
+    if not frappe.db.exists("Territory", new_territory):
+        frappe.throw(f"Territory '{new_territory}' does not exist.")
+
+    customer_ids = [str(c) for c in customer_ids if c is not None and str(c).strip() != ""]
+    total = len(customer_ids)
+    summary = {
+        'total': total,
+        'updated': 0,
+        'unchanged': 0,
+        'missing': 0,
+        'failed': 0,
+        'dry_run': bool(dry_run),
+    }
+    if total == 0:
+        print("No customer IDs provided. Nothing to do.")
+        return summary
+
+    for index, customer_id in enumerate(customer_ids):
+        progress = int((index / total) * 100)
+
+        if verbose:
+            print(f"[{progress:3d}%] Processing Customer '{customer_id}'...")
+
+        if not frappe.db.exists("Customer", customer_id):
+            summary['missing'] += 1
+            print(f"  -> Customer '{customer_id}' not found. Skipping.")
+            continue
+        try:
+            customer = frappe.get_doc("Customer", customer_id)
+            previous_territory = customer.territory
+            if customer.territory == new_territory:
+                summary['unchanged'] += 1
+                print(f"  -> Territory already set to '{new_territory}'.")
+                continue
+
+            if dry_run:
+                summary['updated'] += 1
+                if verbose:
+                    print(f"  -> Would change Territory from '{previous_territory}' to '{new_territory}'.")
+                continue
+
+            customer.territory = new_territory
+            customer.save()
+            summary['updated'] += 1
+            if verbose:
+                print(f"  -> Changed Territory from '{previous_territory}' to '{new_territory}'.")
+
+        except Exception as err:
+            summary['failed'] += 1
+            frappe.log_error(
+                f"Could not set territory '{new_territory}' for customer '{customer_id}':\n{err}",
+                "utils.set_territory_for_customers"
+            )
+            print(f"  -> Failed to update Customer '{customer_id}': {err}")
+
+    if not dry_run and summary['updated'] > 0:
+        frappe.db.commit()
+    print(
+        f"Finished set_territory_for_customers: {summary['updated']} updated, "
+        f"{summary['unchanged']} unchanged, {summary['missing']} missing, "
+        f"{summary['failed']} failed (total={summary['total']}, dry_run={summary['dry_run']})."
+    )
+    return summary
+
+
 def determine_territory(address_id):
     """
     Determine the territory from an address id.
@@ -1674,9 +1738,12 @@ def determine_territory(address_id):
         elif address.country == "Poland":
             return frappe.get_doc("Territory", "Rest of Europe (PL)")
 
-        elif address.country in ("Åland Islands", "Andorra", "Belgium", "Denmark", "Faroe Islands", "Finland", "Gibraltar", "Greenland", "Guernsey",
-                                 "Holy See (Vatican City State)", "Iceland", "Ireland", "Isle of Man", "Italy", "Jersey", "Luxembourg", "Monaco",
-                                 "Netherlands", "Norway", "Portugal", "San Marino", "Spain", "Sweden", "United Kingdom"):
+        elif address.country in ("Åland Islands", "Denmark", "Faroe Islands", "Finland", "Greenland", "Guernsey",
+                                 "Iceland", "Ireland", "Isle of Man", "Jersey", "Norway", "Sweden", "United Kingdom"):
+            return frappe.get_doc("Territory", "Rest of Europe (North)")
+
+        elif address.country in ("Andorra", "Belgium", "Gibraltar", "Holy See (Vatican City State)", "Italy",
+                                 "Luxembourg", "Monaco", "Netherlands", "Portugal", "San Marino", "Spain"):
             return frappe.get_doc("Territory", "Rest of Europe (West)")
 
         elif address.country in ("Albania", "Armenia", "Belarus", "Bosnia and Herzegovina", "Bulgaria", "Croatia", "Cyprus", "Czech Republic",
@@ -3024,6 +3091,44 @@ def check_sales_order(sales_order, event):
         frappe.throw("The following fields are mandatory to submit:<ul><li>Billing Address Name</li><li>Shipping Address Name</li><li>Invoice To</li><li>Contact Person</li></ul>Please check the section <b>Address and Contact</b>.")
 
 
+def send_label_order_confirmation_email(sales_order):
+    """
+    Check if the Sales Order contains an Item with an Item User Guide table entry, has a web_order_id and a contact_person with an email address.
+    If yes, use the Email Template "Barcode Label Order Confirmation" to send an email to the contact_person.
+    """
+    try:
+        if not sales_order.product_type == "Labels":
+            return
+        if not sales_order.web_order_id:
+            return
+        if not sales_order.contact_email:
+            return
+        item_user_guide_entries = frappe.get_all("Item User Guide", filters={'item_code': ['in', [item.item_code for item in sales_order.items]]}, fields=['name', 'item_code', 'user_guide_name', 'user_guide_url'])
+        if not item_user_guide_entries:
+            return
+
+        link_list = "<ul>"
+        for iug in item_user_guide_entries:
+            link_list += f"<li><a href={iug.user_guide_url}>{iug.user_guide_name}</a></li>"
+        link_list += "</ul>"
+
+        email_template = frappe.get_doc("Email Template", f"Barcode Label Order Confirmation {sales_order.company}")
+        rendered_subject = frappe.render_template(email_template.subject, {'company': sales_order.company, 'web_order_id': sales_order.web_order_id})
+        rendered_content = frappe.render_template(email_template.response, {'links': link_list})  # TODO: Footer with company address and contact info
+        #frappe.log_error(f"DEBUG: Going to send email to {sales_order.contact_email}\nSubject: {rendered_subject}\n\nContent:\n{rendered_content}", "send_label_order_confirmation_email")
+        send_email_from_template(email_template, rendered_content, rendered_subject=rendered_subject, recipients=sales_order.contact_email)
+    except Exception as e:
+        frappe.log_error(f"Error in send_label_order_confirmation_email for Sales Order {sales_order.name}: {str(e)}", "send_label_order_confirmation_email")
+
+
+def sales_order_on_submit(sales_order, event):
+    """
+    Triggered on Sales Order submission.
+    """
+    check_sales_order(sales_order, event)
+    send_label_order_confirmation_email(sales_order)
+
+
 def validate_sales_order_items(sales_order_doc, event=None):
     """
     Validate the Sales Order (server-side validation trigger).
@@ -3061,6 +3166,37 @@ def validate_sales_order_items(sales_order_doc, event=None):
             frappe.log_error(f"The Webshop tried to save Sales Order {sales_order_doc.name} with invalid items: {invalid_items}", "Invalid Items on Webshop Sales Order")
             return
         frappe.throw(html, title="Invalid Items")
+
+
+def validate_contact_customer_consistency(doc, event=None):
+    """
+    Validate that the contact_person linked to the Quotation belongs to the same Customer as the Quotation.
+    """
+    if not doc.contact_person:
+        frappe.throw("Contact Person must be set.")
+    contact_customer = get_customer(doc.contact_person)
+    if not contact_customer:
+        frappe.throw(f"Contact <b>{doc.contact_person}</b> is not linked to any Customer.")
+    if doc.order_customer:
+        return  # Skip validation if order_customer is set (Customer mismatch is allowed in the distributor workflow)
+    msg = f"Contact <b>{doc.contact_person}</b> belongs to Customer <b>{contact_customer}</b>, but {doc.doctype} belongs to Customer "\
+          f"<b>{doc.party_name if doc.doctype == 'Quotation' else doc.customer}</b>.<br>"\
+          f"Please choose another Customer, link the Contact to the correct Customer or choose another Contact."
+    if doc.doctype == "Quotation":
+        if contact_customer != doc.party_name:
+            frappe.throw(msg)
+    else:
+        if contact_customer != doc.customer:
+            frappe.throw(msg)
+
+
+def validate_sales_order(sales_order_doc, event=None):
+    """
+    Validate the Sales Order (server-side validation trigger).
+    Validate that no Item on the Sales Order has Sales Status "In Preparation" or "Discontinued".
+    """
+    validate_sales_order_items(sales_order_doc, event)
+    validate_contact_customer_consistency(sales_order_doc, event)
 
 
 def report_therapeutic_oligo_sales(from_date=None, to_date=None):
@@ -3271,6 +3407,7 @@ def send_email_from_template(email_template, rendered_content, rendered_subject=
     make(
             recipients = recipients if recipients else email_template.recipients,
             cc = email_template.cc_recipients,
+            bcc = email_template.bcc_recipients,
             sender = email_template.sender,
             sender_full_name = email_template.sender_full_name,
             subject = rendered_subject if rendered_subject else email_template.subject,

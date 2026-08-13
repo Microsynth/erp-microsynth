@@ -58,7 +58,9 @@ frappe.ui.form.on('Sales Order', {
                     }
                 });
             });
-        } else {
+        }
+        if (frm.doc.__islocal) {
+            fetch_default_company_from_customer(frm.doc.customer);
             prepare_naming_series(frm);             // common function
         }
 
@@ -263,6 +265,9 @@ frappe.ui.form.on('Sales Order', {
             cur_frm.set_value("amended_from", null);
             set_naming_series(frm);                 // common function
         }
+    },
+    customer(frm) {
+        fetch_default_company_from_customer(frm.doc.customer);
     }
 });
 
@@ -271,6 +276,34 @@ frappe.ui.form.on('Sales Order Item', {
         fetch_price_list_rate(frm, cdt, cdn);
     }
 });
+
+
+function fetch_default_company_from_customer(customer) {
+    if (!customer) {
+        return;
+    }
+    frappe.call({
+        "method": "frappe.client.get",
+        "args": {
+            "doctype": "Customer",
+            "name": customer
+        },
+        "callback": function(response) {
+            let customer_doc = response.message;
+            if (customer_doc && customer_doc.default_company) {
+                if (cur_frm.doc.__islocal) {
+                    cur_frm.set_value("company", customer_doc.default_company);
+                } else if (cur_frm.doc.company !== customer_doc.default_company) {
+                    frappe.msgprint({
+                        title: __('Company Mismatch'),
+                        indicator: 'orange',
+                        message: __("The selected Customer has Default Company {0} which is different from Company {1} set on this Sales Order. Please check the Company field.", [customer_doc.default_company, cur_frm.doc.company])
+                    });
+                }
+            }
+        }
+    });
+}
 
 
 function has_intercompany_order(frm) {

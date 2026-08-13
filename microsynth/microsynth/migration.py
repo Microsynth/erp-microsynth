@@ -3174,7 +3174,7 @@ def assess_income_account_matrix(from_date, to_date, auto_correct=0):
         doc = frappe.get_doc("Sales Invoice", invoice.get('name'))
         if doc.base_grand_total > 0:        # skip returns and 0-sums
 
-            correct_accounts = get_income_accounts(doc.shipping_address_name, doc.currency, doc.items)
+            correct_accounts = get_income_accounts(doc.customer, doc.shipping_address_name, doc.currency, doc.items)
 
             for i in range(0, len(doc.items)):
                 if doc.items[i].income_account != correct_accounts[i]:
@@ -3247,7 +3247,7 @@ def correct_income_account(sales_invoice):
     new_doc.amended_from = old_doc.name
 
     # correct income accounts
-    correct_accounts = get_income_accounts(new_doc.shipping_address_name, new_doc.currency, new_doc.items)
+    correct_accounts = get_income_accounts(new_doc.customer, new_doc.shipping_address_name, new_doc.currency, new_doc.items)
     for i in range(0, len(new_doc.items)):
         new_doc.items[i].income_account = correct_accounts[i]
 
@@ -3280,7 +3280,7 @@ def correct_income_account(sales_invoice):
             new_cn.return_against = new_doc.name
 
             # correct income accounts
-            correct_accounts = get_income_accounts(new_cn.shipping_address_name, new_cn.currency, new_cn.items)
+            correct_accounts = get_income_accounts(new_cn.customer, new_cn.shipping_address_name, new_cn.currency, new_cn.items)
             for i in range(0, len(new_cn.items)):
                 new_cn.items[i].income_account = correct_accounts[i]
             new_cn.insert()
@@ -3599,7 +3599,7 @@ def export_abacus_file_with_account_matrix(abacus_export_file, output_file, vali
             # optional: validate according to assessment
             if validate:
                 # fetch all corrected income accounts
-                correct_accounts = get_income_accounts(si.shipping_address_name, si.currency, si.items)
+                correct_accounts = get_income_accounts(si.customer, si.shipping_address_name, si.currency, si.items)
                 # check if all accounts are in the correct income accounts
                 for a in t.get("against_singles"):
                     if get_account_by_number(a.get('account'), si.company) not in correct_accounts:
@@ -6428,13 +6428,16 @@ def get_total_outstanding_credits(credit_data):
     return total
 
 
-def create_legacy_credit_account(customer_id, company, credit_type, credit_data, verbose_level=0, contact_id=None, dry_run=False, contact_replacement_map={}):
+def create_legacy_credit_account(customer_id, company, credit_type, credit_data, verbose_level=0, contact_id=None, dry_run=False, contact_replacement_map=None):
     """
     Create a Legacy Credit Account for the given customer/company/credit_type if not already existing.
     Use credit_data to find the latest deposit Sales Invoice of type "Credit" to base the Credit Account on.
     If contact_id is given, use it as contact for the Credit Account, otherwise use the contact_person from the Sales Invoice.
     If dry_run=True, no data will be written to the database — all create/save operations will be simulated and logged instead.
     """
+    if contact_replacement_map is None:
+        contact_replacement_map = {}
+
     def log(level, message):
         # level examples: INFO, WARNING, ERROR, DRY-RUN
         print(f"{level};{customer_id};{company};{credit_type};{message}")
@@ -6620,7 +6623,7 @@ def create_legacy_credit_account(customer_id, company, credit_type, credit_data,
         pass  # errors already printed above
 
 
-def create_legacy_credit_accounts(limit=None, verbose_level=1, dry_run=False, contact_replacement_map={}):
+def create_legacy_credit_accounts(limit=None, verbose_level=1, dry_run=False, contact_replacement_map=None):
     """
     Create Legacy Credit Accounts for all Customers with outstanding credits according to the Customer Credits report.
     The parameter 'limit' can be used to limit the number of Customers processed (for testing).
@@ -6629,6 +6632,9 @@ def create_legacy_credit_accounts(limit=None, verbose_level=1, dry_run=False, co
     bench execute microsynth.microsynth.migration.create_legacy_credit_accounts --kwargs "{'verbose_level': 2, 'dry_run': False, 'contact_replacement_map': {'103257': '233464', '212799': '240974', '3016274': '208158', '216049': '215228', '210106': '243942', '225107': '217154'}}"
     """
     from microsynth.microsynth.report.customer_credits.customer_credits import get_data as get_customer_credits
+
+    if contact_replacement_map is None:
+        contact_replacement_map = {}
 
     processed_customers = 0
     print("\nLevel;Customer;Company;Credit Type;Message")
@@ -6957,3 +6963,85 @@ def change_purchase_uom_box():
         updated_count += 1
 
     print(f"\nDONE: Updated {updated_count} Items.")
+
+
+def set_preferred_express_shipping_items(dry_run=False):
+    """
+    For every active Customer:
+      - if they have Shipping Items
+      - and none is marked preferred_express
+      - and exactly one Shipping Item contains "Express"
+
+    then set preferred_express = 1 on that Shipping Item.
+
+    Otherwise print a verbose warning and skip the Customer.
+
+    Args:
+        dry_run (bool): If True, only print what would be changed.
+
+    bench execute microsynth.microsynth.migration.set_preferred_express_shipping_items --kwargs "{'dry_run': True}"
+    """
+    customers = frappe.get_all(
+        "Customer",
+        filters={"disabled": 0},
+        fields=["name", "customer_name"],
+    )
+    updated = 0
+    skipped = 0
+
+    for cust in customers:
+        customer = frappe.get_doc("Customer", cust.name)
+        shipping_items = customer.get("shipping_items") or []
+
+        # Only interested in customers having at least one Shipping Item
+        if not shipping_items:
+            continue
+
+        preferred_items = [
+            row for row in shipping_items
+            if cint(row.preferred_express)
+        ]
+        # Skip if already configured
+        if preferred_items:
+            continue
+
+        express_items = [
+            row for row in shipping_items
+            if row.item_name
+            and "express" in row.item_name.lower()
+        ]
+        if len(express_items) == 1:
+            target = express_items[0]
+            msg = (
+                f"[UPDATE] Customer {customer.name} "
+                f"({customer.customer_name}): "
+                f"setting preferred_express on "
+                f"Shipping Item '{target.item_name}' (ID: {target.name})"
+            )
+            print(msg)
+            if not dry_run:
+                target.preferred_express = 1
+                # Save via ORM to trigger validations/hooks
+                customer.save()
+            updated += 1
+        else:
+            shipping_names = [
+                row.item_name or "<empty>"
+                for row in shipping_items
+            ]
+            express_names = [
+                row.item_name or "<empty>"
+                for row in express_items
+            ]
+            print(
+                f"[WARNING] Skipping Customer {customer.name} ({customer.customer_name})\n"
+                f"  Shipping Items: {shipping_names}\n"
+                f"  Matching 'Express': {express_names}\n"
+                f"  Reason: expected exactly one Shipping Item containing 'Express', found {len(express_items)}"
+            )
+            skipped += 1
+
+    if not dry_run:
+        frappe.db.commit()
+
+    print(f"\nDone. Updated: {updated}, Skipped with warnings: {skipped}")

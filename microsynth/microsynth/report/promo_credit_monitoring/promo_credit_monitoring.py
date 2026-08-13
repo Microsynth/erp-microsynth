@@ -17,12 +17,14 @@ PROMO_CAMPAIGNS = {
 def get_columns():
     return [
         {"label": "Person ID", "fieldname": "person_id", "fieldtype": "Link", "options": "Contact", "width": 80},
-        {"label": "Full Name", "fieldname": "full_name", "fieldtype": "Data", "width": 150},
+        {"label": "Full Name", "fieldname": "full_name", "fieldtype": "Data", "width": 140},
+        {"label": "Institute Key", "fieldname": "institute_key", "fieldtype": "Data", "width": 95},
         {"label": "Credit Account", "fieldname": "credit_account", "fieldtype": "Link", "options": "Credit Account", "width": 100},
         {"label": "CA Status", "fieldname": "status", "fieldtype": "Data", "width": 80},
         {"label": "Expiry Date", "fieldname": "expiry_date", "fieldtype": "Date", "width": 85},
         {"label": "Customer ID", "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 90},
         {"label": "Customer Name", "fieldname": "customer_name", "fieldtype": "Data", "width": 240},
+        {"label": "Territory", "fieldname": "territory", "fieldtype": "Link", "options": "Territory", "width": 140},
         {"label": "Given Promo Credits", "fieldname": "given_credits", "fieldtype": "Currency", "options": "currency", "width": 135},
         {"label": "Used Promo Credits", "fieldname": "used_credits", "fieldtype": "Currency", "options": "currency", "width": 130},
         {"label": "Remaining Valid Promo Credits", "fieldname": "remaining_valid_credits", "fieldtype": "Currency", "options": "currency", "width": 190},
@@ -44,6 +46,10 @@ def get_conditions(filters):
         ca_conditions += " AND `tabCredit Account`.`customer` = %(customer)s"
         si_conditions += " AND `tabSales Invoice`.`customer` = %(customer)s"
         params["customer"] = filters.get("customer")
+
+    if filters.get("territory"):
+        ca_conditions += " AND `tabCustomer`.`territory` = %(territory)s"
+        params["territory"] = filters.get("territory")
 
     return ca_conditions, si_conditions, params
 
@@ -80,10 +86,18 @@ def get_data(filters):
             `tabSales Invoice`.`credit_account`,
             `tabSales Invoice`.`customer`,
             `tabSales Invoice`.`customer_name`,
+            `tabCustomer`.`territory`,
             `tabCredit Account`.`contact_person`,
             `tabCredit Account`.`status`,
             `tabCredit Account`.`expiry_date`,
-            `tabSales Invoice`.`contact_display`,
+            (SELECT `tabContact`.`full_name`
+            FROM `tabContact`
+            WHERE `tabContact`.`name` = `tabCredit Account`.`contact_person`
+            LIMIT 1) AS `contact_display`,
+            (SELECT `tabContact`.`institute_key`
+            FROM `tabContact`
+            WHERE `tabContact`.`name` = `tabCredit Account`.`contact_person`
+            LIMIT 1) AS `institute_key`,
             SUM(`tabSales Invoice Item`.`net_amount`) AS `amount`,
             `tabCredit Account`.`currency`
         FROM `tabSales Invoice`
@@ -91,6 +105,8 @@ def get_data(filters):
             ON `tabSales Invoice Item`.`parent` = `tabSales Invoice`.`name`
         INNER JOIN `tabCredit Account`
             ON `tabCredit Account`.`name` = `tabSales Invoice`.`credit_account`
+        INNER JOIN `tabCustomer`
+            ON `tabCustomer`.`name` = `tabSales Invoice`.`customer`
         WHERE
             `tabSales Invoice`.`docstatus` = 1
             AND `tabSales Invoice Item`.`item_code` = %(credit_item_code)s
@@ -174,11 +190,13 @@ def get_data(filters):
         data.append({
             "person_id": d.contact_person,
             "full_name": d.contact_display,
+            "institute_key": d.institute_key,
             "credit_account": d.credit_account,
             "status": d.status,
             "expiry_date": d.expiry_date,
             "customer": d.customer,
             "customer_name": d.customer_name,
+            "territory": d.territory,
             "given_credits": given,
             "used_credits": used,
             "remaining_valid_credits": remaining_valid,

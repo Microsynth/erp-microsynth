@@ -310,7 +310,7 @@ def create_logbook_entry(qm_instrument, entry_type, description, date):
 
 def import_qm_instruments(input_filepath, expected_line_length=23):
     """
-    bench execute microsynth.qms.doctype.qm_instrument.qm_instrument.import_qm_instruments --kwargs "{'input_filepath': '/mnt/erp_share/JPe/260414_TestImport_Instruments.csv'}"
+    sudo bench --site erp-test.microsynth.local execute microsynth.qms.doctype.qm_instrument.qm_instrument.import_qm_instruments --kwargs "{'input_filepath': '/mnt/erp_share/Migration/QM_Instruments/260604_Import_übrige_Messmittel_v02.csv'}"
     """
     def parse_date(value):
         try:
@@ -474,13 +474,13 @@ def import_qm_instruments(input_filepath, expected_line_length=23):
                 print(f"ERROR: Supplier '{supplier}' does not exist in the system for the following line: {line}.")
                 continue
 
-            if instrument_sop and not last_requalification_date:
-                print(f"ERROR: Instrument SOP is provided but Last Requalification Date is missing for the following line: {line}.")
-                continue
+            # if instrument_sop and not last_requalification_date:
+            #     print(f"WARNING: Instrument SOP is provided but Last Requalification Date is missing for the following line: {line}.")
+            #     #continue
 
             if last_requalification_date and not instrument_sop:
-                print(f"ERROR: Last Requalification Date is provided but Instrument SOP is missing for the following line: {line}.")
-                continue
+                print(f"WARNING: Last Requalification Date is provided but Instrument SOP is missing for the following line: {line}.")
+                #continue
 
             # get or create location
             location = None

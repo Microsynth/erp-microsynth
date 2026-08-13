@@ -27,6 +27,8 @@
   "inbound_freight_item",
   "hr_sec",
   "website_applications_path",
+  "quality_management_section",
+  "certificate_import_path",
   "abacus_export_section",
   "abacus_export_path",
   "sec_datev",
@@ -221,11 +223,21 @@
    "fieldtype": "Table",
    "label": "Default Expense Accounts",
    "options": "Default Expense Account"
+  },
+  {
+   "fieldname": "quality_management_section",
+   "fieldtype": "Section Break",
+   "label": "Quality Management"
+  },
+  {
+   "fieldname": "certificate_import_path",
+   "fieldtype": "Data",
+   "label": "Certificate Import Path"
   }
  ],
  "issingle": 1,
- "modified": "2026-04-16 11:46:34.320165",
- "modified_by": "Administrator",
+ "modified": "2026-05-01 11:37:09.327419",
+ "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "Microsynth Settings",
  "owner": "Administrator",

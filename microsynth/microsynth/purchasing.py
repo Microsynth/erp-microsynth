@@ -144,7 +144,7 @@ def compute_total_quantity_by_item(material_request_rows):
     return totals
 
 
-def select_quotation_for_item(item_code, consolidated_total_qty, supplier_doc, currency, today_date, original_rate, company):
+def select_quotation_for_item(item_code, consolidated_total_qty, supplier_doc, currency, today_date, original_rate, company, requested_uom=None):
     """Select cheapest valid Supplier Quotation Item or fallback to price list rate.
 
     Returns a dict: {
@@ -170,6 +170,7 @@ def select_quotation_for_item(item_code, consolidated_total_qty, supplier_doc, c
             `tabSupplier Quotation`.`name` AS `supplier_quotation`,
             `tabSupplier Quotation`.`external_reference` AS `external_reference`,
             `tabSupplier Quotation Item`.`name` AS `supplier_quotation_item`,
+            `tabSupplier Quotation Item`.`uom` AS `uom`,
             IFNULL(`tabSupplier Quotation Item`.`qty`, 0) AS `min_qty`,
             IFNULL(`tabSupplier Quotation Item`.`rate`, 0) AS `rate`,
             IFNULL(`tabSupplier Quotation`.`valid_from`, '1900-01-01') AS `valid_from`,
@@ -205,8 +206,25 @@ def select_quotation_for_item(item_code, consolidated_total_qty, supplier_doc, c
         else:
             expired_quotation_items.append(sq_row)
 
-    if valid_quotation_items:
+    quote_candidates = valid_quotation_items
+    requested_uom_value = (requested_uom or '').strip()
+    if requested_uom_value:
+        quote_candidates = []
+        mismatching_uoms = set()
         for item in valid_quotation_items:
+            quote_uom = (item.get('uom') or '').strip()
+            if quote_uom == requested_uom_value:
+                quote_candidates.append(item)
+            else:
+                mismatching_uoms.add(quote_uom or '<empty>')
+
+        if valid_quotation_items and not quote_candidates:
+            selection['warnings'].append(
+                f"Item {item_code}: found valid Supplier Quotations with incompatible UOM ({', '.join(sorted(mismatching_uoms))}); requested UOM is '{requested_uom_value}'."
+            )
+
+    if quote_candidates:
+        for item in quote_candidates:
             selection['rate'] = flt(item.get('rate') or selection['rate'])
             selection['supplier_quotation'] = item.get('supplier_quotation')
             selection['supplier_quotation_item'] = item.get('supplier_quotation_item')
@@ -278,12 +296,14 @@ def create_po_document_for_items(material_request_rows, total_quantity_by_item_c
     for original_row in rows_sorted:
         original_item_code = original_row.get('item_code')
         item_code_key = original_item_code or '-'
+        requested_uom = original_row.get('uom')
+        quotation_choice_key = (item_code_key, requested_uom or '')
         consolidated_total_qty = flt(total_quantity_by_item_code.get(item_code_key, 0.0))
         original_rate = flt(original_row.get('rate') or 0.0)
 
         # reuse cached selection or compute it
-        if item_code_key in quotation_choice_cache:
-            selection = quotation_choice_cache[item_code_key]
+        if quotation_choice_key in quotation_choice_cache:
+            selection = quotation_choice_cache[quotation_choice_key]
             if selection.get('external_reference'):
                 used_supplier_quotations.append(
                     f"{selection.get('supplier_quotation')} ({selection.get('external_reference')})"
@@ -292,9 +312,9 @@ def create_po_document_for_items(material_request_rows, total_quantity_by_item_c
                 purchase_warnings.extend(selection.get('warnings'))
         else:
             selection = select_quotation_for_item(
-                item_code_key, consolidated_total_qty, supplier_doc, currency, today_date, original_rate, company
+                item_code_key, consolidated_total_qty, supplier_doc, currency, today_date, original_rate, company, requested_uom=requested_uom
             )
-            quotation_choice_cache[item_code_key] = selection
+            quotation_choice_cache[quotation_choice_key] = selection
             if selection.get('external_reference'):
                 used_supplier_quotations.append(
                     f"{selection.get('supplier_quotation')} ({selection.get('external_reference')})"
@@ -353,13 +373,13 @@ def create_po_document_for_items(material_request_rows, total_quantity_by_item_c
             'external_quotation_reference': selection.get('external_reference')
         }
         # set supplier quotation link only once because the core validation checks that a purchase order does not have multiple items (same item code) linked against the same quotation.
-        already_used_sq_item = quotation_choice_cache[item_code_key].get('sq_item_used')
+        already_used_sq_item = quotation_choice_cache[quotation_choice_key].get('sq_item_used')
         if not already_used_sq_item:
             po_item_row.update({
                 'supplier_quotation': selection.get('supplier_quotation'),
                 'supplier_quotation_item': selection.get('supplier_quotation_item')
             })
-            quotation_choice_cache[item_code_key]['sq_item_used'] = True
+            quotation_choice_cache[quotation_choice_key]['sq_item_used'] = True
 
         po_doc.append('items', po_item_row)
 
@@ -773,7 +793,7 @@ def get_or_create_single_location(location_name, parent_location, is_group=True)
     return loc.name
 
 
-def get_or_create_location(floor, room, destination, fridge_rack, company='Microsynth AG'):
+def get_or_create_location(floor, room, destination, fridge_rack, company='Microsynth AG', explicit_floor_and_room=False):
     """
     Returns the final Location document (creates any missing lower-level locations).
 
@@ -796,36 +816,48 @@ def get_or_create_location(floor, room, destination, fridge_rack, company='Micro
         return frappe.get_doc("Location", city)
 
     # Floor
-    if not floor in FLOOR_MAPPING:
-        frappe.throw(f"Got unknown floor '{floor}'.")
-    floor_name = FLOOR_MAPPING.get(str(floor), '')
+    if explicit_floor_and_room:
+        floor_name = floor
+    else:
+        if not floor in FLOOR_MAPPING:
+            frappe.throw(f"Got unknown floor '{floor}'.")
+        floor_name = FLOOR_MAPPING.get(str(floor), '')
     floor_location = frappe.db.exists("Location", {"location_name": floor_name, "parent_location": city_location})
     if not floor_location:
         frappe.throw(f"Floor '{floor_name}' not found under city '{city}'.")
     if not room:
         return frappe.get_doc("Location", floor_name)
 
-    # Room - exact structured match
-    floor_str = str(floor).strip()
-    room_str = str(room).strip()
-
-    # Validate that floor and room are exactly two digits
-    if not (floor_str.isdigit() and len(floor_str) == 2):
-        frappe.throw(f"Invalid floor '{floor}': must be exactly two digits (e.g. '10', '11').")
-    if not (room_str.isdigit() and len(room_str) == 2) and room_str != '14c':
-        frappe.throw(f"Invalid room '{room}': must be exactly two digits (e.g. '03', '20').")
-
-    if company == 'Microsynth Seqlab GmbH':
-        pattern = f"{floor_str}.{room_str}%"
+    if explicit_floor_and_room:
+        # Room - direct match
+        room_doc = frappe.db.sql("""
+            SELECT `name`
+            FROM `tabLocation`
+            WHERE `parent_location` = %s
+            AND `location_name` = %s
+        """, (floor_location, room), as_dict=True)
     else:
-        pattern = f"{floor_str}-{room_str}%"
+        # Room - exact structured match
+        floor_str = str(floor).strip()
+        room_str = str(room).strip()
 
-    room_doc = frappe.db.sql("""
-        SELECT `name`
-        FROM `tabLocation`
-        WHERE `parent_location` = %s
-          AND `location_name` LIKE %s
-    """, (floor_location, pattern), as_dict=True)
+        # Validate that floor and room are exactly two digits
+        if not (floor_str.isdigit() and len(floor_str) == 2):
+            frappe.throw(f"Invalid floor '{floor}': must be exactly two digits (e.g. '10', '11').")
+        if not (room_str.isdigit() and len(room_str) == 2) and room_str != '14c':
+            frappe.throw(f"Invalid room '{room}': must be exactly two digits (e.g. '03', '20').")
+
+        if company == 'Microsynth Seqlab GmbH':
+            pattern = f"{floor_str}.{room_str}%"
+        else:
+            pattern = f"{floor_str}-{room_str}%"
+
+        room_doc = frappe.db.sql("""
+            SELECT `name`
+            FROM `tabLocation`
+            WHERE `parent_location` = %s
+            AND `location_name` LIKE %s
+        """, (floor_location, pattern), as_dict=True)
 
     if len(room_doc) == 0:
         frappe.throw(f"No room matching pattern '{pattern}' found under floor '{floor_name}' in '{city}'.")
@@ -855,6 +887,35 @@ def get_or_create_location(floor, room, destination, fridge_rack, company='Micro
     # Return final location
     final_doc = frappe.get_doc("Location", parent_location)
     return final_doc
+
+
+def import_locations(input_filepath):
+    """
+    Imports Locations from a given CSV file. The CSV file should have the following columns:
+    company, floor, room, destination, fridge_rack
+
+    bench execute microsynth.microsynth.purchasing.import_locations --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2026-06-12_Fridges_Freezers.csv'}"
+    """
+    with open(input_filepath) as file:
+        print(f"INFO: Parsing Locations from '{input_filepath}' ...")
+        csv_reader = csv.reader((l.replace('\0', '') for l in file), delimiter=";")  # replace NULL bytes (throwing an error)
+        next(csv_reader)  # skip header
+        for line in csv_reader:
+            if len(line) != 5:
+                print(f"ERROR: Line '{line}' has length {len(line)}, but expected length 5. Going to continue.")
+                continue
+            company = line[0].strip()
+            floor = line[1].strip()
+            room = line[2].strip()
+            destination = line[3].strip()
+            fridge_rack = line[4].strip()
+            fridge_rack = None if fridge_rack.lower() in ['none', 'null', 'na', 'n/a', ''] else fridge_rack  # normalize empty values to None
+            try:
+                location_doc = get_or_create_location(floor, room, destination, fridge_rack, company, explicit_floor_and_room=True)
+                print(f"Successfully processed location for floor '{floor}', room '{room}', destination '{destination}', fridge rack '{fridge_rack}' in company '{company}'. Final location: '{location_doc.name}'")
+            except Exception as e:
+                print(f"ERROR processing location for floor '{floor}', room '{room}', destination '{destination}', fridge rack '{fridge_rack}' in company '{company}': {e}. Going to continue.")
+    print("Finished processing locations.")
 
 
 def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file, company='Microsynth AG', expected_line_length=43, update_existing_items=False):
@@ -1627,9 +1688,8 @@ def check_supplier_shop_password(password):
 
 def mark_purchase_invoice_as_proposed(purchase_invoice):
     """
-    bench execute microsynth.microsynth.purchasing.mark_purchase_invoices_as_proposed --kwargs "{'payment_proposal_id':'e9b1a13027'}"
+    bench execute microsynth.microsynth.purchasing.mark_purchase_invoice_as_proposed --kwargs "{'purchase_invoice':'PI-2601134'}"
     """
-
     pi = frappe.get_doc("Purchase Invoice", purchase_invoice)
     pi.is_proposed = True
     pi.save()
@@ -1693,7 +1753,9 @@ def create_batches_and_assign(purchase_receipt, batch_data):
     purchase_receipt_doc = frappe.get_doc("Purchase Receipt", purchase_receipt)
 
     for row in batch_data:
-        batch_no = row.get('batch_id')
+        batch_no = row.get('batch_id').strip() if row.get('batch_id') else None
+        if not batch_no:
+            frappe.throw(f"Missing Batch ID in row {row['idx']}. Please provide a Batch ID and try again.")
         item_code = row['item_code']
         # Check if Batch with batch_no already exists for item_code, if yes use it, if not create and use it
         existing_batch_nos = frappe.db.get_all(
@@ -2457,7 +2519,7 @@ def add_location_to_item(item, location):
         return
 
     doc.append("storage_locations", {"location": location})
-    doc.save()
+    doc.save(ignore_permissions=True)
 
 
 @frappe.whitelist()
@@ -2573,7 +2635,7 @@ def link_items_symmetrically(item_a, item_b):
             new_row = item_doc.append("linked_items", {})
             new_row.item = other_item
             # item_name, pack_size, pack_uom auto-populate via fetch_from
-            item_doc.save()
+            item_doc.save(ignore_permissions=True)
 
     # Add A → B and B → A
     add_link_if_missing(doc_a, item_b)
@@ -2602,6 +2664,87 @@ def get_items_using_supplier(supplier):
             `tabItem Supplier`.`supplier` = %(supplier)s
             AND `tabItem`.`disabled` = 0
     """, {"supplier": supplier}, as_dict=True)
+
+
+@frappe.whitelist()
+def get_open_purchase_invoices(supplier):
+    """
+    Return open submitted Purchase Invoices of a supplier that may still land on future Payment Proposals.
+
+    bench execute microsynth.microsynth.purchasing.get_open_purchase_invoices --kwargs "{'supplier': 'S-00015'}"
+    """
+    return frappe.db.sql(
+        """
+        SELECT
+            `tabPurchase Invoice`.`name`,
+            `tabPurchase Invoice`.`bill_no`,
+            `tabPurchase Invoice`.`posting_date`,
+            `tabPurchase Invoice`.`due_date`,
+            `tabPurchase Invoice`.`currency`,
+            `tabPurchase Invoice`.`outstanding_amount`
+        FROM `tabPurchase Invoice`
+        WHERE
+            `tabPurchase Invoice`.`supplier` = %(supplier)s
+            AND `tabPurchase Invoice`.`docstatus` = 1
+            AND `tabPurchase Invoice`.`outstanding_amount` > 0
+            AND IFNULL(`tabPurchase Invoice`.`is_proposed`, 0) = 0
+        ORDER BY
+            `tabPurchase Invoice`.`due_date` ASC,
+            `tabPurchase Invoice`.`name` ASC
+        """,
+        {"supplier": supplier},
+        as_dict=True,
+    )
+
+
+@frappe.whitelist()
+def exclude_purchase_invoices_from_future_payment_proposals(purchase_invoices):
+    """
+    Set is_proposed = 1 for a list of Purchase Invoices to exclude them from future Payment Proposals.
+
+    bench execute microsynth.microsynth.purchasing.exclude_purchase_invoices_from_future_payment_proposals --kwargs "{'purchase_invoices': ['PINV-0001', 'PINV-0002']}"
+    """
+    if isinstance(purchase_invoices, str):
+        try:
+            purchase_invoices = json.loads(purchase_invoices)
+        except Exception:
+            purchase_invoices = [purchase_invoices]
+
+    if not isinstance(purchase_invoices, list):
+        purchase_invoices = [purchase_invoices]
+
+    purchase_invoices = [
+        purchase_invoice.strip()
+        for purchase_invoice in purchase_invoices
+        if isinstance(purchase_invoice, str) and purchase_invoice.strip()
+    ]
+
+    if not purchase_invoices:
+        return {"updated_count": 0, "updated_invoices": []}
+
+    purchase_invoices_to_update = frappe.db.sql(
+        """
+        SELECT
+            `tabPurchase Invoice`.`name`
+        FROM `tabPurchase Invoice`
+        WHERE
+            `tabPurchase Invoice`.`name` IN %(purchase_invoices)s
+            AND `tabPurchase Invoice`.`docstatus` = 1
+            AND `tabPurchase Invoice`.`outstanding_amount` > 0
+            AND IFNULL(`tabPurchase Invoice`.`is_proposed`, 0) = 0
+        """,
+        {"purchase_invoices": tuple(purchase_invoices)},
+        as_dict=True,
+    )
+    purchase_invoices_to_update = [row["name"] for row in purchase_invoices_to_update]
+
+    for purchase_invoice in purchase_invoices_to_update:
+        mark_purchase_invoice_as_proposed(purchase_invoice)
+
+    return {
+        "updated_count": len(purchase_invoices_to_update),
+        "updated_invoices": purchase_invoices_to_update,
+    }
 
 
 @frappe.whitelist()
@@ -2776,7 +2919,7 @@ def change_item_uom_and_has_batch_no(item_code, expected_current_stock_uom=None,
         - Placeholder batches ([NA]-<item_code>) may group stock artificially
         - Only supports single-company items (based on warehouses)
 
-    bench execute microsynth.microsynth.purchasing.change_item_uom_and_has_batch_no --kwargs "{'item_code': 'P001034', 'new_stock_uom': 'Bottle', 'new_has_batch_no': 1, 'dry_run': False, 'verbose': True}"
+    sudo bench execute microsynth.microsynth.purchasing.change_item_uom_and_has_batch_no --kwargs "{'item_code': 'P013471', 'new_has_batch_no': 1, 'dry_run': False, 'verbose': True}"
     """
     def log(msg):
         if verbose:
@@ -2787,13 +2930,14 @@ def change_item_uom_and_has_batch_no(item_code, expected_current_stock_uom=None,
     if not item_code:
         frappe.throw("item_code is required.")
 
-    if frappe.db.exists("Item", f"x{item_code}"):
-        frappe.throw("Migration already (partially) executed. Please fix manually if still needed.")
-
     posting_dt = now_datetime()
 
     # 1. Load & validate Item
     item_doc = frappe.get_doc("Item", item_code)
+
+    if item_doc.disabled:
+        print(f"ERROR: Item {item_code} is disabled. Skipping.")
+        return
 
     if batch_type is not None and item_doc.batch_type != batch_type and not dry_run:
         item_doc.batch_type = batch_type
@@ -2805,28 +2949,28 @@ def change_item_uom_and_has_batch_no(item_code, expected_current_stock_uom=None,
 
     if expected_current_stock_uom and item_doc.stock_uom != expected_current_stock_uom:
         if item_doc.stock_uom and target_stock_uom and item_doc.stock_uom == target_stock_uom:
-            log(f"WARNING: Item {item_code} has stock_uom {item_doc.stock_uom} equals {target_stock_uom=}, but expected Item to have stock_uom {expected_current_stock_uom}.")
+            print(f"WARNING: Item {item_code} has stock_uom {item_doc.stock_uom} equals {target_stock_uom=}, but expected Item to have stock_uom {expected_current_stock_uom}.")
         else:
-            frappe.throw(f"Item {item_code} has stock_uom {item_doc.stock_uom}, expected {expected_current_stock_uom}, target_stock_uom={target_stock_uom}.")
+            print(f"ERROR: Item {item_code} has stock_uom {item_doc.stock_uom}, expected {expected_current_stock_uom}, target_stock_uom={target_stock_uom}. Skipping.")
+            return
 
     if expected_current_has_batch_no is not None and item_doc.has_batch_no != expected_current_has_batch_no:
         if item_doc.has_batch_no == target_has_batch_no:
-            log(f"WARNING: Item {item_code} has has_batch_no {item_doc.has_batch_no} equals target_has_batch_no={target_has_batch_no}, but expected Item to have has_batch_no {expected_current_has_batch_no}.")
+            print(f"WARNING: Item {item_code} has has_batch_no {item_doc.has_batch_no} equals target_has_batch_no={target_has_batch_no}, but expected Item to have has_batch_no {expected_current_has_batch_no}.")
         else:
-            frappe.throw(f"Item {item_code} has has_batch_no {item_doc.has_batch_no}, expected {expected_current_has_batch_no}, target_has_batch_no={target_has_batch_no}.")
+            print(f"ERROR: Item {item_code} has has_batch_no {item_doc.has_batch_no}, expected {expected_current_has_batch_no}, target_has_batch_no={target_has_batch_no}. Skipping.")
+            return
 
     if target_stock_uom == item_doc.stock_uom and target_has_batch_no == item_doc.has_batch_no:
-        log("No changes necessary. Skipping.")
+        print(f"Item {item_code}: No changes necessary. Skipping.")
         return
 
     if not item_doc.is_stock_item:
-        frappe.throw("Only Stock Items can be migrated.")
-
-    if item_doc.disabled:
-        frappe.throw("Item is disabled.")
+        print(f"ERROR: Item {item_code} has not 'Maintain Stock' (is_stock_item) set. Only Stock Items can be migrated. Skipping.")
+        return
 
     if item_doc.stock_uom == target_stock_uom and item_doc.has_batch_no == target_has_batch_no:
-        log(f"Item {item_code} already uses the target configuration stock_uom={target_stock_uom}, has_batch_no={target_has_batch_no}. Skipping.")
+        print(f"WARNING: Item {item_code} already uses the target configuration stock_uom={target_stock_uom}, has_batch_no={target_has_batch_no}. Skipping.")
         return
 
     if target_stock_uom and not frappe.db.exists("UOM", target_stock_uom):
@@ -2834,6 +2978,20 @@ def change_item_uom_and_has_batch_no(item_code, expected_current_stock_uom=None,
 
     if item_doc.has_serial_no:
         frappe.throw("Serial-numbered items are NOT supported by this migration script.")
+
+    existing_migrated_items = frappe.db.get_all("Item", filters=[["name", "like", f"x{item_code}%"]], fields=["name"], order_by="name desc")
+    if existing_migrated_items:
+        if len(existing_migrated_items) == 1 and existing_migrated_items[0]['name'] == f"x{item_code}":
+            temp_item_code = f"x{item_code}-1"
+        elif len(existing_migrated_items) > 1 and existing_migrated_items[0]['name'].startswith(f"x{item_code}-") and existing_migrated_items[0]['name'].split('-')[1].isdigit():
+            temp_item_code = f"x{item_code}-{int(existing_migrated_items[0]['name'].split('-')[-1])+1}"
+        else:
+            log(f"ERROR: Found {len(existing_migrated_items)} existing migrated items with unexpected names for {item_code}: {[i['name'] for i in existing_migrated_items]}. Please resolve manually. Skipping.")
+            return
+        log(f"WARNING: Found {len(existing_migrated_items)} migrated item(s) for {item_code}: {[i['name'] for i in existing_migrated_items]}. Renaming to {temp_item_code} to avoid conflicts.")
+    else:
+        temp_item_code = f"x{item_code}"
+
     log(f"Item {item_code} validated (current has_batch_no={item_doc.has_batch_no}, target_has_batch_no={target_has_batch_no}, stock_uom={item_doc.stock_uom}, target_stock_uom={target_stock_uom})")
 
     # 2. Collect stock data
@@ -2872,9 +3030,9 @@ def change_item_uom_and_has_batch_no(item_code, expected_current_stock_uom=None,
     if not stock_rows:
         # Check for non-Cancelled Material Requests and Purchase Orders
         material_requests = frappe.get_all("Material Request Item", filters=[["item_code", "=", item_code], ["docstatus", "<", 2]], fields=["name"])
-        purchase_orders = frappe.get_all("Purchase Order Item", filters=[["item_code", "=", item_code], ["docstatus", "<", 2]], fields=["name"])
+        purchase_orders = frappe.get_all("Purchase Order Item", filters=[["item_code", "=", item_code], ["docstatus", "<", 2], ['qty', '>', 0]], fields=["name"])
         if material_requests or purchase_orders:
-            log(f"WARNING: No stock exists for Item {item_code}, but there are {len(material_requests)} Material Request Items and {len(purchase_orders)} Purchase Order Items. Please solve manually. Skipping.")
+            print(f"ERROR: No stock exists for Item {item_code}, but there are {len(material_requests)} Material Request Items and {len(purchase_orders)} Purchase Order Items. Please solve manually. Skipping.")
             return
         log("No stock exists. Safe direct UOM/has_batch_no change.")
         if not dry_run:
@@ -2887,8 +3045,11 @@ def change_item_uom_and_has_batch_no(item_code, expected_current_stock_uom=None,
 
     log(f"Collected {len(stock_rows)} stock row(s) for Item {item_code} across {len(set(r['warehouse'] for r in stock_rows))} warehouse(s) and {len(affected_batches)} batch(es).")
 
-    # 3. Resolve company from warehouses
+    # 3. Material Issue per company (remove old stock)
+    log("Preparing Material Issue")
+
     companies = set()
+    company_issue_map = {}
 
     for r in stock_rows:
         company = frappe.db.get_value("Warehouse", r["warehouse"], "company")
@@ -2896,41 +3057,39 @@ def change_item_uom_and_has_batch_no(item_code, expected_current_stock_uom=None,
             frappe.throw(f"Warehouse {r['warehouse']} has no company")
         companies.add(company)
 
-    if len(companies) != 1:
-        frappe.throw(
-            f"Multiple companies detected: {', '.join(companies)}"
-        )
-    company = companies.pop()
-    log(f"Using company {company}")
-
-    # 4. Material Issue (remove old stock)
-    log("Preparing Material Issue")
-    cost_center = frappe.db.get_value("Company", company, "cost_center")
-
     if not dry_run:
-        issue = frappe.new_doc("Stock Entry")
-        issue.stock_entry_type = "Material Issue"
-        issue.company = company
-        issue.posting_date = posting_dt.date()
-        issue.posting_time = posting_dt.time()
-        issue.remarks = f"UOM migration issue for {item_code}"
+        for company in companies:  # TODO: create a mapping of companies to issues to use it in the receipt step
+            frappe.flags.warehouse_account_map = None  # avoid cache issues with multiple companies and warehouses
+            issue = frappe.new_doc("Stock Entry")
+            issue.stock_entry_type = "Material Issue"
+            issue.company = company
+            issue.posting_date = posting_dt.date()
+            issue.posting_time = posting_dt.time()
+            issue.remarks = f"UOM migration issue for {item_code}"
 
-        for r in stock_rows:  # stock_rows are created using tabBin and tabBatch
-            issue.append("items", {
-                "item_code": item_code,
-                "qty": r["qty"],
-                "s_warehouse": r["warehouse"],
-                "cost_center": cost_center,  # seems to be mandatory
-                "batch_no": r.get("batch_no"),
-                "uom": item_doc.stock_uom,
-                "conversion_factor": 1  # valuation shall be done by integrated mechanism
-            })
-        issue.insert()
-        issue.submit()
+            for r in stock_rows:  # stock_rows are created using tabBin and tabBatch
+                row_company = frappe.db.get_value("Warehouse", r["warehouse"], "company")
+                if not row_company:
+                    frappe.throw(f"Warehouse {r['warehouse']} has no company")
+                if row_company != company:
+                    continue  # skip rows not belonging to the current company loop
+                cost_center = frappe.db.get_value("Company", company, "cost_center")
+                log(f"Using company {company} and cost center {cost_center} for warehouse {r['warehouse']} to issue {r['qty']} {item_doc.stock_uom} {item_code} with batch {r.get('batch_no')}.")
+                issue.append("items", {
+                    "item_code": item_code,
+                    "qty": r["qty"],
+                    "s_warehouse": r["warehouse"],
+                    "cost_center": cost_center,  # seems to be mandatory
+                    "batch_no": r.get("batch_no"),
+                    "uom": item_doc.stock_uom,
+                    "conversion_factor": 1  # valuation shall be done by integrated mechanism
+                })
+            issue.insert()
+            issue.submit()
+            company_issue_map[company] = issue
 
-    # 5. Rename & disable old item
+    # 4. Rename & disable old item
     old_item_code = item_code
-    temp_item_code = f"x{item_code}"
     log(f"Renaming Item {old_item_code} → {temp_item_code}")
 
     if not dry_run:
@@ -2949,7 +3108,7 @@ def change_item_uom_and_has_batch_no(item_code, expected_current_stock_uom=None,
         )
         old_item.save()
 
-    # 6. Create new item with new Stock UOM
+    # 5. Create new item with new Stock UOM
     log(f"Creating new Item {old_item_code} with new Stock UOM {target_stock_uom} and has_batch_no={target_has_batch_no}")
     if not dry_run:
         old_item = frappe.get_doc("Item", temp_item_code)
@@ -2977,43 +3136,51 @@ def change_item_uom_and_has_batch_no(item_code, expected_current_stock_uom=None,
             frappe.db.set_value("Batch", batch_id, "item", old_item_code)
         frappe.db.commit()  # necessary according to Lars
 
-    # 7. Material Receipt (restore stock)
+    # 6. Material Receipt per company (restore stock)
     log("Preparing Material Receipt")
     if not dry_run:
-        receipt = frappe.new_doc("Stock Entry")
-        receipt.stock_entry_type = "Material Receipt"
-        receipt.company = company
-        receipt.posting_date = posting_dt.date()
-        receipt.posting_time = posting_dt.time()
-        receipt.remarks = f"UOM migration receipt for {old_item_code}"
+        for company in companies:
+            frappe.flags.warehouse_account_map = None  # avoid cache issues with multiple companies and warehouses
+            receipt = frappe.new_doc("Stock Entry")
+            receipt.stock_entry_type = "Material Receipt"
+            receipt.company = company
+            receipt.posting_date = posting_dt.date()
+            receipt.posting_time = posting_dt.time()
+            receipt.remarks = f"UOM migration receipt for {old_item_code}"
+            issue = company_issue_map[company]
 
-        for r in issue.items:  # base this on the issued material according to Lars
-            if target_has_batch_no:
-                batch_no = r.get("batch_no") or f"[NA]-{item_code}"
-                if batch_no and not frappe.db.exists("Batch", batch_no):
-                    log(f"Creating missing Batch '{batch_no}'.")
-                    batch_doc = frappe.get_doc({
-                        "doctype": "Batch",
-                        "batch_id": batch_no,
-                        "item": item_code
-                    })
-                    batch_doc.insert(ignore_permissions=True)
-            else:
-                batch_no = None
-            receipt.append("items", {
-                "item_code": item_code,
-                "qty": r.get("qty"),
-                "t_warehouse": r.get("s_warehouse"),
-                "cost_center": r.get("cost_center"),
-                "batch_no": batch_no,
-                "uom": target_stock_uom,
-                "conversion_factor": 1,
-                "basic_rate": r.get("basic_rate") or 0.01
-            })
-        receipt.insert()
-        receipt.submit()
+            for r in issue.items:  # base this on the issued material according to Lars
+                row_company = frappe.db.get_value("Warehouse", r.s_warehouse, "company")
+                if not row_company:
+                    frappe.throw(f"Warehouse {r.s_warehouse} has no company")
+                if row_company != company:
+                    continue  # skip rows not belonging to the current company loop
+                if target_has_batch_no:
+                    batch_no = r.get("batch_no") or f"[NA]-{item_code}"
+                    if batch_no and not frappe.db.exists("Batch", batch_no):
+                        log(f"Creating missing Batch '{batch_no}'.")
+                        batch_doc = frappe.get_doc({
+                            "doctype": "Batch",
+                            "batch_id": batch_no,
+                            "item": item_code
+                        })
+                        batch_doc.insert(ignore_permissions=True)
+                else:
+                    batch_no = None
+                receipt.append("items", {
+                    "item_code": item_code,
+                    "qty": r.get("qty"),
+                    "t_warehouse": r.get("s_warehouse"),
+                    "cost_center": r.get("cost_center"),
+                    "batch_no": batch_no,
+                    "uom": target_stock_uom,
+                    "conversion_factor": 1,
+                    "basic_rate": r.get("basic_rate") or 0.01
+                })
+            receipt.insert()
+            receipt.submit()
 
-    # 8. Move Item Prices from old to new item
+    # 7. Move Item Prices from old to new item
     log("Move Item Prices from old to new item")
     item_prices = frappe.get_all(
         "Item Price",
@@ -3021,17 +3188,20 @@ def change_item_uom_and_has_batch_no(item_code, expected_current_stock_uom=None,
         fields=["*"]
     )
     for ip in item_prices:
-        log(f" - Moving Item Price {ip.name} for Price List {ip.price_list}, min_qty {ip.min_qty} from Item {temp_item_code} to {old_item_code}")
+        log(f" - Moving Item Price {ip.name} for Price List {ip.price_list}, rate {ip.price_list_rate}, min_qty {ip.min_qty}, UOM {ip.uom} from Item {temp_item_code} to {old_item_code}")
         if not dry_run:
             ip_doc = frappe.get_doc("Item Price", ip.name)
             ip_doc.item_code = old_item_code
             if ip_doc.uom == item_doc.stock_uom:
                 ip_doc.uom = target_stock_uom
-            ip_doc.save()
+            try:
+                ip_doc.save()
+            except Exception as e:
+                print(f"ERROR: Failed to save Item Price {ip_doc.name}: {e}")
 
     if not dry_run:
         frappe.db.commit()
-        log("UOM/Batch migration completed successfully")
+        print(f"Item {old_item_code}: UOM/Batch migration completed successfully")
 
 
 def change_item_uoms_and_has_batch_nos(input_filepath, expected_line_length=11, dry_run=True, verbose=True):
@@ -3039,11 +3209,11 @@ def change_item_uoms_and_has_batch_nos(input_filepath, expected_line_length=11, 
     Batch processing for change_item_uom_and_has_batch_no using a CSV file with columns:
     item_code	item_name	 purchase_uom 	 conversion_factor 	stock_uom	new_stock_uom	 pack_size    	 pack_uom       	has_batch_no	new_has_batch_no	batch_type
 
-    sudo bench --site erp-test.microsynth.local execute microsynth.microsynth.purchasing.change_item_uoms_and_has_batch_nos --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2026-04-22_oligo_items_to_change.csv', 'dry_run': False, 'verbose': True}"
-    sudo bench --site erp.microsynth.local execute microsynth.microsynth.purchasing.change_item_uoms_and_has_batch_nos --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2026-04-20_Seqlab_items_to_change.csv', 'dry_run': True, 'verbose': True}"
+    sudo bench execute microsynth.microsynth.purchasing.change_item_uoms_and_has_batch_nos --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2026-05-07_Sanger_items_to_change.csv', 'dry_run': True, 'verbose': True}"
+    sudo bench execute microsynth.microsynth.purchasing.change_item_uoms_and_has_batch_nos --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2026-06-05_Oligo_items_to_change.csv', 'dry_run': True, 'verbose': True}"
     """
     with open(input_filepath, newline='', encoding='utf-8') as file:
-        print(f"INFO: Items from '{input_filepath}' ...")
+        print(f"INFO: Update Items from '{input_filepath}' ...")
         csv_reader = csv.reader((l.replace('\0', '') for l in file), delimiter=";")  # replace NULL bytes (throwing an error)
         next(csv_reader)  # skip header
         for line in csv_reader:
@@ -3061,9 +3231,11 @@ def change_item_uoms_and_has_batch_nos(input_filepath, expected_line_length=11, 
             if new_stock_uom == "Carton":
                 new_stock_uom = "Box"  # rename since Carton should only be used for purchase_uom, not stock_uom
 
-            print(f"\nProcessing Item {item_code}:")
+            if verbose:
+                print(f"\nProcessing Item {item_code}:")
             if (not new_stock_uom or new_stock_uom == stock_uom) and (new_has_batch_no is None or new_has_batch_no == has_batch_no) and not batch_type:
-                print("No changes specified. Skipping.")
+                if verbose:
+                    print("No changes specified. Skipping.")
                 continue
             if new_has_batch_no == 0 and batch_type in ("Generic", "Standard"):
                 print(f"ERROR: Input conflict: Cannot set has_batch_no to 0 while batch_type is {batch_type}. Skipping.")
@@ -3420,3 +3592,48 @@ def backfill_item_price_uom(dry_run=True, verbose=True):
     print(f"Updated Item Prices: {updated}")
     print(f"Skipped Items: {skipped}")
     print(f"Dry Run: {dry_run}")
+
+
+def purchase_receipt_before_submit(doc, event):
+    """
+    Prevent submitting a Purchase Receipt that leads to total Item quantity higher than the Item quantity on the linked Purchase Order.
+    """
+    for item in doc.items:
+        if not item.purchase_order or not item.item_code:
+            continue
+
+        po_qty = frappe.db.get_value(
+            "Purchase Order Item",
+            {
+                "parent": item.purchase_order,
+                "item_code": item.item_code
+            },
+            "qty"
+        ) or 0
+
+        # Sum of already submitted Purchase Receipts for this PO Item
+        already_received_qty = frappe.db.sql(
+            """
+            SELECT
+                SUM(`tabPurchase Receipt Item`.`received_qty`)
+            FROM
+                `tabPurchase Receipt Item`
+            JOIN
+                `tabPurchase Receipt`
+                ON `tabPurchase Receipt`.`name` = `tabPurchase Receipt Item`.`parent`
+            WHERE
+                `tabPurchase Receipt Item`.`purchase_order` = %s
+                AND `tabPurchase Receipt Item`.`item_code` = %s
+                AND `tabPurchase Receipt`.`docstatus` = 1
+                AND `tabPurchase Receipt`.`name` != %s
+            """,
+            (item.purchase_order, item.item_code, doc.name)
+        )[0][0] or 0
+
+        # Total received qty if this receipt is submitted
+        total_received = already_received_qty + item.received_qty
+
+        if total_received > po_qty:
+            frappe.throw(
+                f"Cannot submit Purchase Receipt {doc.name} because it would lead to total received quantity {total_received} higher than ordered quantity {po_qty} for Item {item.item_code} in Purchase Order {item.purchase_order}. Please use the button <b>View > Related Documents</b> to check."
+            )

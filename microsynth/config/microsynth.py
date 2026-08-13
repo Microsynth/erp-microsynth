@@ -128,6 +128,13 @@ def get_data():
                         "label": _("Oligo envelope sizes (CH)"),
                         "doctype": "Delivery Note",
                         "is_query_report": True
+                    },
+                    {
+                        "type": "report",
+                        "name": "Oligo Modifier Stock",
+                        "label": _("Oligo Modifier Stock"),
+                        "doctype": "Item",
+                        "is_query_report": True
                     }
             ]
         },
@@ -360,7 +367,7 @@ def get_data():
                        "type": "report",
                        "name": "Unallocated Payments",
                        "label": _("Unallocated Payments"),
-                       "doctype": _("Payment Entry"),
+                       "doctype": "Payment Entry",
                        "is_query_report": True
                    },
                    {
@@ -373,14 +380,14 @@ def get_data():
                        "type": "report",
                        "name": "Reminded Invoices",
                        "label": _("Reminded Invoices"),
-                       "doctype": _("Sales Invoice"),
+                       "doctype": "Sales Invoice",
                        "is_query_report": True
                    },
                    {
                        "type": "report",
                        "name": "Accounting Note Overview",
                        "label": _("Accounting Note Overview"),
-                       "doctype": _("Accounting Note"),
+                       "doctype": "Accounting Note",
                        "is_query_report": True
                    },
                    {
@@ -555,6 +562,13 @@ def get_data():
                        "name": "Abacus Export File Addition",
                        "label": _("Abacus Export Addition"),
                        "description": _("Abacus Export Addition")
+                    },
+                    {
+                        "type": "report",
+                        "name": "Enforced Credit Deposit Invoices",
+                        "label": _("Enforced Credit Deposit Invoices"),
+                        "doctype": "Sales Invoice",
+                        "is_query_report": True
                     }
             ]
         },
@@ -609,6 +623,13 @@ def get_data():
                         "name": "Analysis Report Monitoring",
                         "label": _("Analysis Report Monitoring"),
                         "doctype": "Analysis Report",
+                        "is_query_report": True
+                    },
+                    {
+                        "type": "report",
+                        "name": "Promo Credit Monitoring",
+                        "label": _("Promo Credit Monitoring"),
+                        "doctype": "Credit Account",
                         "is_query_report": True
                     }
             ]

@@ -4,10 +4,12 @@
 
 import re
 import json
+import traceback
 import unicodedata  # part of standard library, no installation required
-import frappe
 import socket
 from datetime import datetime
+import frappe
+from frappe.utils import formatdate
 from microsynth.microsynth.shipping import (
     get_shipping_service,
     get_shipping_item,
@@ -24,7 +26,7 @@ BRADY_PRINTER_TEMPLATE = "microsynth/templates/includes/address_label_brady.html
 def print_raw(ip, port, content):
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.connect((ip, port))
-    s.send(content.encode())
+    s.sendall((content + "\r\n").encode("utf-8"))
     s.close()  # TODO: Is this necessary? Remove to avoid connection refused errors?
 
 
@@ -359,23 +361,114 @@ def create_ups_batch_file(sales_orders):
                 ws_file.write(ws_line)
 
 
+def prepare_brady_rows(row, username, is_legacy, receipt_date):
+    row["material_code_line"] = row.get("material_code") or ""
+    row["internal_or_item_code"] = row.get("internal_code") or row.get("item_code")
+
+    # Normal mode (non-legacy)
+    if not is_legacy:
+        row["receipt_line"] = f"Receipt: {receipt_date} {username}"
+        row["shelf_life_line"] = (
+            f"Shelf life: {frappe.utils.formatdate(row.get('shelf_life_date'), 'dd.MM.yyyy')}"
+            if row.get("shelf_life_date")
+            else "Shelf life: on product"
+        )
+    # Legacy mode
+    else:
+        # No receipt / shelf life lines
+        row["receipt_line"] = ""
+        row["shelf_life_line"] = ""
+
+    # DataMatrix content
+    item = row.get("item_code", "")
+    batch = row.get("batch_no", "")
+    timestamp = row.get("timestamp", "")
+    datamatrix = f"{item}:{batch}:{timestamp}".rstrip(":")  # remove trailing colons because they are problematic in JScript datamatrix
+    row["datamatrix_content"] = (
+        f"{datamatrix}"
+        if datamatrix else ""
+    )
+
+
 @frappe.whitelist()
-def print_purchasing_labels(label_table, is_legacy=False):
-    if is_legacy:
+def print_instrument_label(qm_instrument_id, acquisition_date):
+    """
+    bench execute "microsynth.microsynth.labels.print_instrument_label" --kwargs "{'qm_instrument_id': 'QMI-00001', 'acquisition_date': '2026-05-07'}"
+    """
+    try:
+        user = frappe.get_user().name
+
+        # check if there is a user-specific printer
+        if frappe.db.exists("User Printer", user):
+            printer_name = frappe.get_value("User Printer", user, "purchase_label_printer")
+            if not printer_name:
+                return {
+                    "success": False,
+                    "message": f"No user-specific printer found for user '{user}'. Please contact IT App."
+                }
+            printer = frappe.get_doc("Brady Printer", printer_name)
+        else:
+            return {
+                "success": False,
+                "message": f"No user-specific printer found for user '{user}'. Please contact IT App."
+            }
+
+        label_data = {
+            'qm_instrument_id': qm_instrument_id,
+            'acquisition_date': formatdate(acquisition_date, "dd.mm.yyyy") if acquisition_date else "",
+            'datamatrix_content': qm_instrument_id
+        }
+        content = frappe.render_template("microsynth/templates/includes/instrument_label_brady.html", label_data)
+
+        if printer:
+            print_raw(printer.ip, printer.port, content)
+            return {
+                "success": True,
+                "message": f"Label for QM Instrument {qm_instrument_id} printed successfully on printer {printer.name}."
+            }
+        else:
+            return {
+                "success": False,
+                "message": f"Found no Brady printer for user '{user}'. Please contact IT App."
+            }
+    except Exception as err:
+        msg = f"Error printing label for QM Instrument '{qm_instrument_id}': {err}"
+        frappe.log_error(f"{msg}\n{traceback.format_exc()}", "labels.print_instrument_label")
+        return {
+            "success": False,
+            "message": f"Error printing label for QM Instrument '{qm_instrument_id}': {err}"
+        }
+
+
+@frappe.whitelist()
+def print_purchasing_labels(label_table, is_legacy=False, use_brady=True):
+    """
+    bench execute microsynth.microsynth.labels.print_purchasing_labels --kwargs "{'label_table': [{'labels_to_print':1,'item_code':'P001015','item_name':'Cap A 4.0 L 89','shelf_life_date':'2029-05-03','material_code':'Cap A','internal_code':'1015','batch_no':'HMBK8790','serial_no':'','idx':1}], 'is_legacy': False, 'use_brady': True}"
+    """
+    # Template selection
+    if use_brady:
+        purchase_label_template = "microsynth/templates/includes/purchase_label_brady.html"
+    elif is_legacy:
         purchase_label_template = "microsynth/templates/includes/purchase_label_legacy_novexx.html"
     else:
         purchase_label_template = "microsynth/templates/includes/purchase_label_novexx.html"
-    label_printer_ip = "192.0.1.73"
+
+    label_printer_ip = "192.0.1.85"  # change to 192.0.1.73 for Novexx printer
     label_printer_port = 9100
     user = frappe.get_user().name
     username = frappe.get_value("User", user, "username")
+    receipt_date = frappe.utils.formatdate(frappe.utils.nowdate(), "dd.MM.yyyy")
 
     # check if there is a user-specific printer
     if frappe.db.exists("User Printer", user):
-        printer_name = frappe.get_value("User Printer", user, "purchase_label_printer")
-        printer = frappe.get_doc("Brady Printer", printer_name)  # also used for Novexx printers
-        label_printer_ip = printer.ip
-        label_printer_port = printer.port
+        if is_legacy:
+            printer_name = frappe.get_value("User Printer", user, "stock_correction_printer")
+        else:
+            printer_name = frappe.get_value("User Printer", user, "purchase_label_printer")
+        if printer_name:
+            printer = frappe.get_doc("Brady Printer", printer_name)  # also used for Novexx printers
+            label_printer_ip = printer.ip
+            label_printer_port = printer.port
 
     if isinstance(label_table, str):
         label_table = json.loads(label_table)
@@ -390,12 +483,18 @@ def print_purchasing_labels(label_table, is_legacy=False):
             for _ in range(labels_to_print):
                 # add an individual timestamp to each label including milliseconds
                 row['timestamp'] = datetime.now().strftime("%y%m%d%H%M%S%f")[:-3]
+                if use_brady:
+                    prepare_brady_rows(row, username, is_legacy, receipt_date)
                 # Render the label
-                content = frappe.render_template(
-                    purchase_label_template,
-                    {"row": row}
-                )
-                s.send(content.encode())
+                content = frappe.render_template(purchase_label_template, {"row": row})
+                #frappe.log_error(f"DEBUG: Starting to print purchasing labels with label_table={label_table},\n\nis_legacy={is_legacy}, use_brady={use_brady}, label_printer_ip={label_printer_ip}, label_printer_port={label_printer_port},\npurchase_label_template={purchase_label_template}, username={username}, receipt_date={receipt_date},\n\ncontent={content}")
+                #return
+                # Send to printer
+                if use_brady:
+                    s.sendall((content + "\n").encode("utf-8"))
+                else:
+                    pass
+                    s.send(content.encode())
         s.close()
     except Exception as err:
         frappe.log_error(frappe.get_traceback(), "print_purchasing_labels")

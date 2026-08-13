@@ -11,6 +11,12 @@ frappe.query_reports["Training Confirmations"] = {
             "options": "User"
         },
         {
+            "fieldname": "training_status",
+            "label": __("Training Status"),
+            "fieldtype": "Select",
+            "options": "\nSigned\nUnsigned\nCancelled"
+        },
+        {
             "fieldname": "qm_process",
             "label": __("QM Process"),
             "fieldtype": "Link",
@@ -21,6 +27,13 @@ frappe.query_reports["Training Confirmations"] = {
             "label": __("QM Document"),
             "fieldtype": "Link",
             "options": "QM Document"
+        },
+        {
+            "fieldname": "qm_document_list",
+            "label": __("QM Document List"),
+            "fieldtype": "Data",
+            "length": 1000,
+            "description": __("Comma separated QM Document prefixes")
         },
         {
             "fieldname": "limit_to_valid",

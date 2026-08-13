@@ -380,7 +380,6 @@ async function print_labels(frm) {
 
 function display_mr_owners_and_storage_locations(frm) {
     // Collect info grouped by material_request.owner
-    let owner_map = {};
     let item_codes = [];
 
     // Fetch linked Material Requests and their owners
@@ -506,7 +505,7 @@ function display_mr_owners_and_storage_locations(frm) {
                                 });
                                 comment_html += `</tbody></table></div>`;
                                 // Remove existing comments to avoid duplicates
-                                frm.dashboard.clear_comments();
+                                frm.dashboard.clear_comment();
                                 // Add dashboard comment/banner
                                 frm.dashboard.add_comment(comment_html, 'blue', true);
                             });

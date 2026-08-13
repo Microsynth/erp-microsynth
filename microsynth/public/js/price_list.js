@@ -1,5 +1,9 @@
 frappe.ui.form.on('Price List', {
     refresh(frm) {
+        if ((frm.doc.name || "").includes("Sales Prices")) {
+            frm.remove_custom_button(__("Add / Edit Prices"));
+        }
+
         if (!frm.doc.__islocal && frm.doc.selling) {
             // link to pricing configurator
             frm.add_custom_button(__("Price List"), function() {

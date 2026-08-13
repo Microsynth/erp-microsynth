@@ -2,6 +2,7 @@
 # License: GNU General Public License v3. See license.txt
 
 import json
+import base64
 from datetime import date, datetime, timedelta
 import frappe
 from frappe import _
@@ -75,14 +76,14 @@ def get_applicable_customer_credits(customer, company, credit_accounts):
     """
     raw_customer_credits = get_customer_credits({'customer': customer, 'company': company, 'credit_accounts': credit_accounts, 'exclude_unpaid_deposits': True})
 
-    credits = []
+    applicable_credits = []
 
     for credit in reversed(raw_customer_credits):  # raw_customer_credits are sorted newest to oldest. We want to allocate oldest credits first.
         if 'outstanding' in credit and flt(credit['outstanding']) >= 0.01:
             if credit['credit_account'] in credit_accounts:
-                credits.append(credit)
+                applicable_credits.append(credit)
 
-    return credits
+    return applicable_credits
 
 
 def get_credit_account_balance(credit_account_id):
@@ -282,6 +283,9 @@ def book_credit(sales_invoice, credit_item=None, event=None):
 
 
 def book_promo_credit_sales_invoice(sales_invoice_id, company, promo_item_code="AC-6600"):
+    """
+    sudo bench execute microsynth.microsynth.credits.book_promo_credit_sales_invoice --kwargs "{'sales_invoice_id': 'SI-BAL-26012901', 'company': 'Microsynth Seqlab GmbH', 'promo_item_code': 'AC-6601'}"
+    """
     si_doc = frappe.get_doc("Sales Invoice", sales_invoice_id)
     # fetch Item used for advertising/promo/marketing
     promo_item = frappe.get_doc("Item", promo_item_code)
@@ -320,7 +324,7 @@ def book_promo_credit_sales_invoice(sales_invoice_id, company, promo_item_code="
             {
                 'account': expense_account,
                 'debit_in_account_currency': base_amount,
-                'exchange_rate': 1,
+                'exchange_rate': si_doc.conversion_rate,
                 'debit': base_amount,
                 'cost_center': si_doc.items[0].cost_center
             }
@@ -373,7 +377,7 @@ def create_promotion_credit_account(account_name, customer_id, company, webshop_
         customer_order_number="",
         ignore_permissions=True,
         transmit_invoice=False,
-        allow_recharge=True
+        allow_recharge=False
     )
     if not response['success']:
         frappe.throw(response.get('message'))
@@ -945,6 +949,7 @@ def change_si_credit_accounts(sales_invoice, new_credit_accounts):
     new_si.customer_credits = []
     new_si.remaining_customer_credit = None
     new_si.credit_account = None
+    new_si.discount_amount =  si_doc.discount_amount - si_doc.total_customer_credit     # reset the discount amount
     # TODO: Set the no_copy flag for fields customer_credits and credit_account on DocType Sales Invoice?
     # TODO: check date and payment due date
 
@@ -1016,9 +1021,9 @@ def get_promo_credit_amount(delivery_note_doc, promo_credit_settings):
     promo_credit_limit = promo_credit_settings.limit
     credit_percentage = promo_credit_settings.credit_percentage
     contact_person = delivery_note_doc.contact_person
-    # Get all submitted Sales Invoices with contact_person, credit_item and item_name and sum up their base_net_total
+    # Get all submitted Sales Invoices with contact_person, credit_item and item_name and sum up their net_total
     already_given_promo_credit_total = frappe.db.sql("""
-        SELECT SUM(`tabSales Invoice`.`base_net_total`)
+        SELECT SUM(`tabSales Invoice`.`net_total`)
         FROM `tabSales Invoice`
         WHERE `tabSales Invoice`.`docstatus` = 1
             AND `tabSales Invoice`.`contact_person` = %s
@@ -1030,8 +1035,8 @@ def get_promo_credit_amount(delivery_note_doc, promo_credit_settings):
                     AND `tabSales Invoice Item`.`item_name` = %s
             )
     """, (contact_person, credit_item, item_name))[0][0] or 0
-    # give max credit_percentage of the delivery note base net total as promo credit, but do not exceed the promo credit limit
-    return min(promo_credit_limit - already_given_promo_credit_total, delivery_note_doc.base_net_total * (credit_percentage / 100))
+    # give max credit_percentage of the delivery note net total as promo credit, but do not exceed the promo credit limit
+    return min(promo_credit_limit - already_given_promo_credit_total, delivery_note_doc.net_total * (credit_percentage / 100))
 
 
 def fetch_delivery_note_order_date(delivery_note_doc):
@@ -1101,6 +1106,7 @@ def create_promo_credit(delivery_note_doc, promo_credit_amount, promo_credit_set
             "account_type": "Enforced Credit",
             "company": company,
             "customer": delivery_note_doc.customer,
+            "contact_person": delivery_note_doc.contact_person,
             "currency": delivery_note_doc.currency,
             "status": "Active",
             "expiry_date": (">=", nowdate())
@@ -1116,7 +1122,7 @@ def create_promo_credit(delivery_note_doc, promo_credit_amount, promo_credit_set
         # adjust expiry date if the current expiry date is before new_expiry_date
         if not credit_account_doc.expiry_date or getdate(credit_account_doc.expiry_date) < new_expiry_date:
             credit_account_doc.expiry_date = new_expiry_date
-            credit_account_doc.save()
+            credit_account_doc.save(ignore_permissions=True)
     else:
         credit_account_name = create_credit_account(
             account_name=promo_credit_settings.credit_account_name,
@@ -1141,7 +1147,8 @@ def create_promo_credit(delivery_note_doc, promo_credit_amount, promo_credit_set
         customer=delivery_note_doc.customer,
         customer_order_number=delivery_note_doc.name,  # TODO: What to provide as po_no for the deposit invoice? It is mandatory, but could be e.g. an empty string.
         ignore_permissions=True,
-        transmit_invoice=False
+        transmit_invoice=False,
+        allow_recharge=True
     )
     if result.get("success"):
         sales_invoice_id = result.get("reference")
@@ -1210,6 +1217,32 @@ def check_and_create_promo_credit(delivery_note):
         }
 
 
+def check_and_create_promo_credits(delivery_notes):
+    """
+    Checks and creates promotional credits for a list of Delivery Notes.
+    Returns a summary of the results.
+
+    bench execute microsynth.microsynth.credits.check_and_create_promo_credits --kwargs "{'delivery_notes': ['DN-GOE-26006645', 'DN-GOE-26006655', 'DN-GOE-26006817', 'DN-GOE-26006900', 'DN-GOE-26006910', 'DN-GOE-26006915', 'DN-GOE-26006967', 'DN-GOE-26006968', 'DN-GOE-26006978', 'DN-GOE-26007055', 'DN-GOE-26007056', 'DN-GOE-26007126', 'DN-GOE-26007127', 'DN-GOE-26007129', 'DN-GOE-26007130', 'DN-GOE-26007133', 'DN-GOE-26007196', 'DN-GOE-26007197', 'DN-GOE-26007271', 'DN-GOE-26007273', 'DN-GOE-26007401']}"
+    """
+    results = []
+    for dn in delivery_notes:
+        try:
+            result = check_and_create_promo_credit(dn)
+            results.append({
+                "delivery_note": dn,
+                "success": result.get("success"),
+                "message": result.get("message")
+            })
+        except Exception as e:
+            frappe.log_error(frappe.get_traceback(), "check_and_create_promo_credits")
+            results.append({
+                "delivery_note": dn,
+                "success": False,
+                "message": f"Error processing Delivery Note {dn}: {str(e)}"
+            })
+    return results
+
+
 def delivery_note_on_submit(delivery_note, event):
     try:
         if delivery_note.product_type != "Labels":
@@ -1218,3 +1251,231 @@ def delivery_note_on_submit(delivery_note, event):
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "delivery_note_on_submit")
         print(f"Error in delivery_note_on_submit for Delivery Note {delivery_note.name}: {str(e)}")
+
+
+def get_credit_accounts_for_balance_warning():
+    """
+    Fetch Credit Accounts that have balance warning enabled and all required data to evaluate/send warnings.
+
+    bench execute microsynth.microsynth.credits.get_credit_accounts_for_balance_warning
+    """
+    return frappe.db.sql(
+        """
+        SELECT
+            `tabCredit Account`.`name`,
+            `tabCredit Account`.`account_name`,
+            `tabCredit Account`.`company`,
+            `tabCredit Account`.`currency`,
+            `tabCredit Account`.`customer`,
+            `tabCredit Account`.`contact_person`,
+            `tabCredit Account`.`threshold`,
+            `tabCredit Account`.`low_balance_warning`,
+            `tabCredit Account`.`last_notification_sent`
+        FROM `tabCredit Account`
+        WHERE
+            `tabCredit Account`.`status` = 'Active'
+            AND `tabCredit Account`.`low_balance_warning` IN ('Daily', 'Weekly', 'Monthly')
+            AND COALESCE(`tabCredit Account`.`threshold`, 0) > 0
+            AND (
+                `tabCredit Account`.`expiry_date` IS NULL
+                OR `tabCredit Account`.`expiry_date` = ''
+                OR `tabCredit Account`.`expiry_date` >= %(today)s
+            )
+        ORDER BY `tabCredit Account`.`name` ASC
+        """,
+        {"today": nowdate()},
+        as_dict=True,
+    )
+
+
+def get_credit_account_forecast_balance(credit_account_id, debug=False):
+    """
+    Return forecast balance for a Credit Account.
+    Forecast = current balance - unbilled Sales Orders + unpaid deposit invoices.
+
+    bench execute microsynth.microsynth.credits.get_credit_account_forecast_balance --kwargs "{'credit_account_id': 'CA-000990', 'debug': True}"
+    """
+    from microsynth.microsynth.api.webshop.credit_account import get_open_sales_orders, get_unpaid_deposit_invoices
+
+    current_balance = get_credit_account_balance(credit_account_id)
+    open_sales_orders = get_open_sales_orders(credit_account_id)
+    unpaid_deposit_invoices = get_unpaid_deposit_invoices(credit_account_id)
+
+    total_open_sales_order_amount = sum(flt(entry.get("unbilled_amount")) for entry in open_sales_orders)
+    total_unpaid_deposit_amount = sum(flt(entry.get("unbilled_amount")) for entry in unpaid_deposit_invoices)
+
+    forecast_balance = current_balance - total_open_sales_order_amount + total_unpaid_deposit_amount
+    if debug:
+        print(f"Credit Account ID: {credit_account_id}")
+        print(f"Current Balance: {current_balance}")
+        print(f"Total Open Sales Order Amount: {total_open_sales_order_amount}")
+        print(f"Total Unpaid Deposit Amount: {total_unpaid_deposit_amount}")
+        print(f"Forecast Balance: {forecast_balance}")
+    return round(forecast_balance, 2)
+
+
+def is_balance_warning_due(credit_account):
+    """
+    Return True if the warning cadence is due based on low_balance_warning and last_notification_sent.
+
+    bench execute microsynth.microsynth.credits.is_balance_warning_due --kwargs "{'credit_account': {'name': 'CA-000990', 'low_balance_warning': 'Weekly', 'last_notification_sent': '2024-09-20'}}"
+    """
+    last_notification_sent = credit_account.get("last_notification_sent")
+    if not last_notification_sent:
+        return True
+
+    warning_frequency_days = {
+        "Daily": 1,
+        "Weekly": 7,
+        "Monthly": 30,
+    }
+    days_until_next_warning = warning_frequency_days.get(credit_account.get("low_balance_warning"), 0)
+    if days_until_next_warning <= 0:
+        return False
+
+    last_sent_date = getdate(last_notification_sent)
+    if not last_sent_date:
+        return True
+
+    return (getdate(nowdate()) - last_sent_date).days >= days_until_next_warning
+
+
+def should_send_balance_warning(credit_account, forecast_balance):
+    """
+    Return True if a warning should be sent for the given Credit Account and forecast balance.
+
+    bench execute microsynth.microsynth.credits.should_send_balance_warning --kwargs "{'credit_account': {'name': 'CA-000990', 'threshold': 100}, 'forecast_balance': 50}"
+    """
+    threshold = flt(credit_account.get("threshold"))
+    if forecast_balance >= threshold:
+        return False
+    return True
+
+
+def send_credit_account_balance_warning(credit_account, forecast_balance, email_template_name):
+    """
+    Send a low balance warning to the Credit Account contact and update last_notification_sent.
+
+    bench execute microsynth.microsynth.credits.send_credit_account_balance_warning --kwargs "{'credit_account': {'name': 'CA-000990', 'account_name': 'Test Account', 'company': 'Microsynth AG', 'currency': 'CHF', 'customer': '840931', 'contact_person': '103039', 'threshold': 100}, 'forecast_balance': 50}"
+    """
+    recipient = frappe.get_value("Contact", credit_account.get("contact_person"), "email_id")
+    if not recipient:
+        frappe.log_error(
+            f"Could not send low balance warning for Credit Account '{credit_account.get('name')}': "
+            f"Contact '{credit_account.get('contact_person')}' has no email_id.",
+            "credits.send_credit_account_balance_warning",
+        )
+        return False
+
+    email_template = frappe.get_doc("Email Template", email_template_name)
+    context = {
+        "credit_account_id": credit_account.get("name"),
+        "credit_account_name": credit_account.get("account_name"),
+        "threshold": flt(credit_account.get("threshold")),
+        "forecast_balance": flt(forecast_balance),
+        "currency": credit_account.get("currency"),
+        "company": credit_account.get("company"),
+        "customer": credit_account.get("customer"),
+        "contact": credit_account.get("contact_person"),
+    }
+    rendered_subject = frappe.render_template(email_template.subject, context)
+    rendered_content = frappe.render_template(email_template.response, context)
+
+    attachments = None
+    try:
+        from microsynth.microsynth.api.webshop.credit_account import get_balance_sheet_pdf
+
+        balance_sheet_pdf = get_balance_sheet_pdf(credit_account.get("name"))
+        if balance_sheet_pdf.get("success") and balance_sheet_pdf.get("file"):
+            file_data = balance_sheet_pdf.get("file") or {}
+            encoded_content = file_data.get("content_base64")
+            if encoded_content:
+                attachments = [{
+                    "fname": file_data.get("file_name") or f"Balance_Sheet_{credit_account.get('name')}.pdf",
+                    "fcontent": base64.b64decode(encoded_content),
+                }]
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "credits.send_credit_account_balance_warning.attach_balance_sheet")
+
+    send_email_from_template(
+        email_template,
+        rendered_content,
+        rendered_subject=rendered_subject,
+        recipients=None,  # None will fall back to the recipients on the Email Template. TODO: Replace "None" by "recipient" once testing is done.
+        attachments=attachments,
+    )
+
+    frappe.db.set_value("Credit Account", credit_account.get("name"), "last_notification_sent", datetime.now())
+    return True
+
+
+def report_credit_account_low_balance_warnings(email_template_name="Credit Account Low Balance Warning"):
+    """
+    Check active Credit Accounts with warning settings and notify the account contact when forecast balance is below threshold.
+
+    Forecast includes open Sales Orders and unpaid deposit invoices.
+
+    Should be run by a daily cronjob, e.g.:
+    25 16 * * * cd /home/frappe/frappe-bench && /usr/local/bin/bench --site erp.microsynth.local execute microsynth.microsynth.credits.report_credit_account_low_balance_warnings
+
+    sudo bench execute microsynth.microsynth.credits.report_credit_account_low_balance_warnings
+    """
+    credit_accounts = get_credit_accounts_for_balance_warning()
+    sent = []
+    skipped = []
+
+    for credit_account in credit_accounts:
+        try:
+            if not is_balance_warning_due(credit_account):
+                skipped.append({
+                    "credit_account": credit_account.get("name"),
+                    "reason": "frequency not due",
+                })
+                continue
+
+            forecast_balance = get_credit_account_forecast_balance(credit_account.get("name"))
+            if not should_send_balance_warning(credit_account, forecast_balance):
+                skipped.append({
+                    "credit_account": credit_account.get("name"),
+                    "reason": "threshold not reached",
+                    "forecast_balance": forecast_balance,
+                })
+                continue
+
+            warning_sent = send_credit_account_balance_warning(
+                credit_account,
+                forecast_balance,
+                email_template_name=email_template_name,
+            )
+            if warning_sent:
+                sent.append({
+                    "credit_account": credit_account.get("name"),
+                    "forecast_balance": forecast_balance,
+                    "threshold": flt(credit_account.get("threshold")),
+                    "currency": credit_account.get("currency"),
+                })
+            else:
+                skipped.append({
+                    "credit_account": credit_account.get("name"),
+                    "reason": "warning email could not be sent",
+                    "forecast_balance": forecast_balance,
+                })
+        except Exception as err:
+            msg = f"Error while processing Credit Account '{credit_account.get('name')}': {err}"
+            frappe.log_error(f"{msg}\n\n{frappe.get_traceback()}", "credits.report_credit_account_low_balance_warnings")
+            skipped.append({
+                "credit_account": credit_account.get("name"),
+                "reason": str(err),
+            })
+
+    if len(sent) > 0:
+        frappe.db.commit()
+
+    return {
+        "success": True,
+        "checked": len(credit_accounts),
+        "sent": len(sent),
+        "skipped": len(skipped),
+        "sent_accounts": sent,
+        "skipped_accounts": skipped,
+    }

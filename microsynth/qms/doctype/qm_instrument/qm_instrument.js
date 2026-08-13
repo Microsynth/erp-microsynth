@@ -40,6 +40,12 @@ frappe.ui.form.on('QM Instrument', {
         };
         const company = site_company_mapping[frm.doc.site];
 
+        // remove Menu > Duplicate and Menu > New QM Instrument
+        var target ="span[data-label='" + __("Duplicate") + "']";
+        $(target).parent().parent().remove();
+        var new_target ="span[data-label='" + __("New QM Instrument") + "']";
+        $(new_target).parent().parent().remove();
+
         frm.dashboard.clear_comment();
 
         if (frm.doc.qm_process && company) {
@@ -283,9 +289,9 @@ function add_custom_buttons(frm, isProcessOwner) {
 
     if (!frm.doc.__islocal) {
         // Add button "View > Log Book" to open the QM Log Book list if the document is not local
-        frm.add_custom_button(__('Log Book'), function() {
-            frappe.set_route('List', 'QM Log Book', { 'document_type': frm.doc.doctype, 'document_name': frm.doc.name });
-        }, __('View'));
+        // frm.add_custom_button(__('Log Book'), function() {
+        //     frappe.set_route('List', 'QM Log Book', { 'document_type': frm.doc.doctype, 'document_name': frm.doc.name });
+        // }, __('View'));
 
         // Add button Create > Log Book Entry
         frm.add_custom_button(__('Log Book Entry'), function() {
@@ -307,12 +313,24 @@ function add_custom_buttons(frm, isProcessOwner) {
         }
 
         // Add button "Print Label"
-        if ((is_qau || is_manager || isProcessOwner) && frm.doc.status !== 'Disposed') {
+        if ((is_qau || is_manager || isProcessOwner || is_purchaser) && frm.doc.status !== 'Disposed') {
             frm.add_custom_button(__('Print Label'), function() {
-                frappe.msgprint(__('Not yet implemented'));
-                //window.open(`/api/method/microsynth.qms.doctype.qm_instrument.qm_instrument.print_label?instrument_name=${frm.doc.name}`, '_blank');
-            });
-        }
+                frappe.call({
+                    'method': "microsynth.microsynth.labels.print_instrument_label",
+                    'args': {
+                        'qm_instrument_id': frm.doc.name,
+                        'acquisition_date': frm.doc.acquisition_date
+                    },
+                    'callback': function(r) {
+                        if (r.message && r.message.success) {
+                            frappe.msgprint(r.message.message, 'Success');
+                        } else {
+                            frappe.msgprint(r.message ? r.message.message : __('Failed to print label. Please contact IT App.'), 'error');
+                        }
+                    }
+                });
+             });
+         }
     }
 }
 

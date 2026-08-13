@@ -3,7 +3,6 @@
 # For license information, please see license.txt
 # For more details, refer to https://github.com/Microsynth/erp-microsynth/
 
-import time
 import json
 import traceback
 from datetime import datetime
@@ -13,8 +12,7 @@ from frappe.utils import get_url_to_form
 from erpnext.selling.doctype.sales_order.sales_order import make_delivery_note
 
 from microsynth.microsynth.naming_series import get_naming_series
-from microsynth.microsynth.utils import validate_sales_order, has_items_delivered_by_supplier, get_customer
-from microsynth.microsynth.shipping import create_receiver_address_lines
+from microsynth.microsynth.utils import validate_sales_order_status, has_items_delivered_by_supplier
 
 
 def check_and_get_label(label):
@@ -154,6 +152,7 @@ def process_label_status_change(labels, target_status, required_current_statuses
         return {'success': False, 'message': "Please provide at least one Label", 'labels': None}
 
     success = True
+    disabled_customers = []
 
     try:
         # Normalize and deduplicate
@@ -232,7 +231,6 @@ def process_label_status_change(labels, target_status, required_current_statuses
             labels_to_process.append(erp_label)
 
         # Batch enable Customers (only fetch and modify disabled ones)
-        disabled_customers = []
         if customers_to_enable:
             disabled_customers_to_enable = frappe.get_all("Customer", filters={"name": ["in", list(customers_to_enable)], "disabled": 1}, fields=["name"])
             for c in disabled_customers_to_enable:
@@ -277,7 +275,7 @@ def process_label_status_change(labels, target_status, required_current_statuses
         }
 
     except Exception as err:
-        msg = f"Error setting labels to {target_status}: {err}"
+        msg = f"Error setting labels to '{target_status}':\n{labels=}\n\n {err}\n\n{disabled_customers=}"
         frappe.log_error(f"{msg}\n\n{traceback.format_exc()}", f"process_label_status_change")
         return {'success': False, 'message': msg, 'labels': None}
 
@@ -350,15 +348,39 @@ def processed_labels(content):
     return set_status("processed", content.get("labels"))
 
 
-#@frappe.whitelist(allow_guest=True)
-#def unlock_labels(content):
-#    """
-#    Set label status to 'locked'. Labels must be a list of dictionaries
-#    (see `set_status` function).
-#    """
-#    if type(content) == str:
-#        content = json.loads(content)
-#    return set_status("unknown", content.get("labels"))
+def validate_sales_order(sales_order):
+    """
+    Checks if the customer is enabled, the sales order is submitted, has an allowed
+    status, has the tax template set and there are no delivery notes in status draft, submitted.
+
+    run
+    bench execute microsynth.microsynth.utils.validate_sales_order --kwargs "{'sales_order': ''}"
+    """
+
+    if not validate_sales_order_status(sales_order):
+        return False
+
+    # Check if delivery notes exists. consider also deliver notes with the same web_order_id
+    web_order_id = frappe.get_value("Sales Order", sales_order, "web_order_id")
+    if web_order_id:
+        web_order_id_condition = f" OR `tabDelivery Note`.`web_order_id` = '{web_order_id}' "
+    else:
+        web_order_id_condition = ""
+
+    delivery_notes = frappe.db.sql(f"""
+        SELECT `tabDelivery Note Item`.`parent`
+        FROM `tabDelivery Note Item`
+        LEFT JOIN `tabDelivery Note` ON `tabDelivery Note`.`name` = `tabDelivery Note Item`.`parent`
+        WHERE `tabDelivery Note Item`.`docstatus` < 2
+            AND (`tabDelivery Note Item`.`against_sales_order` = '{sales_order}'
+                {web_order_id_condition});
+        """, as_dict=True)
+
+    if len(delivery_notes) > 0:
+        # frappe.log_error("Order '{0}' has already Delivery Notes. Cannot create a delivery note.".format(sales_order), "utils.validate_sales_order")
+        return False
+
+    return True
 
 
 def check_sales_order_completion():
@@ -744,63 +766,9 @@ def get_shipping_addresses(webshop_accounts):
 
     bench execute microsynth.microsynth.seqblatt.get_shipping_addresses --kwargs "{'webshop_accounts': ['215856', '215857']}"
     """
-    account_addresses = []
-    for webshop_account in list(set(webshop_accounts)):  # remove duplicates
-        if not webshop_account or webshop_account.strip() == "" or not isinstance(webshop_account, str):
-            return {
-                "success": False,
-                "message": "Wrong input",
-                "internal_message": f"Webshop account '{webshop_account}' is not a valid non-empty string.",
-                "account_addresses": account_addresses
-            }
-        customer_id = None
-        contact_id = None
-        address_id = None
-        try:
-            webshop_address_doc = frappe.get_doc("Webshop Address", webshop_account)
-        except frappe.DoesNotExistError as err:
-            return {
-                "success": False,
-                "message": f"Unable to get Webshop Address '{webshop_account}'",
-                "internal_message": str(err),
-                "account_addresses": account_addresses
-            }
-        for a in webshop_address_doc.addresses:
-            if a.is_default_shipping and not a.disabled:
-                customer_id = get_customer(a.contact)
-                contact_id = a.contact
-                contact_doc = frappe.get_doc("Contact", contact_id)
-                address_id = contact_doc.address
-                break
-        if customer_id and contact_id and address_id:
-            customer_name = frappe.get_value("Customer", customer_id, "customer_name")
-            shipping_address_lines = create_receiver_address_lines(customer_name, contact_id, address_id)
-        else:
-            return {
-                "success": False,
-                "message": f"Unable to get default shipping address for webshop account {webshop_account}",
-                "internal_message": f"No default shipping address found for webshop account {webshop_account}",
-                "account_addresses": account_addresses
-            }
-
-        account_addresses.append({
-            "webshop_account": webshop_account,
-            "first_name": contact_doc.first_name,
-            "last_name": contact_doc.last_name,
-            "salutation": contact_doc.salutation,
-            "title": contact_doc.designation,
-            "full_name": contact_doc.full_name,
-            "email": contact_doc.email_id,
-            "email_cc": [email.get("email_id") for email in contact_doc.get("email_ids") if email.get("email_id") != contact_doc.email_id],
-            "shipping_address_lines": shipping_address_lines
-        })
-
-    return {
-        "success": True,
-        "message": "OK",
-        "internal_message": None,
-        "account_addresses": account_addresses
-    }
+    from microsynth.microsynth.api.seqblatt import get_shipping_addresses
+    frappe.log_error(f"Called 'seqblatt.get_shipping_addresses' by {frappe.session.user}. Please change to 'api.seqblatt.get_shipping_addresses'.", "seqblatt.get_shipping_addresses")
+    return get_shipping_addresses(webshop_accounts)
 
 
 @frappe.whitelist()
@@ -840,191 +808,6 @@ def get_unused_easy_run_label_ranges():
 
     bench execute microsynth.microsynth.seqblatt.get_unused_easy_run_label_ranges
     """
-    sql_query = """
-        SELECT
-            `sequencing_label_grouped`.`contact`,
-            `sequencing_label_grouped`.`registered`,
-            `sequencing_label_grouped`.`registered_to`,
-            `sequencing_label_grouped`.`item`,
-            `sequencing_label_grouped`.`sales_order`,
-            (SELECT `web_order_id` FROM `tabSales Order` WHERE `name` = `sequencing_label_grouped`.`sales_order`) AS `web_order_id`,
-            MIN(`sequencing_label_grouped`.`label_id`) AS `barcode_start_range`,
-            MAX(`sequencing_label_grouped`.`label_id`) AS `barcode_end_range`
-        FROM (
-            SELECT
-                `tabSequencing Label`.`contact`,
-                `tabSequencing Label`.`registered`,
-                `tabSequencing Label`.`registered_to`,
-                `tabSequencing Label`.`item`,
-                `tabSequencing Label`.`sales_order`,
-                `tabSequencing Label`.`label_id`,
-                `tabSequencing Label`.`label_id` - ROW_NUMBER() OVER (
-                    PARTITION BY
-                        `tabSequencing Label`.`contact`,
-                        `tabSequencing Label`.`registered`,
-                        `tabSequencing Label`.`registered_to`,
-                        `tabSequencing Label`.`item`
-                    ORDER BY
-                        `tabSequencing Label`.`label_id`
-                ) AS `group_identifier`
-            FROM `tabSequencing Label`
-            WHERE
-                `tabSequencing Label`.`item` = '3050'
-                AND `tabSequencing Label`.`status` = 'unused'
-        ) AS `sequencing_label_grouped`
-        GROUP BY
-            `sequencing_label_grouped`.`contact`,
-            `sequencing_label_grouped`.`registered`,
-            `sequencing_label_grouped`.`registered_to`,
-            `sequencing_label_grouped`.`item`,
-            `sequencing_label_grouped`.`sales_order`,
-            `sequencing_label_grouped`.`group_identifier`
-        ORDER BY
-            `barcode_start_range`
-        """
-    ranges = frappe.db.sql(sql_query, as_dict=True)
-    return {
-        "success": True,
-        "message": "OK",
-        "internal_message": None,
-        "ranges": ranges
-    }
-
-
-### The following functions are alternative implementations of the same logic as get_unused_easy_run_label_ranges but implemented in Python without SQL window functions.
-
-# def get_unused_easy_run_label_ranges_simple():
-#     """
-#     Same as get_unused_easy_run_label_ranges but implemented in Python without SQL window functions.
-#     Should return the same result but is expected to be much slower. Used for testing and comparison.
-
-#     bench execute microsynth.microsynth.seqblatt.get_unused_easy_run_label_ranges_simple
-#     """
-#     rows = frappe.db.sql("""
-#         SELECT
-#             `contact`,
-#             `registered`,
-#             `registered_to`,
-#             `item`,
-#             `label_id`
-#         FROM `tabSequencing Label`
-#         WHERE
-#             `item` = '3050'
-#             AND `status` = 'unused'
-#         ORDER BY
-#             `contact`,
-#             `registered`,
-#             `registered_to`,
-#             `item`,
-#             `label_id`
-#     """, as_dict=True)
-
-#     # normalize types (important!)
-#     for row in rows:
-#         row["label_id"] = int(row["label_id"])
-#         row["registered"] = int(row["registered"]) if row["registered"] is not None else 0
-#         row["registered_to"] = row["registered_to"] or None
-
-#     ranges = []
-#     current = None
-
-#     for row in rows:
-#         key = (
-#             row["contact"],
-#             row["registered"],
-#             row["registered_to"],
-#             row["item"]
-#         )
-#         if current is None:
-#             current = {"key": key, "start": row["label_id"], "end": row["label_id"]}
-#             continue
-
-#         # same group + consecutive?
-#         if key == current["key"] and row["label_id"] == current["end"] + 1:
-#             current["end"] = row["label_id"]
-#         else:
-#             ranges.append({
-#                 "contact": current["key"][0],
-#                 "registered": current["key"][1],
-#                 "registered_to": current["key"][2],
-#                 "item": current["key"][3],
-#                 "barcode_start_range": current["start"],
-#                 "barcode_end_range": current["end"]
-#             })
-#             current = {"key": key, "start": row["label_id"], "end": row["label_id"]}
-
-#     # append last range
-#     if current:
-#         ranges.append({
-#             "contact": current["key"][0],
-#             "registered": current["key"][1],
-#             "registered_to": current["key"][2],
-#             "item": current["key"][3],
-#             "barcode_start_range": current["start"],
-#             "barcode_end_range": current["end"]
-#         })
-
-#     return {
-#         "success": True,
-#         "message": "OK",
-#         "internal_message": None,
-#         "ranges": ranges
-#     }
-
-
-# def compare_easy_run_label_range_methods(validate=True):
-#     """
-#     Compare SQL vs Python implementation for label range grouping.
-
-#     bench execute microsynth.microsynth.seqblatt.compare_easy_run_label_range_methods --kwargs "{'validate': True}"
-#     """
-#     # 1. SQL (window function)
-#     start_sql = time.perf_counter()
-#     sql_result = get_unused_easy_run_label_ranges()
-#     duration_sql = time.perf_counter() - start_sql
-#     print(f"Efficient SQL: {duration_sql:.6f} seconds")
-
-#     # 2. Python (simple)
-#     start_py = time.perf_counter()
-#     py_result = get_unused_easy_run_label_ranges_simple()
-#     duration_py = time.perf_counter() - start_py
-#     print(f"Efficient Python: {duration_py:.6f} seconds")
-
-#     # 3. Python (very simple)
-#     start_py_very_simple = time.perf_counter()
-#     duration_py_very_simple = time.perf_counter() - start_py_very_simple
-#     print(f"Non-efficient Python: {duration_py_very_simple:.6f} seconds")
-
-#     # 4. Validation
-#     start_validation = time.perf_counter()
-#     is_equal_sql_py = None
-
-#     if validate:
-#         def normalize(ranges):
-#             def s(val):
-#                 return val or ""
-
-#             return sorted([
-#                 (
-#                     s(r["contact"]),
-#                     int(r["registered"]) if r["registered"] is not None else 0,
-#                     s(r["registered_to"]),
-#                     s(r["item"]),
-#                     int(r["barcode_start_range"]),
-#                     int(r["barcode_end_range"]),
-#                 )
-#                 for r in ranges
-#             ])
-
-#         sql_norm = normalize(sql_result["ranges"])
-#         py_norm = normalize(py_result["ranges"])
-#         is_equal_sql_py = sql_norm == py_norm
-
-#         if not is_equal_sql_py:
-#             print("[COMPARE] ❌ Mismatch detected!")
-#             print("SQL (first 5):", sql_norm[:5])
-#             print("PY efficient (first 5):", py_norm[:5])
-
-#     duration_validation = time.perf_counter() - start_validation
-#     print(f"Validation: {duration_validation:.6f} seconds")
-#     print(f"Results identical SQL vs Efficient Python: {is_equal_sql_py}")
+    from microsynth.microsynth.api.seqblatt import get_unused_easy_run_label_ranges
+    frappe.log_error(f"Called 'seqblatt.get_unused_easy_run_label_ranges' by {frappe.session.user}. Please change to 'api.seqblatt.get_unused_easy_run_label_ranges'.", "seqblatt.get_unused_easy_run_label_ranges")
+    return get_unused_easy_run_label_ranges()

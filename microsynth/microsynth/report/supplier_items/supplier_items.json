@@ -7,7 +7,7 @@
  "doctype": "Report",
  "idx": 0,
  "is_standard": "Yes",
- "modified": "2026-01-14 10:06:59.029734",
+ "modified": "2026-05-05 12:11:25.115042",
  "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Supplier Items",
@@ -46,6 +46,9 @@
   },
   {
    "role": "Product Manager"
+  },
+  {
+   "role": "Purchase Item Manager"
   }
  ]
 }

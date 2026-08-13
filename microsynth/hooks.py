@@ -37,6 +37,7 @@ doctype_js = {
     "Contact" :           "public/js/contact.js",
     "Customer" :          "public/js/customer.js",
     "Delivery Note":      "public/js/delivery_note.js",
+    "Employee":           "public/js/employee.js",
     "File":               "public/js/file.js",
     "Item Group":         "public/js/item_group.js",
     "Item Price":         "public/js/item_price.js",
@@ -166,7 +167,7 @@ jinja = {
 # }
 doc_events = {
     "Customer": {
-        "validate": "microsynth.microsynth.shipping.validate_customer_shipping_currencies"
+        "validate": "microsynth.microsynth.shipping.validate_customer_shipping_items"
     },
     "Contact": {
         "after_insert": "microsynth.microsynth.marketing.lock_contact"
@@ -184,8 +185,8 @@ doc_events = {
     },
     "Sales Order": {
         "before_save": "microsynth.microsynth.taxes.sales_order_before_save",
-        "validate": "microsynth.microsynth.utils.validate_sales_order_items",
-        "on_submit": "microsynth.microsynth.utils.check_sales_order",
+        "validate": "microsynth.microsynth.utils.validate_sales_order",
+        "on_submit": "microsynth.microsynth.utils.sales_order_on_submit",
         "before_cancel": "microsynth.microsynth.utils.sales_order_before_cancel"
     },
     "Delivery Note": {
@@ -217,9 +218,9 @@ doc_events = {
     "Item": {
         "before_save": "microsynth.microsynth.utils.item_before_save",
     },
-    # "Purchase Receipt": {
-    #     "on_submit": "microsynth.microsynth.purchasing.send_material_request_owner_emails"  # Use custom Notification "Microsynth Material Request Receipt Notification" instead of manual email sending
-    # },
+    "Purchase Receipt": {
+        "on_submit": "microsynth.microsynth.purchasing.purchase_receipt_before_submit"
+    },
     "Job Opening": {
         "autoname": "microsynth.microsynth.hr.hr_autoname"
     },

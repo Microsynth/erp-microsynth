@@ -1,0 +1,39 @@
+{
+ "add_total_row": 0,
+ "creation": "2026-07-29 17:01:57.459306",
+ "disable_prepared_report": 1,
+ "disabled": 0,
+ "docstatus": 0,
+ "doctype": "Report",
+ "idx": 0,
+ "is_standard": "Yes",
+ "modified": "2026-08-12 15:56:16.577445",
+ "modified_by": "Administrator",
+ "module": "Microsynth",
+ "name": "Procurement Prices",
+ "owner": "Administrator",
+ "prepared_report": 0,
+ "ref_doctype": "Purchase Order",
+ "report_name": "Procurement Prices",
+ "report_type": "Script Report",
+ "roles": [
+  {
+   "role": "Purchase User"
+  },
+  {
+   "role": "Purchase Manager"
+  },
+  {
+   "role": "Stock Manager"
+  },
+  {
+   "role": "Pricing Analyst"
+  },
+  {
+   "role": "Product Manager"
+  },
+  {
+   "role": "Board Member"
+  }
+ ]
+}

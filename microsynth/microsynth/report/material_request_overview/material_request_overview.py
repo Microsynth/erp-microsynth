@@ -11,24 +11,35 @@ from microsynth.qms.report.users_by_process.users_by_process import get_users
 def get_columns(mode=None):
     columns = [
         {"label": _("Request"), "fieldname": "material_request", "fieldtype": "Dynamic Link", "options": "request_type", "width": 95},
-        {"label": _("Request Date"), "fieldname": "transaction_date", "fieldtype": "Date", "width": 95},
-        {"label": _("Required By"), "fieldname": "schedule_date", "fieldtype": "Date", "width": 85},
-        {"label": _("Item"), "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 350},
+        {"label": _("Request Date"), "fieldname": "transaction_date", "fieldtype": "Date", "width": 95}
+    ]
+    if mode == "All Material Requests":
+        columns += [
+            {"label": _("Receipt Date"), "fieldname": "receipt_date", "fieldtype": "Date", "width": 90},
+            {"label": _("TAT (d)"), "fieldname": "turnaround_time", "fieldtype": "Int", "width": 60},
+        ]
+    else:
+        columns += [
+            {"label": _("Required By"), "fieldname": "schedule_date", "fieldtype": "Date", "width": 85}
+        ]
+    columns += [
+        {"label": _("Item"), "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 330},
         #{"label": _("Item Name"), "fieldname": "item_name", "fieldtype": "Data", "width": 200},
         {"label": _("Qty"), "fieldname": "qty", "fieldtype": "Int", "width": 45},
         {"label": _("Unit"), "fieldname": "uom", "fieldtype": "Data", "width": 60},
     ]
     if mode != "To Order":
         columns += [
-            {"label": _("Ordered Qty"), "fieldname": "ordered_qty", "fieldtype": "Int", "width": 85},
+            {"label": _("Ordered Qty"), "fieldname": "ordered_qty", "fieldtype": "Int", "width": 50},
             {"label": _("Purchase Order"), "fieldname": "purchase_order", "fieldtype": "Link", "options": "Purchase Order", "width": 105},
-            {"label": _("Received Qty"), "fieldname": "received_qty", "fieldtype": "Int", "width": 95},
+            {"label": _("Received Qty"), "fieldname": "received_qty", "fieldtype": "Int", "width": 50},
+            {"label": _("Pur. Receipt"), "fieldname": "receipt", "fieldtype": "Link", "options": "Purchase Receipt", "width": 90},
         ]
     columns += [
         {"label": _("Supplier"), "fieldname": "supplier", "fieldtype": "Link", "options": "Supplier", "width": 65},
-        {"label": _("Supplier Name"), "fieldname": "supplier_name", "fieldtype": "Data", "width": 250},
+        {"label": _("Supplier Name"), "fieldname": "supplier_name", "fieldtype": "Data", "width": 220},
         {"label": _("Supplier Item Code"), "fieldname": "supplier_part_no", "fieldtype": "Data", "width": 125},
-        {"label": _("Requested By"), "fieldname": "requested_by", "fieldtype": "Link", "options": "User", "width": 150},
+        {"label": _("Requested By"), "fieldname": "requested_by", "fieldtype": "Link", "options": "User", "width": 110},
         {"label": _("Comment"), "fieldname": "comment", "fieldtype": "Data", "width": 200, "align": "left"},
         {"label": _("QM Process"), "fieldname": "qm_processes", "fieldtype": "Data", "width": 400, "align": "left"}
     ]
@@ -79,6 +90,31 @@ def get_data(filters):
     if filters and filters.get("company"):
         conditions += " AND `tabMaterial Request`.`company` = %(company)s"
         item_request_conditions += " AND `tabItem Request`.`company` = %(company)s"
+    if filters and filters.get("item_name"):
+        conditions += " AND IFNULL(`tabMaterial Request Item`.`item_name`, '') LIKE CONCAT('%%', %(item_name)s, '%%')"
+        item_request_conditions += " AND IFNULL(`tabItem Request`.`item_name`, '') LIKE CONCAT('%%', %(item_name)s, '%%')"
+    if filters and filters.get("purchase_order"):
+        conditions += """
+            AND EXISTS (
+                SELECT 1
+                FROM `tabPurchase Order Item`
+                WHERE
+                    `tabPurchase Order Item`.`docstatus` = 1
+                    AND `tabPurchase Order Item`.`material_request_item` = `tabMaterial Request Item`.`name`
+                    AND `tabPurchase Order Item`.`parent` = %(purchase_order)s
+            )
+        """
+        # Item Requests are not linked to Purchase Orders.
+        item_request_conditions += " AND 1 = 0"
+    if filters and filters.get("supplier_item_code"):
+        conditions += " AND IFNULL(`tabItem Supplier`.`supplier_part_no`, '') LIKE CONCAT('%%', %(supplier_item_code)s, '%%')"
+        item_request_conditions += " AND IFNULL(`tabItem Request`.`supplier_part_no`, '') LIKE CONCAT('%%', %(supplier_item_code)s, '%%')"
+    if filters and filters.get("comment"):
+        conditions += " AND IFNULL(`tabMaterial Request`.`comment`, '') LIKE CONCAT('%%', %(comment)s, '%%')"
+        item_request_conditions += " AND IFNULL(`tabItem Request`.`comment`, '') LIKE CONCAT('%%', %(comment)s, '%%')"
+    if filters and filters.get("requested_by"):
+        conditions += " AND IFNULL(`tabMaterial Request`.`requested_by`, `tabMaterial Request`.`owner`) = %(requested_by)s"
+        item_request_conditions += " AND `tabItem Request`.`owner` = %(requested_by)s"
 
     if mode == "All Material Requests":
         data = frappe.db.sql(f"""
@@ -86,6 +122,8 @@ def get_data(filters):
                 `tabMaterial Request`.`name` AS `material_request`,
                 'Material Request' AS `request_type`,
                 `tabMaterial Request`.`transaction_date`,
+                `pr_receipts`.`receipt_date`,
+                DATEDIFF(`pr_receipts`.`receipt_date`, `tabMaterial Request`.`transaction_date`) AS `turnaround_time`,
                 `tabMaterial Request Item`.`schedule_date`,
                 `tabMaterial Request Item`.`item_code`,
                 `tabMaterial Request Item`.`item_name`,
@@ -99,13 +137,8 @@ def get_data(filters):
                         `tabPurchase Order Item`.`docstatus` = 1
                         AND `tabPurchase Order Item`.`material_request_item` = `tabMaterial Request Item`.`name`
                 ) AS `ordered_qty`,
-                (
-                    SELECT IFNULL(SUM(`tabPurchase Receipt Item`.`qty`), 0)
-                    FROM `tabPurchase Receipt Item`
-                    WHERE
-                        `tabPurchase Receipt Item`.`docstatus` = 1
-                        AND `tabPurchase Receipt Item`.`material_request_item` = `tabMaterial Request Item`.`name`
-                ) AS `received_qty`,
+                IFNULL(`pr_receipts`.`received_qty`, 0) AS `received_qty`,
+                `pr_receipts`.`receipt` AS `receipt`,
                 (
                     SELECT `tabPurchase Order Item`.`parent`
                     FROM `tabPurchase Order Item`
@@ -124,6 +157,25 @@ def get_data(filters):
                 `tabMaterial Request Item`
             LEFT JOIN `tabMaterial Request`
                 ON `tabMaterial Request Item`.`parent` = `tabMaterial Request`.`name`
+            LEFT JOIN (
+                SELECT
+                    `tabPurchase Receipt Item`.`material_request_item`,
+                    `tabPurchase Receipt Item`.`parent` AS `receipt`,
+                    `tabPurchase Receipt`.`posting_date` AS `receipt_date`,
+                    SUM(`tabPurchase Receipt Item`.`qty`) AS `received_qty`
+                FROM `tabPurchase Receipt Item`
+                INNER JOIN `tabPurchase Receipt`
+                    ON `tabPurchase Receipt`.`name` = `tabPurchase Receipt Item`.`parent`
+                WHERE
+                    `tabPurchase Receipt Item`.`docstatus` = 1
+                    AND `tabPurchase Receipt`.`docstatus` = 1
+                    AND IFNULL(`tabPurchase Receipt Item`.`material_request_item`, '') != ''
+                GROUP BY
+                    `tabPurchase Receipt Item`.`material_request_item`,
+                    `tabPurchase Receipt`.`posting_date`,
+                    `tabPurchase Receipt Item`.`parent`
+            ) AS `pr_receipts`
+                ON `pr_receipts`.`material_request_item` = `tabMaterial Request Item`.`name`
             LEFT JOIN `tabItem Supplier`
                 ON `tabItem Supplier`.`parent` = `tabMaterial Request Item`.`item_code`
                 AND `tabItem Supplier`.`parenttype` = 'Item'
@@ -145,7 +197,7 @@ def get_data(filters):
                 AND `tabMaterial Request`.`docstatus` = 1
                 AND `tabMaterial Request`.`status` != 'Stopped'
                 {conditions}
-            ORDER BY `tabMaterial Request`.`transaction_date`, `tabMaterial Request Item`.`supplier` ASC
+            ORDER BY `tabMaterial Request`.`transaction_date`, `pr_receipts`.`receipt_date`, `tabMaterial Request Item`.`supplier` ASC
         """, filters, as_dict=True)
     elif mode == "To Receive":
         data = frappe.db.sql(f"""
@@ -175,6 +227,15 @@ def get_data(filters):
                             `tabPurchase Receipt Item`.`docstatus` = 1
                             AND `tabPurchase Receipt Item`.`material_request_item` = `tabMaterial Request Item`.`name`
                     ) AS `received_qty`,
+                    (
+                        SELECT `tabPurchase Receipt Item`.`parent`
+                        FROM `tabPurchase Receipt Item`
+                        WHERE
+                            `tabPurchase Receipt Item`.`docstatus` = 1
+                            AND `tabPurchase Receipt Item`.`material_request_item` = `tabMaterial Request Item`.`name`
+                        ORDER BY `tabPurchase Receipt Item`.`creation` DESC
+                        LIMIT 1
+                    ) AS `receipt`,
                     (
                         SELECT `tabPurchase Order Item`.`parent`
                         FROM `tabPurchase Order Item`

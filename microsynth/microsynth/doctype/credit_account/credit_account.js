@@ -28,7 +28,9 @@ frappe.ui.form.on('Credit Account', {
             cur_frm.set_df_property('customer', 'read_only', true);
             cur_frm.set_df_property('company', 'read_only', true);
             cur_frm.set_df_property('currency', 'read_only', true);
-            cur_frm.set_df_property('account_type', 'read_only', true);
+            if (!frappe.user.has_role("System Manager")) {
+                cur_frm.set_df_property('account_type', 'read_only', true);
+            }
 
             // frm.add_custom_button(__('Sales Orders'), function() {
             //     frappe.set_route("List", "Sales Order", {"credit_account": frm.doc.name});

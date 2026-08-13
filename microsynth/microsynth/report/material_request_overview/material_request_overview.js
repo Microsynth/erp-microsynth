@@ -44,10 +44,38 @@ frappe.query_reports["Material Request Overview"] = {
             label: __("QM Process"),
             fieldtype: "Link",
             options: "QM Process"
+        },
+        {
+            fieldname: "item_name",
+            label: __("Item Name"),
+            fieldtype: "Data"
+        },
+        {
+            fieldname: "purchase_order",
+            label: __("Purchase Order"),
+            fieldtype: "Link",
+            options: "Purchase Order"
+        },
+        {
+            fieldname: "supplier_item_code",
+            label: __("Supplier Item Code"),
+            fieldtype: "Data"
+        },
+        {
+            fieldname: "comment",
+            label: __("Comment"),
+            fieldtype: "Data"
+        },
+        {
+            fieldname: "requested_by",
+            label: __("Requested By"),
+            fieldtype: "Link",
+            options: "User"
         }
     ],
     "onload": (report) => {
         hide_chart_buttons();
+        hide_column_filters();
 
         report.page.add_inner_button( __("New Request"), function() {
             // open search dialog currently shown on Material Request (Button "Add Item")
@@ -69,7 +97,14 @@ frappe.query_reports["Material Request Overview"] = {
                 let row = target.getAttribute("data-row-index");
                 let column = target.getAttribute("data-col-index");
                 if (row == null || column == null) return;
-                if (parseInt(column) === 11) {
+                let target_column_number = 15;
+                let my_filters = frappe.query_report.get_filter_values();
+                if (my_filters.mode === "To Order") {
+                    target_column_number = 11;
+                } else if (my_filters.mode === "All Material Requests") {
+                    target_column_number = 16;
+                }
+                if (parseInt(column) === target_column_number) {
                     let rowData = frappe.query_report.data[row];
                     if (!rowData || !rowData.material_request) return;
                     if (rowData.request_type === "Item Request") {

@@ -6,7 +6,6 @@ from __future__ import unicode_literals
 import json
 import frappe
 from frappe import _
-from microsynth.qms.signing import check_approval_password, sign
 
 
 def get_columns():
@@ -48,6 +47,9 @@ def get_conditions(filters):
 
     if filters.get("regulatory_classification"):
         conditions += " AND `tabQM Instrument`.`regulatory_classification` = %(regulatory_classification)s"
+
+    if filters.get("site"):
+        conditions += " AND `tabQM Instrument`.`site` = %(site)s"
 
     if filters.get("qm_process"):
         conditions += " AND `tabQM Instrument`.`qm_process` = %(qm_process)s"

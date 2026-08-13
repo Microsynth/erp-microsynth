@@ -14,8 +14,9 @@ frappe.ui.form.on('QM Log Book', {
             }
         }
         if (frm.doc.__islocal && !frm.doc.document_name) {
-            frm.dashboard.add_comment(__("Please create this Log Book Entry from the QM Instrument."), "red", true);
+            frm.dashboard.add_comment(__("Please create this Log Book Entry from a QM Instrument or QM Computerised System."), "red", true);
         }
+        apply_entry_type_options(frm);
         if (!frm.doc.__islocal && frm.doc.document_type && frm.doc.document_name) {
             // do not allow to relink the log book entry to another document after it has been created
             frm.set_df_property("document_name", "read_only", true);
@@ -35,6 +36,14 @@ frappe.ui.form.on('QM Log Book', {
                 frm.page.wrapper.find('.btn-secondary').hide();
             }, 100);
         }
+
+        // remove Menu > Duplicate
+        var target ="span[data-label='" + __("Duplicate") + "']";
+        $(target).parent().parent().remove();
+
+        // Remove option Menu > New QM Log Book as log book entries should only be created via the "Create > Log Book Entry" button on the linked document (e.g. QM Instrument)
+        var target ="span[data-label='" + __("New QM Log Book") + "']";
+        $(target).parent().parent().remove();
 
         if (frm.doc.document_type === "QM Instrument" && frm.doc.status === "To Review" && frm.doc.docstatus === 1) {
             if (frappe.user_roles.includes('QAU')) {
@@ -71,11 +80,71 @@ frappe.ui.form.on('QM Log Book', {
             }
         }
 
-        // remove Menu > Duplicate
-        var target ="span[data-label='" + __("Duplicate") + "']";
-        $(target).parent().parent().remove();
+        if (frm.doc.document_type === "QM Instrument" && (frm.doc.status === "To Review" || frm.doc.status === "Closed")) {
+            // show button "Print Label"
+            frm.add_custom_button('Print Label', function() {
+                frappe.call({
+                    'method': "microsynth.qms.doctype.qm_log_book.qm_log_book.print_instrument_certification_label",
+                    'args': {
+                        'qm_log_book_entry_id': frm.doc.name
+                    },
+                    'callback': function(r) {
+                        if (r.message && r.message.success) {
+                            frappe.msgprint(r.message.message);
+                        } else {
+                            frappe.msgprint((r.message ? r.message.message : __('An error occurred while printing the label.')), 'Error');
+                        }
+                    }
+                });
+            });
+        }
+    }
+    ,
+    document_type: function(frm) {
+        apply_entry_type_options(frm);
     }
 });
+
+
+function get_allowed_entry_types(document_type) {
+    if (document_type === "QM Computerised System") {
+        return [
+            "Bugfix",
+            "Update",
+            "(Re-)Validation",
+            "Audit Trail Review",
+            "Other"
+        ];
+    }
+    if (document_type === "QM Instrument") {
+        return [
+            "Maintanance",
+            "Service",
+            "Function Control",
+            "Crash/Error",
+            "(Re-)Qualification",
+            "Verification",
+            "Calibration",
+            "Software",
+            "Other"
+        ];
+    }
+    return [];
+}
+
+
+function apply_entry_type_options(frm) {
+    const allowed = get_allowed_entry_types(frm.doc.document_type);
+    if (!allowed.length) {
+        return;
+    }
+
+    frm.set_df_property("entry_type", "options", [""].concat(allowed).join("\n"));
+
+    if (frm.doc.docstatus === 0 && frm.doc.entry_type && !allowed.includes(frm.doc.entry_type)) {
+        frm.set_value("entry_type", "");
+    }
+}
 
 
 function allow_write_access(frm) {
@@ -86,16 +155,37 @@ function allow_write_access(frm) {
 }
 
 
-function close_log_book_entry(frm) {
-    frm.set_value('status', 'Closed');
-    frm.save();
-    frm.refresh();
-    frappe.show_alert(__('Log Book Entry has been closed.'));
+function approve_and_close_log_book(frm, approval_password) {
+    frappe.call({
+        'method': 'microsynth.qms.doctype.qm_log_book.qm_log_book.approve_and_close_log_book',
+        'args': {
+            'dn': frm.doc.name,
+            'approval_password': approval_password || null,
+            'expected_modified': frm.doc.modified
+        },
+        'freeze': true,
+        'freeze_message': __('Closing Log Book Entry...'),
+        'callback': function(r) {
+            if (r.message && r.message.ok) {
+                frm.reload_doc().then(function() {
+                    if (r.message.already_closed) {
+                        frappe.show_alert(__('Log Book Entry was already closed.'));
+                    } else {
+                        frappe.show_alert(__('Log Book Entry has been closed.'));
+                    }
+                });
+            }
+        }
+    });
 }
 
+
 function show_approve_button(frm) {
-    // add button "Approve and Close" that sets the status to "Closed"
     frm.add_custom_button(__('Approve and Close'), function() {
+        if (frm.is_dirty()) {
+            frappe.msgprint(__('Please save your changes before closing this Log Book Entry.'));
+            return;
+        }
         frappe.call({
             'method': "microsynth.qms.doctype.qm_instrument.qm_instrument.is_gmp",
             'args': {
@@ -103,35 +193,17 @@ function show_approve_button(frm) {
             },
             'callback': function(r) {
                 if (r.message === true) {
-                    // If the linked QM Instrument is GMP classified, ask for approval password before allowing to close the log book entry
+                    // GMP: ask for approval password
                     frappe.prompt({
                         fieldtype: 'Password',
                         label: 'Approval Password',
                         fieldname: 'approval_password'
-                    }, function(values){
-                        frappe.call({
-                            'method': 'microsynth.qms.signing.sign',
-                            'args': {
-                                'dt': "QM Log Book",
-                                'dn': frm.doc.name,
-                                'user': frappe.session.user,
-                                'password': values.approval_password,
-                                'target_field': 'closure_signature'
-                            },
-                            "callback": function(response) {
-                                if (response.message) {
-                                    frm.set_value('closed_on', frappe.datetime.now_datetime());
-                                    frm.set_value('closed_by', frappe.session.user);
-                                    close_log_book_entry(frm);
-                                } else {
-                                    frappe.show_alert(__('Incorrect approval password. Log Book Entry has not been closed.'), 5, 'red');
-                                }
-                            }
-                        });
+                    }, function(values) {
+                        approve_and_close_log_book(frm, values.approval_password);
                     }, __('Approval Required'), __('Approve'));
-                }
-                else {  // If the linked QM Instrument is not GMP classified, directly close the log book entry without asking for approval password
-                    close_log_book_entry(frm);
+                } else {
+                    // Non-GMP: close directly, no password
+                    approve_and_close_log_book(frm);
                 }
             }
         });

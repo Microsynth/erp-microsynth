@@ -189,14 +189,14 @@ def import_job_applicants(verbose=False):
                     "is_private": 1,
                 }).insert(ignore_permissions=True)
             except Exception as e:
-                msg = f"Failed to attach file {file_path} to {doc.doctype} {doc.name}: {str(e)}"
+                msg = f"Failed to attach file `{file_path}` to {doc.doctype} {doc.name}: {str(e)}"
                 frappe.log_error(msg, "Job Applicant Import")
                 frappe.get_doc({
                     'doctype': 'Comment',
                     'comment_type': 'Comment',
                     'reference_doctype': doc.doctype,
                     'reference_name': doc.name,
-                    'subject': f"Failed to attach file: {os.path.basename(file_path)}",
+                    'subject': f"Failed to attach file: `{os.path.basename(file_path)}`",
                     'content': msg,
                     'status': 'Linked'
                 }).insert(ignore_permissions=True)
@@ -309,7 +309,7 @@ def import_job_applicants(verbose=False):
                     'reference_doctype': applicant.doctype,
                     'reference_name': applicant.name,
                     'subject': "Updated from XML import",
-                    'content': f"Existing Job Applicant {applicant.name} was updated with data from {fname} because email and job ID matched, status was still 'Open' and there was no Assessment.",
+                    'content': f"Existing Job Applicant {applicant.name} was updated with data from `{fname}` because email and job ID matched, status was still 'Open' and there was no Assessment.",
                     'status': 'Linked'
                 }).insert(ignore_permissions=True)
 
