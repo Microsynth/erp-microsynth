@@ -22,6 +22,13 @@ frappe.query_reports["Sales Order Percentiles"] = {
             fieldtype: "Select",
             options: "\nOligos\nLabels\nSequencing\nGenetic Analysis\nNGS\nFLA\nProject\nMaterial\nService",
             reqd: 0
+        },
+        {
+            fieldname: "territory",
+            label: __("Territory"),
+            fieldtype: "Link",
+            options: "Territory",
+            reqd: 0
         }
     ],
     onload: function() {
