@@ -1,6 +1,6 @@
 {
  "charts": [],
- "content": "[{\"id\":\"kQWyPtMfJo\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Purchasing</span>\",\"col\":12}},{\"id\":\"v78pk-wZI9\",\"type\":\"card\",\"data\":{\"card_name\":\"Buying\",\"col\":4}},{\"id\":\"3arncWXb7Y\",\"type\":\"card\",\"data\":{\"card_name\":\"Administration\",\"col\":4}}]",
+ "content": "[{\"id\":\"kQWyPtMfJo\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Purchasing</span>\",\"col\":12}},{\"id\":\"v78pk-wZI9\",\"type\":\"card\",\"data\":{\"card_name\":\"Buying\",\"col\":4}},{\"id\":\"3arncWXb7Y\",\"type\":\"card\",\"data\":{\"card_name\":\"Administration\",\"col\":4}},{\"id\":\"rby7OVD83z\",\"type\":\"card\",\"data\":{\"card_name\":\"Creditor Accounting \",\"col\":4}}]",
  "creation": "2026-08-13 11:39:46.881034",
  "custom_blocks": [],
  "docstatus": 0,
@@ -17,7 +17,7 @@
    "hidden": 0,
    "is_query_report": 0,
    "label": "Buying",
-   "link_count": 4,
+   "link_count": 9,
    "link_type": "DocType",
    "onboard": 0,
    "type": "Card Break"
@@ -29,6 +29,46 @@
    "link_count": 0,
    "link_to": "Material Request Overview",
    "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Stock Overview",
+   "link_count": 0,
+   "link_to": "Stock Overview",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Supplier",
+   "link_count": 0,
+   "link_to": "Supplier",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Supplier Items",
+   "link_count": 0,
+   "link_to": "Supplier Items",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Supplier Quotation",
+   "link_count": 0,
+   "link_to": "Supplier Quotation",
+   "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
   },
@@ -64,6 +104,16 @@
   },
   {
    "hidden": 0,
+   "is_query_report": 1,
+   "label": "Purchase Document Overview",
+   "link_count": 0,
+   "link_to": "Purchase Document Overview",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
    "is_query_report": 0,
    "label": "Administration",
    "link_count": 2,
@@ -74,7 +124,7 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "invoice_entry",
+   "label": "Invoice Entry",
    "link_count": 0,
    "link_to": "invoice_entry",
    "link_type": "Page",
@@ -84,15 +134,64 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "approval-manager",
+   "label": "Approval Manager",
    "link_count": 0,
    "link_to": "approval-manager",
    "link_type": "Page",
    "onboard": 0,
    "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Creditor Accounting ",
+   "link_count": 4,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Item Accounting",
+   "link_count": 0,
+   "link_to": "Item Accounting",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Purchase Invoice",
+   "link_count": 0,
+   "link_to": "Purchase Invoice",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Payment Proposal",
+   "link_count": 0,
+   "link_to": "Payment Proposal",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Payment Entry",
+   "link_count": 0,
+   "link_to": "Payment Entry",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
   }
  ],
- "modified": "2026-08-14 13:52:45.187956",
+ "modified": "2026-08-14 14:11:39.607709",
  "modified_by": "rolf.suter@microsynth.ch",
  "module": "Microsynth",
  "name": "Purchasing",
