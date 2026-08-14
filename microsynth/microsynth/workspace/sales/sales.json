@@ -94,45 +94,6 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Pricing",
-   "link_count": 3,
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Card Break"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Price List",
-   "link_count": 0,
-   "link_to": "Price List",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 1,
-   "label": "Pricing Configurator",
-   "link_count": 0,
-   "link_to": "Pricing Configurator",
-   "link_type": "Report",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 1,
-   "label": "Compare Price Lists",
-   "link_count": 0,
-   "link_to": "Compare Price Lists",
-   "link_type": "Report",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
    "label": "CRM",
    "link_count": 6,
    "link_type": "DocType",
@@ -198,9 +159,58 @@
    "link_type": "Report",
    "onboard": 0,
    "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Pricing",
+   "link_count": 4,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Price List",
+   "link_count": 0,
+   "link_to": "Price List",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Pricing Configurator",
+   "link_count": 0,
+   "link_to": "Pricing Configurator",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Compare Price Lists",
+   "link_count": 0,
+   "link_to": "Compare Price Lists",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Procurement Prices",
+   "link_count": 0,
+   "link_to": "Procurement Prices",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
   }
  ],
- "modified": "2026-08-14 13:53:56.540953",
+ "modified": "2026-08-14 14:27:13.256082",
  "modified_by": "rolf.suter@microsynth.ch",
  "module": "Microsynth",
  "name": "Sales",
