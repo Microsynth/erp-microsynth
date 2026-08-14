@@ -151,6 +151,97 @@ def create_receiver_address_lines(customer_name, contact, address):
     return rec_adr_lines
 
 
+def create_receiver_address_structured(customer_name, contact, address):
+    """Creates a structured receiver address dict and the rendered address lines."""
+
+    contact_doc = frappe.get_doc("Contact", contact) if contact else None
+    address_doc = frappe.get_doc("Address", address) if address else None
+
+    receiver_address = {
+        "customer_name": customer_name,
+        "company": None,
+        "institute": None,
+        "designation": None,
+        "first_name": None,
+        "last_name": None,
+        "full_name": None,
+        "department": None,
+        "room": None,
+        "address_line1": None,
+        "address_line2": None,
+        "city": None,
+        "pincode": None,
+        "city_pincode_line": None,
+        "country": None,
+        "lines": []
+    }
+
+    if address_doc and address_doc.overwrite_company:
+        receiver_address["company"] = address_doc.overwrite_company
+    else:
+        receiver_address["company"] = customer_name
+
+    lines = [receiver_address["company"]]
+
+    if contact_doc:
+        receiver_address["institute"] = contact_doc.institute or None
+        receiver_address["designation"] = contact_doc.designation or None
+        receiver_address["first_name"] = contact_doc.first_name or None
+        receiver_address["last_name"] = contact_doc.last_name or None
+        receiver_address["department"] = contact_doc.department or None
+        receiver_address["room"] = contact_doc.room or None
+
+        if receiver_address["institute"]:
+            lines.append(receiver_address["institute"])
+        if receiver_address["designation"]:
+            lines.append(receiver_address["designation"])
+
+        name_line = None
+        if receiver_address["first_name"] and receiver_address["first_name"] != "-":
+            name_line = receiver_address["first_name"]
+        if receiver_address["last_name"]:
+            name_line = (f"{name_line} {receiver_address['last_name']}" if name_line else receiver_address["last_name"])
+
+        receiver_address["full_name"] = name_line
+        if name_line:
+            lines.append(name_line)
+
+        if receiver_address["department"]:
+            lines.append(receiver_address["department"])
+        if receiver_address["room"]:
+            lines.append(receiver_address["room"])
+
+    if address_doc:
+        receiver_address["address_line1"] = address_doc.address_line1 or None
+        receiver_address["address_line2"] = address_doc.address_line2 or None
+        receiver_address["city"] = address_doc.city or None
+        receiver_address["pincode"] = address_doc.pincode or None
+        receiver_address["country"] = address_doc.country or None
+
+        if receiver_address["address_line1"]:
+            lines.append(receiver_address["address_line1"])
+        if receiver_address["address_line2"]:
+            lines.append(receiver_address["address_line2"])
+
+        if receiver_address["city"] and receiver_address["pincode"]:
+            if receiver_address["country"] in ["United Kingdom"]:
+                receiver_address["city_pincode_line"] = f"{receiver_address['city']} {receiver_address['pincode']}"
+            else:
+                receiver_address["city_pincode_line"] = f"{receiver_address['pincode']} {receiver_address['city']}"
+        elif receiver_address["city"]:
+            receiver_address["city_pincode_line"] = receiver_address["city"]
+        elif receiver_address["pincode"]:
+            receiver_address["city_pincode_line"] = receiver_address["pincode"]
+
+        if receiver_address["city_pincode_line"]:
+            lines.append(receiver_address["city_pincode_line"])
+        if receiver_address["country"]:
+            lines.append(receiver_address["country"])
+
+    receiver_address["lines"] = lines
+    return receiver_address
+
+
 def get_sender_address_line(sales_order, shipping_address_country):
 
     letter_head_name = ""

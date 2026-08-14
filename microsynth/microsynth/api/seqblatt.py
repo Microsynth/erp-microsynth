@@ -1,7 +1,7 @@
 import frappe
 
 from microsynth.microsynth.utils import get_customer
-from microsynth.microsynth.shipping import create_receiver_address_lines
+from microsynth.microsynth.shipping import create_receiver_address_structured
 
 @frappe.whitelist()
 def get_shipping_addresses(webshop_accounts):
@@ -20,14 +20,31 @@ def get_shipping_addresses(webshop_accounts):
                 "salutation": "Mr.",
                 "title": null,
                 "full_name": "Rolf Suter",
-                "shipping_address_lines": [
-                    "Microsynth AG",
-                    "Rolf Suter",
-                    "IT Applications",
-                    "Schützenstrasse 15",
-                    "9436 Balgach",
-                    "Switzerland"
-                ]
+                "shipping_address_lines": {
+                    "customer_name": "Microsynth AG",
+                    "company": "Microsynth AG",
+                    "institute": null,
+                    "designation": null,
+                    "first_name": "Rolf",
+                    "last_name": "Suter",
+                    "full_name": "Rolf Suter",
+                    "department": "IT Applications",
+                    "room": null,
+                    "address_line1": "Schützenstrasse 15",
+                    "address_line2": null,
+                    "city": "Balgach",
+                    "pincode": "9436",
+                    "city_pincode_line": "9436 Balgach",
+                    "country": "Switzerland",
+                    "lines": [
+                        "Microsynth AG",
+                        "Rolf Suter",
+                        "IT Applications",
+                        "Schützenstrasse 15",
+                        "9436 Balgach",
+                        "Switzerland"
+                    ]
+                }
             }
         ]
 
@@ -63,7 +80,7 @@ def get_shipping_addresses(webshop_accounts):
                 break
         if customer_id and contact_id and address_id:
             customer_name = frappe.get_value("Customer", customer_id, "customer_name")
-            shipping_address_lines = create_receiver_address_lines(customer_name, contact_id, address_id)
+            shipping_address_lines = create_receiver_address_structured(customer_name, contact_id, address_id)
         else:
             return {
                 "success": False,
