@@ -1,6 +1,6 @@
 {
  "charts": [],
- "content": "[{\"id\":\"jwvTXlZ2dS\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Sales</span>\",\"col\":12}},{\"id\":\"44yLKJzAaC\",\"type\":\"card\",\"data\":{\"card_name\":\"Quotation\",\"col\":4}},{\"id\":\"reHMrgpwwA\",\"type\":\"card\",\"data\":{\"card_name\":\"Orders\",\"col\":4}},{\"id\":\"nloytSSDDL\",\"type\":\"card\",\"data\":{\"card_name\":\"CRM\",\"col\":4}},{\"id\":\"rN7_tVSWyH\",\"type\":\"card\",\"data\":{\"card_name\":\"Pricing\",\"col\":4}}]",
+ "content": "[{\"id\":\"jwvTXlZ2dS\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Sales</span>\",\"col\":12}},{\"id\":\"44yLKJzAaC\",\"type\":\"card\",\"data\":{\"card_name\":\"Quotation\",\"col\":4}},{\"id\":\"reHMrgpwwA\",\"type\":\"card\",\"data\":{\"card_name\":\"Orders\",\"col\":4}},{\"id\":\"nloytSSDDL\",\"type\":\"card\",\"data\":{\"card_name\":\"CRM\",\"col\":4}},{\"id\":\"rN7_tVSWyH\",\"type\":\"card\",\"data\":{\"card_name\":\"Pricing\",\"col\":4}},{\"id\":\"JlYpWSxEaz\",\"type\":\"card\",\"data\":{\"card_name\":\"Product Management\",\"col\":4}},{\"id\":\"ekjvNMuEZe\",\"type\":\"card\",\"data\":{\"card_name\":\"Reporting\",\"col\":4}}]",
  "creation": "2026-04-21 12:06:33.616720",
  "custom_blocks": [],
  "docstatus": 0,
@@ -208,9 +208,97 @@
    "link_type": "Report",
    "onboard": 0,
    "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Product Management",
+   "link_count": 3,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Item",
+   "link_count": 0,
+   "link_to": "Item",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Benchmarking Information",
+   "link_count": 0,
+   "link_to": "Benchmarking Information",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Product Ideas",
+   "link_count": 0,
+   "link_to": "Product Ideas",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Reporting",
+   "link_count": 4,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Sales Overview",
+   "link_count": 0,
+   "link_to": "Sales Overview",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Revenue Export (Pivot)",
+   "link_count": 0,
+   "link_to": "Revenue Export",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Sales Analytics",
+   "link_count": 0,
+   "link_to": "Sales Analytics",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Promo Credit Monitoring",
+   "link_count": 0,
+   "link_to": "Promo Credit Monitoring",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
   }
  ],
- "modified": "2026-08-14 14:27:13.256082",
+ "modified": "2026-08-14 15:53:50.985395",
  "modified_by": "rolf.suter@microsynth.ch",
  "module": "Microsynth",
  "name": "Sales",
