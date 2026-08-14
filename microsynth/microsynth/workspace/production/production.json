@@ -1,0 +1,157 @@
+{
+ "charts": [],
+ "content": "[{\"id\":\"PPu-l0Bny8\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Production</span>\",\"col\":12}},{\"id\":\"jszAl6VtPa\",\"type\":\"card\",\"data\":{\"card_name\":\"Oligo\",\"col\":4}},{\"id\":\"CsQw5Cn63v\",\"type\":\"card\",\"data\":{\"card_name\":\"Labels\",\"col\":4}},{\"id\":\"xOYdMrJL2f\",\"type\":\"card\",\"data\":{\"card_name\":\"Reporting\",\"col\":4}}]",
+ "creation": "2026-08-14 16:55:44.187781",
+ "custom_blocks": [],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "for_user": "",
+ "hide_custom": 0,
+ "icon": "tool",
+ "idx": 0,
+ "indicator_color": "green",
+ "is_hidden": 0,
+ "label": "Production",
+ "links": [
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Oligo",
+   "link_count": 6,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Oligo",
+   "link_count": 0,
+   "link_to": "Oligo",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Oligo Orders Export",
+   "link_count": 0,
+   "link_to": "Oligo Orders Export",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Oligo Orders Ready To Package (CH)",
+   "link_count": 0,
+   "link_to": "Oligo Orders Ready To Package",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Oligo Orders Export Ready To Package (not CH)",
+   "link_count": 0,
+   "link_to": "Oligo Orders Export Ready To Package",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Oligo envelope sizes (CH)",
+   "link_count": 0,
+   "link_to": "Oligo envelope sizes",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Oligo Modifier Stock",
+   "link_count": 0,
+   "link_to": "Oligo Modifier Stock",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Labels",
+   "link_count": 3,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Label Manager",
+   "link_count": 0,
+   "link_to": "Label Manager",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Label Usage",
+   "link_count": 0,
+   "link_to": "Label Usage",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Open Label Orders",
+   "link_count": 0,
+   "link_to": "Open Label Orders",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Reporting",
+   "link_count": 1,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Analysis Report Monitoring",
+   "link_count": 0,
+   "link_to": "Analysis Report Monitoring",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  }
+ ],
+ "modified": "2026-08-14 17:01:31.504249",
+ "modified_by": "rolf.suter@microsynth.ch",
+ "module": "Microsynth",
+ "name": "Production",
+ "number_cards": [],
+ "owner": "rolf.suter@microsynth.ch",
+ "parent_page": "",
+ "public": 1,
+ "quick_lists": [],
+ "roles": [],
+ "sequence_id": 40.0,
+ "shortcuts": [],
+ "title": "Production"
+}
