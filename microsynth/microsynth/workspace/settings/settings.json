@@ -103,7 +103,7 @@
    "type": "Link"
   }
  ],
- "modified": "2026-08-14 16:24:41.593893",
+ "modified": "2026-08-14 17:05:51.061046",
  "modified_by": "rolf.suter@microsynth.ch",
  "module": "Microsynth",
  "name": "Settings",
@@ -117,7 +117,7 @@
    "role": "System Manager"
   }
  ],
- "sequence_id": 38.0,
+ "sequence_id": 40.0,
  "shortcuts": [],
  "title": "Settings"
 }
