@@ -1,0 +1,452 @@
+{
+ "charts": [],
+ "content": "[{\"id\":\"ah5TKLuh3b\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Administration</span>\",\"col\":12}},{\"id\":\"huxkEa7bic\",\"type\":\"card\",\"data\":{\"card_name\":\"Orders\",\"col\":4}},{\"id\":\"fjqNY6g7-r\",\"type\":\"card\",\"data\":{\"card_name\":\"Customer Credits\",\"col\":4}},{\"id\":\"GMV2DclF7L\",\"type\":\"card\",\"data\":{\"card_name\":\"Invoicing\",\"col\":4}},{\"id\":\"L9mspjjq9N\",\"type\":\"card\",\"data\":{\"card_name\":\"Shipping\",\"col\":4}},{\"id\":\"JGiOdriJxu\",\"type\":\"card\",\"data\":{\"card_name\":\"Accounting\",\"col\":4}},{\"id\":\"8HnODnIcUX\",\"type\":\"card\",\"data\":{\"card_name\":\"Taxes\",\"col\":4}},{\"id\":\"XoiT6VbKWb\",\"type\":\"card\",\"data\":{\"card_name\":\"Export\",\"col\":4}},{\"id\":\"Qcav1ghlFC\",\"type\":\"card\",\"data\":{\"card_name\":\"Reporting\",\"col\":4}}]",
+ "creation": "2026-08-14 16:31:05.256584",
+ "custom_blocks": [],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "for_user": "",
+ "hide_custom": 0,
+ "icon": "accounting",
+ "idx": 0,
+ "indicator_color": "green",
+ "is_hidden": 0,
+ "label": "Administration",
+ "links": [
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Orders",
+   "link_count": 3,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Orders on Hold",
+   "link_count": 0,
+   "link_to": "Orders on Hold",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Open Sales Orders",
+   "link_count": 0,
+   "link_to": "Open Sales Orders",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Open Delivery Notes",
+   "link_count": 0,
+   "link_to": "Open Delivery Notes",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Customer Credits",
+   "link_count": 2,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Customer Credits",
+   "link_count": 0,
+   "link_to": "Customer Credits",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Expired Credits",
+   "link_count": 0,
+   "link_to": "Expired Credits",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Taxes",
+   "link_count": 2,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "VAT Declaration",
+   "link_count": 0,
+   "link_to": "VAT Declaration",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Kontrolle MwSt",
+   "link_count": 0,
+   "link_to": "Kontrolle MwSt",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Invoicing",
+   "link_count": 3,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Invoiceable Services",
+   "link_count": 0,
+   "link_to": "Invoiceable Services",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Payment Reminder",
+   "link_count": 0,
+   "link_to": "Payment Reminder",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Reminded Invoices",
+   "link_count": 0,
+   "link_to": "Reminded Invoices",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Accounting",
+   "link_count": 6,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Bank Wizard",
+   "link_count": 0,
+   "link_to": "bank_wizard",
+   "link_type": "Page",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Unallocated Payments",
+   "link_count": 0,
+   "link_to": "Unallocated Payments",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Accounting Note Overview",
+   "link_count": 0,
+   "link_to": "Accounting Note Overview",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Accounts Receivable Microsynth",
+   "link_count": 0,
+   "link_to": "Accounts Receivable Microsynth",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Customer Accounts Overview",
+   "link_count": 0,
+   "link_to": "Customer Accounts Overview",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Avis Control",
+   "link_count": 0,
+   "link_to": "Avis Control",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Shipping",
+   "link_count": 4,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Customs Declaration",
+   "link_count": 0,
+   "link_to": "Customs Declaration",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Tracking Code Registration",
+   "link_count": 0,
+   "link_to": "tracking_codes",
+   "link_type": "Page",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Missing Tracking Codes",
+   "link_count": 0,
+   "link_to": "Missing Tracking Codes",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Find Tracking Code",
+   "link_count": 0,
+   "link_to": "Find Tracking Code",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Export",
+   "link_count": 8,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "DATEV Export",
+   "link_count": 0,
+   "link_to": "DATEV Export",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Fiscal Representation Export",
+   "link_count": 0,
+   "link_to": "Fiscal Representation Export",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Customer Payments",
+   "link_count": 0,
+   "link_to": "Customer Payments",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Payment Allocation",
+   "link_count": 0,
+   "link_to": "Payment Allocation",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Intrastat",
+   "link_count": 0,
+   "link_to": "Intrastat",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Abacus Export",
+   "link_count": 0,
+   "link_to": "Abacus Export File",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Abacus Export Addition",
+   "link_count": 0,
+   "link_to": "Abacus Export File Addition",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Enforced Credit Deposit Invoices",
+   "link_count": 0,
+   "link_to": "Enforced Credit Deposit Invoices",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Reporting",
+   "link_count": 7,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Shipping Times",
+   "link_count": 0,
+   "link_to": "Shipping Times",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Shipping Item Usage",
+   "link_count": 0,
+   "link_to": "Shipping Item Usage",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Invoice Summary",
+   "link_count": 0,
+   "link_to": "Invoice Summary",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Commission Calculator",
+   "link_count": 0,
+   "link_to": "Commission Calculator",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Label Accounting",
+   "link_count": 0,
+   "link_to": "Label Accounting",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Analysis Report Monitoring",
+   "link_count": 0,
+   "link_to": "Analysis Report Monitoring",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Promo Credit Monitoring",
+   "link_count": 0,
+   "link_to": "Promo Credit Monitoring",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  }
+ ],
+ "modified": "2026-08-14 16:53:18.623526",
+ "modified_by": "rolf.suter@microsynth.ch",
+ "module": "Microsynth",
+ "name": "Administration",
+ "number_cards": [],
+ "owner": "rolf.suter@microsynth.ch",
+ "parent_page": "",
+ "public": 1,
+ "quick_lists": [],
+ "roles": [],
+ "sequence_id": 39.0,
+ "shortcuts": [],
+ "title": "Administration"
+}
