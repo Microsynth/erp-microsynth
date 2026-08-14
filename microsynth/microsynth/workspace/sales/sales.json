@@ -7,9 +7,9 @@
  "doctype": "Workspace",
  "for_user": "",
  "hide_custom": 0,
- "icon": "folder-normal",
+ "icon": "sell",
  "idx": 0,
- "indicator_color": "green",
+ "indicator_color": "",
  "is_hidden": 0,
  "label": "Sales",
  "links": [
@@ -200,8 +200,8 @@
    "type": "Link"
   }
  ],
- "modified": "2026-04-21 12:31:04.719488",
- "modified_by": "Administrator",
+ "modified": "2026-08-14 13:53:56.540953",
+ "modified_by": "rolf.suter@microsynth.ch",
  "module": "Microsynth",
  "name": "Sales",
  "number_cards": [],
@@ -210,7 +210,7 @@
  "public": 1,
  "quick_lists": [],
  "roles": [],
- "sequence_id": 41.0,
+ "sequence_id": 35.0,
  "shortcuts": [],
  "title": "Sales"
 }
