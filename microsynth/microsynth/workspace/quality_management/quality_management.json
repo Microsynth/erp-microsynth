@@ -1,0 +1,312 @@
+{
+ "charts": [],
+ "content": "[{\"id\":\"JGCz5Q2bnI\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Quality Management</span>\",\"col\":12}},{\"id\":\"1tyB8M2GOl\",\"type\":\"card\",\"data\":{\"card_name\":\"Document Management\",\"col\":4}},{\"id\":\"mUIGSRbcOj\",\"type\":\"card\",\"data\":{\"card_name\":\"Nonconformities\",\"col\":4}},{\"id\":\"4slaX6zkoP\",\"type\":\"card\",\"data\":{\"card_name\":\"Change Control\",\"col\":4}},{\"id\":\"C4mVZZ7uGb\",\"type\":\"card\",\"data\":{\"card_name\":\"Instruments\",\"col\":4}},{\"id\":\"qiTojchWva\",\"type\":\"card\",\"data\":{\"card_name\":\"Analytical Procedures\",\"col\":4}},{\"id\":\"bCaXqN_9Lp\",\"type\":\"card\",\"data\":{\"card_name\":\"Complaints\",\"col\":4}},{\"id\":\"KceUvEQZdX\",\"type\":\"card\",\"data\":{\"card_name\":\"Training Courses\",\"col\":4}},{\"id\":\"pDHn9--t1V\",\"type\":\"card\",\"data\":{\"card_name\":\"Settings\",\"col\":4}}]",
+ "creation": "2026-08-14 08:18:41.615340",
+ "custom_blocks": [],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "for_user": "",
+ "hide_custom": 0,
+ "icon": "quality",
+ "idx": 0,
+ "indicator_color": "green",
+ "is_hidden": 0,
+ "label": "Quality Management",
+ "links": [
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Document Management",
+   "link_count": 6,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Document",
+   "link_count": 0,
+   "link_to": "QM Document",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Releasable Documents",
+   "link_count": 0,
+   "link_to": "Releasable Documents",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Training Confirmations",
+   "link_count": 0,
+   "link_to": "Training Confirmations",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Revision Required",
+   "link_count": 0,
+   "link_to": "Revision Required",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Review",
+   "link_count": 0,
+   "link_to": "QM Review",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Revision",
+   "link_count": 0,
+   "link_to": "QM Revision",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Nonconformities",
+   "link_count": 2,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Nonconformity",
+   "link_count": 0,
+   "link_to": "QM Nonconformity",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Pending Nonconformities",
+   "link_count": 0,
+   "link_to": "Pending Nonconformities",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Change Control",
+   "link_count": 1,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "QM Change",
+   "link_count": 0,
+   "link_to": "QM Change",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Instruments",
+   "link_count": 4,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Instrument",
+   "link_count": 0,
+   "link_to": "QM Instrument",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Instrument Compliance Due",
+   "link_count": 0,
+   "link_to": "Instrument Compliance Due",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Log Book entries",
+   "link_count": 0,
+   "link_to": "QM Log Book",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Log Book Review Required",
+   "link_count": 0,
+   "link_to": "Log Book Review Required",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Analytical Procedures",
+   "link_count": 3,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Analytical Procedure",
+   "link_count": 0,
+   "link_to": "QM Analytical Procedure",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "QM Study",
+   "link_count": 0,
+   "link_to": "QM Study",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Test Methods 17025",
+   "link_count": 0,
+   "link_to": "Test Methods 17025",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Complaints",
+   "link_count": 1,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Contact Notes",
+   "link_count": 0,
+   "link_to": "Contact Note",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Training Courses",
+   "link_count": 1,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Training Course",
+   "link_count": 0,
+   "link_to": "QM Training Course",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Settings",
+   "link_count": 3,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Signature",
+   "link_count": 0,
+   "link_to": "Signature",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "User Settings",
+   "link_count": 0,
+   "link_to": "User Settings",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "QM Process",
+   "link_count": 0,
+   "link_to": "QM Process",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  }
+ ],
+ "modified": "2026-08-14 09:22:24.315473",
+ "modified_by": "rolf.suter@microsynth.ch",
+ "module": "Microsynth",
+ "name": "Quality Management",
+ "number_cards": [],
+ "owner": "rolf.suter@microsynth.ch",
+ "parent_page": "",
+ "public": 1,
+ "quick_lists": [],
+ "roles": [],
+ "sequence_id": 43.0,
+ "shortcuts": [],
+ "title": "Quality Management"
+}
