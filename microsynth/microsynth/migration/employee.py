@@ -298,6 +298,9 @@ def import_employees(filename, dry_run=False, update_existing=True, picture_fold
             mapped_status = _employee_import_map_status(row.get("Status"), row_number)
             if mapped_status and meta.has_field("status"):
                 employee_doc.status = mapped_status
+            visa_value = _employee_import_clean(row.get("Visa"))
+            if visa_value and meta.has_field("visa"):
+                employee_doc.visa = visa_value
 
             # User link by Company Email (requested behavior)
             if company_email and meta.has_field("user_id"):
@@ -305,7 +308,6 @@ def import_employees(filename, dry_run=False, update_existing=True, picture_fold
                 if user_name:
                     employee_doc.user_id = user_name
                     counters["linked_users"] += 1
-                    visa_value = _employee_import_clean(row.get("Visa"))
                     if visa_value:
                         user_username = _employee_import_clean(frappe.db.get_value("User", user_name, "username"))
                         if user_username and visa_value.lower() != user_username.lower():
