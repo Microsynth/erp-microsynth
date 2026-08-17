@@ -49,6 +49,9 @@ def get_columns(filters):
         columns.append(
             {"label": MONTHS[m], "fieldname": f"month{m}", "fieldtype": "Integer", "width": 80, "precision": "0" }
         )
+    columns.append(
+        {"label": _("Total"), "fieldname": "total", "fieldtype": "Integer", "width": 90, "precision": "0"}
+    )
     return columns
 
 
@@ -119,15 +122,19 @@ def get_data(filters):
         if scale:
             row = {"scale": scale}
             has_month_value = False
+            row_total = 0
             for m in range (1, 13):
                 month_key = f"month{m}"
                 if month_key in months:
                     count = months[month_key]
                     row[month_key] = count
+                    row_total += count
                     has_month_value = count > 0 or has_month_value
+            row["total"] = row_total
             if scale != 'unknown' or has_month_value:
                 data.append(row)
 
+    total_row["total"] = sum(total_row.get(f"month{m}", 0) for m in range(1, 13))
     data.sort(key=_scale_sort_key)
     data.append(total_row)
     return data
