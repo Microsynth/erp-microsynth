@@ -664,6 +664,20 @@ def get_data():
                         "label": _("Product Ideas"),
                         "doctype": "Product Idea",
                         "is_query_report": True
+                    },
+                    {
+                        "type": "report",
+                        "name": "Oligo Accounting",
+                        "label": _("Sold Units Oligo Synthesis"),
+                        "doctype": "Delivery Note",
+                        "is_query_report": True
+                    },
+                    {
+                        "type": "report",
+                        "name": "Sold Units Fast Lane Analysis",
+                        "label": _("Sold Units Fast Lane Analysis"),
+                        "doctype": "Sales Invoice",
+                        "is_query_report": True
                     }
             ]
         },
