@@ -1,7 +1,7 @@
 import frappe
 
 from microsynth.microsynth.utils import get_customer
-from microsynth.microsynth.shipping import create_receiver_address_structured
+from microsynth.microsynth.shipping import create_receiver_address_lines
 
 @frappe.whitelist()
 def get_shipping_addresses(webshop_accounts):
@@ -15,36 +15,29 @@ def get_shipping_addresses(webshop_accounts):
         "account_addresses": [
             {
                 "webshop_account": "215856",
+                "customer_name": "Microsynth AG",
                 "first_name": "Rolf",
                 "last_name": "Suter",
                 "salutation": "Mr.",
                 "title": null,
                 "full_name": "Rolf Suter",
-                "shipping_address_lines": {
-                    "customer_name": "Microsynth AG",
-                    "company": "Microsynth AG",
-                    "institute": null,
-                    "designation": null,
-                    "first_name": "Rolf",
-                    "last_name": "Suter",
-                    "full_name": "Rolf Suter",
-                    "department": "IT Applications",
-                    "room": null,
-                    "address_line1": "Schützenstrasse 15",
-                    "address_line2": null,
-                    "city": "Balgach",
-                    "pincode": "9436",
-                    "city_pincode_line": "9436 Balgach",
-                    "country": "Switzerland",
-                    "lines": [
-                        "Microsynth AG",
-                        "Rolf Suter",
-                        "IT Applications",
-                        "Schützenstrasse 15",
-                        "9436 Balgach",
-                        "Switzerland"
-                    ]
-                }
+                "institute": null,
+                "department": "IT Applications",
+                "room": null,
+                "address_line1": "Schützenstrasse 15",
+                "address_line2": null,
+                "city": "Balgach",
+                "pincode": "9436",
+                "city_pincode_line": "9436 Balgach",
+                "country": "Switzerland",
+                "shipping_address_lines": [
+                    "Microsynth AG",
+                    "Rolf Suter",
+                    "IT Applications",
+                    "Schützenstrasse 15",
+                    "9436 Balgach",
+                    "Switzerland"
+                ]
             }
         ]
 
@@ -52,7 +45,7 @@ def get_shipping_addresses(webshop_accounts):
     """
     account_addresses = []
     for webshop_account in list(set(webshop_accounts)):  # remove duplicates
-        if not webshop_account or webshop_account.strip() == "" or not isinstance(webshop_account, str):
+        if not isinstance(webshop_account, str) or webshop_account.strip() == "":
             return {
                 "success": False,
                 "message": "Wrong input",
@@ -80,7 +73,8 @@ def get_shipping_addresses(webshop_accounts):
                 break
         if customer_id and contact_id and address_id:
             customer_name = frappe.get_value("Customer", customer_id, "customer_name")
-            shipping_address_lines = create_receiver_address_structured(customer_name, contact_id, address_id)
+            shipping_address_lines = create_receiver_address_lines(customer_name, contact_id, address_id)
+            address_doc = frappe.get_doc("Address", address_id)
         else:
             return {
                 "success": False,
@@ -89,13 +83,27 @@ def get_shipping_addresses(webshop_accounts):
                 "account_addresses": account_addresses
             }
 
+        city = address_doc.get("city")
+        pincode = address_doc.get("pincode")
+        city_pincode_line = " ".join(filter(None, [pincode, city]))
+
         account_addresses.append({
             "webshop_account": webshop_account,
+            "customer_name": customer_name,
             "first_name": contact_doc.first_name,
             "last_name": contact_doc.last_name,
             "salutation": contact_doc.salutation,
             "title": contact_doc.designation,
             "full_name": contact_doc.full_name,
+            "institute": contact_doc.get("institute"),
+            "department": contact_doc.get("department"),
+            "room": contact_doc.get("room"),
+            "address_line1": address_doc.get("address_line1"),
+            "address_line2": address_doc.get("address_line2"),
+            "city": city,
+            "pincode": pincode,
+            "city_pincode_line": city_pincode_line,
+            "country": address_doc.get("country"),
             "email": contact_doc.email_id,
             "email_cc": [email.get("email_id") for email in contact_doc.get("email_ids") if email.get("email_id") != contact_doc.email_id],
             "shipping_address_lines": shipping_address_lines
