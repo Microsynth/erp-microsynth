@@ -27,6 +27,33 @@ frappe.query_reports["Employee Entries and Exits"] = {
 		}
 	],
 	"onload": (report) => {
+		report.page.add_inner_button(__("Print Overview"), function () {
+			const company = report.get_filter_value("company");
+			const from_date = report.get_filter_value("from_date");
+			const to_date = report.get_filter_value("to_date");
+
+			if (!company || !from_date) {
+				frappe.msgprint(__("Please set Company and From Date before printing."));
+				return;
+			}
+
+			frappe.call({
+				method: "microsynth.microsynth.report.employee_entries_and_exits.employee_entries_and_exits.create_print_overview_pdf",
+				args: {
+					company: company,
+					from_date: from_date,
+					to_date: to_date
+				},
+				freeze: true,
+				freeze_message: __("Creating PDF ..."),
+				callback: function (response) {
+					if (response && response.message) {
+						window.open(response.message, "_blank");
+					}
+				}
+			});
+		});
+
 		hide_chart_buttons();
 	}
 };
