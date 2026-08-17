@@ -393,36 +393,30 @@ def _prepare_ups_batch_lines(sales_orders):
     return non_poland_lines, world_ship_lines, poland_lines, exported_sales_orders
 
 
-def create_daily_ups_batch_files(lookback_hours=24):
+def create_daily_ups_batch_files():
     """
     Generate two UPS batch files once per day based on Sales Orders where labels were
-    printed in the last 24 hours and no batch export timestamp is set yet.
+    printed after 14.08.2026 and no batch export timestamp is set yet.
 
-    10 11 * * * cd /home/frappe/frappe-bench && /usr/local/bin/bench --site erp.microsynth.local execute microsynth.microsynth.labels.create_daily_ups_batch_files
+    10 11 * * 1-5 cd /home/frappe/frappe-bench && /usr/local/bin/bench --site erp.microsynth.local execute microsynth.microsynth.labels.create_daily_ups_batch_files
 
-    bench execute microsynth.microsynth.labels.create_daily_ups_batch_files --kwargs "{'lookback_hours': 24}"
+    bench execute microsynth.microsynth.labels.create_daily_ups_batch_files
     """
     now_dt = frappe.utils.now_datetime()
 
-    hours_raw = lookback_hours
-    try:
-        hours = abs(int(hours_raw))
-    except (TypeError, ValueError):
-        frappe.throw(f"Invalid lookback_hours value: {hours_raw}. Please pass an integer number of hours.")
-
-    since = frappe.utils.add_to_date(now_dt, hours=-hours)
-
     # Idempotency rule: only orders with a fresh label print and without export timestamp.
+    # Process only orders strictly after 14.08.2026.
+    cutoff_date = "2026-08-14"
     sales_orders = frappe.db.sql(
         """
         SELECT `name`
         FROM `tabSales Order`
         WHERE
             `docstatus` = 1
-            AND `label_printed_on` >= %(since)s
+            AND DATE(`transaction_date`) > %(cutoff_date)s
             AND (`shipping_batch_file_exported_on` IS NULL OR `shipping_batch_file_exported_on` = '')
         """,
-        {"since": since},
+        {"cutoff_date": cutoff_date},
         as_list=True
     )
     sales_orders = [row[0] for row in sales_orders]

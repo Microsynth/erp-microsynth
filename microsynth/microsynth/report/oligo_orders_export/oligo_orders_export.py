@@ -71,6 +71,11 @@ def get_data(filters=None):
 
 @frappe.whitelist()
 def print_labels():
+    """
+    Should be run daily from Monday to Friday at 11:05 am to print labels for all open oligo orders that have not yet been printed.
+    # Print shipping labels for all open oligo export orders that have not yet been printed
+    05 11 * * 1-5 cd /home/frappe/frappe-bench && /usr/local/bin/bench --site erp.microsynth.local microsynth.microsynth.report.oligo_orders_export.oligo_orders_export.print_labels
+    """
     data = get_data(filters=None)
     orders = []
 
