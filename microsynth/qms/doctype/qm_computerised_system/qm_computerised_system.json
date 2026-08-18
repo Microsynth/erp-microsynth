@@ -10,6 +10,7 @@
   "gamp5_class",
   "regulatory_classification",
   "primary_version_control_method",
+  "atr_frequency",
   "column_break_6",
   "version",
   "status",
@@ -134,9 +135,15 @@
    "fieldtype": "Table",
    "label": "QM Documents",
    "options": "QM Document Link"
+  },
+  {
+   "description": "Audit Trail Review frequency in months (0 = never)",
+   "fieldname": "atr_frequency",
+   "fieldtype": "Int",
+   "label": "ATR frequency"
   }
  ],
- "modified": "2026-08-18 16:09:26.195284",
+ "modified": "2026-08-18 16:46:50.027163",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Computerised System",
