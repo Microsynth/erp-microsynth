@@ -246,8 +246,8 @@ def create_print_overview_pdf(company, from_date, to_date=None):
 
 	letter_head = _get_letter_head_content(company)
 	header_html = letter_head.content if letter_head and letter_head.content else ""
-	footer_html = letter_head.footer if letter_head and letter_head.footer else ""
-	header_html = _rewrite_html_image_sources(header_html)
+	footer_html = letter_head.quotation_footer if letter_head and letter_head.quotation_footer else ""
+	#header_html = _rewrite_html_image_sources(header_html)
 	footer_html = _rewrite_html_image_sources(footer_html)
 
 	content = frappe.render_template(

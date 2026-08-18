@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <meta name="generator" content="frappe"/>
   <title>Employee Entries and Exits Overview</title>
+  <link href="/assets/css/printview.css" rel="stylesheet" type="text/css"/>
+  <link href="/assets/microsynth/css/microsynth_report.css" rel="stylesheet" type="text/css"/>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -80,55 +82,63 @@
   </style>
 </head>
 <body>
-  {{ header_html }}
-
-  {% if joiners %}
-    <div class="section-title">We warmly welcome</div>
-    {% for employee in joiners %}
-      <div class="emp-row">
-        <div class="emp-image-wrap">
-          <div class="emp-image-frame">
-            {% if employee.image_url %}
-              <img src="{{ employee.image_url }}" class="emp-image"/>
-            {% endif %}
-          </div>
-        </div>
-        <div class="emp-content">
-          <div class="emp-name">{{ employee.employee_name | e }}</div>
-          <div class="emp-line">{{ employee.qm_or_department | e }}</div>
-          <div class="emp-line"><b>Date of Joining:</b> {{ employee.date_of_joining | e }}</div>
-          {% if employee.relieving_date %}
-            <div class="emp-line"><b>Date of Leaving:</b> {{ employee.relieving_date | e }}</div>
-          {% endif %}
-        </div>
+  <div class="print-format-gutter">
+    <div class="print-format">
+      <div id="header-html" class="hidden-pdf">
+        {{ header_html }}
       </div>
-    {% endfor %}
-    <div class="section-subtitle">and wish them a great start.</div>
-  {% endif %}
 
-  {% if leavers %}
-    <div class="section-title section-title-leavers">Unfortunately, the following colleagues are leaving us</div>
-    {% for employee in leavers %}
-      <div class="emp-row">
-        <div class="emp-image-wrap">
-          <div class="emp-image-frame">
-            {% if employee.image_url %}
-              <img src="{{ employee.image_url }}" class="emp-image"/>
-            {% endif %}
-          </div>
-        </div>
-        <div class="emp-content">
-          <div class="emp-name">{{ employee.employee_name | e }}</div>
-          <div class="emp-line">{{ employee.qm_or_department | e }}</div>
-          <div class="emp-line"><b>Date of Joining:</b> {{ employee.date_of_joining | e }}</div>
-          {% if employee.relieving_date %}
-            <div class="emp-line"><b>Date of Leaving:</b> {{ employee.relieving_date | e }}</div>
-          {% endif %}
-        </div>
+      <div id="footer-html" class="hidden-pdf">
+        {{ footer_html }}
       </div>
-    {% endfor %}
-  {% endif %}
 
-  {# {{ footer_html }} #}
+      {% if joiners %}
+        <div class="section-title">We warmly welcome</div>
+        {% for employee in joiners %}
+          <div class="emp-row">
+            <div class="emp-image-wrap">
+              <div class="emp-image-frame">
+                {% if employee.image_url %}
+                  <img src="{{ employee.image_url }}" class="emp-image"/>
+                {% endif %}
+              </div>
+            </div>
+            <div class="emp-content">
+              <div class="emp-name">{{ employee.employee_name | e }}</div>
+              <div class="emp-line">{{ employee.qm_or_department | e }}</div>
+              <div class="emp-line"><b>Date of Joining:</b> {{ employee.date_of_joining | e }}</div>
+              {% if employee.relieving_date %}
+                <div class="emp-line"><b>Date of Leaving:</b> {{ employee.relieving_date | e }}</div>
+              {% endif %}
+            </div>
+          </div>
+        {% endfor %}
+        <div class="section-subtitle">and wish them a great start.</div>
+      {% endif %}
+
+      {% if leavers %}
+        <div class="section-title section-title-leavers">Unfortunately, the following colleagues are leaving us</div>
+        {% for employee in leavers %}
+          <div class="emp-row">
+            <div class="emp-image-wrap">
+              <div class="emp-image-frame">
+                {% if employee.image_url %}
+                  <img src="{{ employee.image_url }}" class="emp-image"/>
+                {% endif %}
+              </div>
+            </div>
+            <div class="emp-content">
+              <div class="emp-name">{{ employee.employee_name | e }}</div>
+              <div class="emp-line">{{ employee.qm_or_department | e }}</div>
+              <div class="emp-line"><b>Date of Joining:</b> {{ employee.date_of_joining | e }}</div>
+              {% if employee.relieving_date %}
+                <div class="emp-line"><b>Date of Leaving:</b> {{ employee.relieving_date | e }}</div>
+              {% endif %}
+            </div>
+          </div>
+        {% endfor %}
+      {% endif %}
+    </div>
+  </div>
 </body>
 </html>
