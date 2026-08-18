@@ -35,8 +35,109 @@ frappe.ui.form.on('QM Computerised System', {
 			apply_field_permissions(frm, false);
             add_custom_buttons(frm, false);
         }
+
+        ensure_dashboard_reference_entries(frm);
+        hide_selected_dashboard_add_buttons(frm);
+        update_dashboard_reference_links(frm);
 	}
 });
+
+
+function ensure_dashboard_reference_entries(frm) {
+    const hasChange = !!find_dashboard_link(frm, 'QM Change').length;
+    const hasNonconformity = !!find_dashboard_link(frm, 'QM Nonconformity').length;
+
+    if (!hasChange || !hasNonconformity) {
+        frm.dashboard.add_transactions([
+            {
+                label: __('Related Documents'),
+                items: ['QM Change', 'QM Nonconformity']
+            }
+        ]);
+    }
+}
+
+
+function hide_selected_dashboard_add_buttons(frm) {
+    ['QM Change', 'QM Nonconformity'].forEach(function(doctype) {
+        const $link = find_dashboard_link(frm, doctype);
+        if (!$link.length) {
+            return;
+        }
+
+        $link.closest('.document-link').find('.btn-new').css('visibility', 'hidden');
+    });
+}
+
+
+function find_dashboard_link(frm, doctype) {
+    let $link = frm.dashboard.transactions_area.find(`a[data-doctype="${doctype}"]`).first();
+    if ($link.length) {
+        return $link;
+    }
+
+    return frm.dashboard.transactions_area.find('a').filter(function() {
+        return ($(this).text() || '').trim().startsWith(doctype);
+    }).first();
+}
+
+
+function set_dashboard_count($link, count) {
+    if (!$link || !$link.length) {
+        return;
+    }
+
+    $link.find('.qmcs-linked-count').remove();
+    $link.append(` <span class="qmcs-linked-count text-muted">(${count})</span>`);
+}
+
+
+function set_dashboard_route_handler($link, doctype, names) {
+    if (!$link || !$link.length) {
+        return;
+    }
+
+    $link.off('click.qmcs').on('click.qmcs', function(e) {
+        e.preventDefault();
+        if (names && names.length) {
+            frappe.set_route('List', doctype, {
+                name: ['in', names]
+            });
+            return;
+        }
+
+        frappe.set_route('List', doctype, {
+            name: ['in', ['__no_linked_records__']]
+        });
+    });
+}
+
+
+function update_dashboard_reference_links(frm) {
+    if (frm.doc.__islocal || !frm.doc.name) {
+        return;
+    }
+
+    frappe.call({
+        method: 'microsynth.qms.doctype.qm_computerised_system.qm_computerised_system.get_linked_qm_documents',
+        args: {
+            qm_computerised_system: frm.doc.name
+        },
+        callback: function(r) {
+            const data = r.message || {};
+            const changeNames = data.qm_change_names || [];
+            const nonconformityNames = data.qm_nonconformity_names || [];
+
+            const $changeLink = find_dashboard_link(frm, 'QM Change');
+            set_dashboard_count($changeLink, data.qm_change_count || 0);
+            set_dashboard_route_handler($changeLink, 'QM Change', changeNames);
+
+            const $nonconformityLink = find_dashboard_link(frm, 'QM Nonconformity');
+            set_dashboard_count($nonconformityLink, data.qm_nonconformity_count || 0);
+            set_dashboard_route_handler($nonconformityLink, 'QM Nonconformity', nonconformityNames);
+        }
+    });
+}
 
 
 function get_allowed_transitions(frm, isProcessOwner) {

@@ -120,3 +120,57 @@ def create_new_version(doc, user=None):
 		'name': new_doc.name,
 		'url': get_url_to_form("QM Computerised System", new_doc.name)
 	}
+
+
+@frappe.whitelist()
+def get_linked_qm_documents(qm_computerised_system):
+	change_parent_rows = frappe.get_all(
+		"QM Computerised System Link",
+		filters={
+			"parenttype": "QM Change",
+			"qm_computerised_system": qm_computerised_system
+		},
+		fields=["parent"]
+	)
+	nonconformity_parent_rows = frappe.get_all(
+		"QM Computerised System Link",
+		filters={
+			"parenttype": "QM Nonconformity",
+			"qm_computerised_system": qm_computerised_system
+		},
+		fields=["parent"]
+	)
+
+	change_parents = [row.get("parent") for row in change_parent_rows if row.get("parent")]
+	nonconformity_parents = [row.get("parent") for row in nonconformity_parent_rows if row.get("parent")]
+
+	change_names = []
+	if change_parents:
+		change_rows = frappe.get_all(
+			"QM Change",
+			filters={
+				"name": ["in", sorted(set(change_parents))],
+				"docstatus": ["<", 2]
+			},
+			fields=["name"]
+		)
+		change_names = [row.get("name") for row in change_rows if row.get("name")]
+
+	nonconformity_names = []
+	if nonconformity_parents:
+		nonconformity_rows = frappe.get_all(
+			"QM Nonconformity",
+			filters={
+				"name": ["in", sorted(set(nonconformity_parents))],
+				"docstatus": ["<", 2]
+			},
+			fields=["name"]
+		)
+		nonconformity_names = [row.get("name") for row in nonconformity_rows if row.get("name")]
+
+	return {
+		"qm_change_names": change_names,
+		"qm_change_count": len(change_names),
+		"qm_nonconformity_names": nonconformity_names,
+		"qm_nonconformity_count": len(nonconformity_names)
+	}
