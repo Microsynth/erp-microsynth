@@ -59,7 +59,7 @@ function ensure_dashboard_reference_entries(frm) {
 
 
 function hide_selected_dashboard_add_buttons(frm) {
-    ['QM Change', 'QM Nonconformity'].forEach(function(doctype) {
+    ['QM Log Book', 'QM Change', 'QM Nonconformity'].forEach(function(doctype) {
         const $link = find_dashboard_link(frm, doctype);
         if (!$link.length) {
             return;
@@ -88,7 +88,7 @@ function set_dashboard_count($link, count) {
     }
 
     $link.find('.qmcs-linked-count').remove();
-    $link.append(` <span class="qmcs-linked-count text-muted">(${count})</span>`);
+    $link.append(' <span class="qmcs-linked-count text-muted">&nbsp;&nbsp;' + count + '</span>');
 }
 
 
