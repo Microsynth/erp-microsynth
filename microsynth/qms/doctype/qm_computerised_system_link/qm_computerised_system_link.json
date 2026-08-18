@@ -20,12 +20,13 @@
    "fetch_from": "qm_computerised_system.cs_name",
    "fieldname": "cs_name",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Name"
   }
  ],
  "istable": 1,
- "modified": "2026-08-17 14:22:05.231883",
- "modified_by": "Administrator",
+ "modified": "2026-08-18 16:07:53.237208",
+ "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Computerised System Link",
  "owner": "Administrator",

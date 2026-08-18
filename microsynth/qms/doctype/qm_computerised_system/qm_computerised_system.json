@@ -18,6 +18,8 @@
   "responsible_user",
   "section_break_12",
   "description",
+  "section_break_14",
+  "qm_documents",
   "naming_series"
  ],
  "fields": [
@@ -122,9 +124,19 @@
    "hidden": 1,
    "label": "Naming Series",
    "options": "QMCS-.#####"
+  },
+  {
+   "fieldname": "section_break_14",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "qm_documents",
+   "fieldtype": "Table",
+   "label": "QM Documents",
+   "options": "QM Document Link"
   }
  ],
- "modified": "2026-08-10 13:42:32.345904",
+ "modified": "2026-08-18 16:01:56.077114",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Computerised System",
