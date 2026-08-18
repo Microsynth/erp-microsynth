@@ -104,7 +104,7 @@
    "fieldname": "responsible_user",
    "fieldtype": "Link",
    "in_standard_filter": 1,
-   "label": "Responsible User",
+   "label": "Responsible Person",
    "options": "User"
   },
   {
@@ -136,7 +136,7 @@
    "options": "QM Document Link"
   }
  ],
- "modified": "2026-08-18 16:01:56.077114",
+ "modified": "2026-08-18 16:09:26.195284",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Computerised System",
