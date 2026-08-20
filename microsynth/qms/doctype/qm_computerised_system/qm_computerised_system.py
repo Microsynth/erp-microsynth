@@ -8,6 +8,7 @@ import frappe
 from frappe.utils import get_url_to_form
 from frappe.model.document import Document
 from frappe.model.naming import make_autoname
+from microsynth.qms.doctype.qm_document.qm_document import get_valid_version
 
 
 class QMComputerisedSystem(Document):
@@ -18,6 +19,54 @@ class QMComputerisedSystem(Document):
 
         # Default naming for freshly created QMCS records.
         self.name = make_autoname(self.naming_series or "QMCS-.#####")
+
+    def get_advanced_dashboard(self):
+        html = frappe.render_template(
+            "microsynth/qms/doctype/qm_computerised_system/advanced_dashboard.html",
+            {
+                "doc": self,
+                "changes": self.get_qm_changes(),
+                "qm_documents": self.get_qm_documents()
+            }
+        )
+        return html
+
+    def get_qm_documents(self):
+        """
+        Fetch a list of all QM Documents linked on this QM Computerised System.
+        If a linked document is not Valid, try to find the latest Valid version.
+        """
+        relating_docs = []
+        for doc in self.qm_documents:
+            if frappe.get_value("QM Document", doc.qm_document, "status") == "Valid":
+                relating_docs.append(doc.qm_document)
+                continue
+
+            without_version = doc.qm_document.split("-")[0]
+            valid_doc = get_valid_version(without_version)
+            if valid_doc:
+                relating_docs.append(valid_doc.get("name"))
+
+        return relating_docs
+
+    def get_qm_changes(self):
+        """
+        Fetch all QM Changes that are not cancelled and link to this system.
+        """
+        return frappe.db.sql(
+            """
+            SELECT `tabQM Change`.`name`, `tabQM Change`.`cc_type`, `tabQM Change`.`title`, `tabQM Change`.`status`, `tabQM Change`.`creation`
+            FROM `tabQM Change`
+            JOIN `tabQM Computerised System Link`
+                ON `tabQM Computerised System Link`.`parent` = `tabQM Change`.`name`
+                AND `tabQM Computerised System Link`.`parenttype` = 'QM Change'
+            WHERE `tabQM Computerised System Link`.`qm_computerised_system` = %s
+                AND `tabQM Change`.`status` != 'Cancelled'
+            ORDER BY `tabQM Change`.`creation` DESC
+            """,
+            (self.name,),
+            as_dict=True
+        )
 
 
 def _get_qmcs_base_name(name):

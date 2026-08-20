@@ -36,6 +36,17 @@ frappe.ui.form.on('QM Computerised System', {
             add_custom_buttons(frm, false);
         }
 
+        if (!frm.doc.__islocal) {
+            // display an advanced dashboard
+            frappe.call({
+                'method': 'get_advanced_dashboard',
+                'doc': frm.doc,
+                'callback': function(r) {
+                    cur_frm.set_df_property('overview', 'options', r.message);
+                }
+            });
+        }
+
         ensure_dashboard_reference_entries(frm);
         hide_selected_dashboard_add_buttons(frm);
         update_dashboard_reference_links(frm);
