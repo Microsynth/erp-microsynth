@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="generator" content="frappe"/>
+  <title>Employee Entries and Exits Overview</title>
+  <link href="/assets/css/printview.css" rel="stylesheet" type="text/css"/>
+  <link href="/assets/microsynth/css/microsynth_report.css" rel="stylesheet" type="text/css"/>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      color: #1f2937;
+      font-size: 12px;
+    }
+
+    .section-title {
+      font-size: 18px;
+      margin: 18px 0 8px 0;
+      font-weight: 600;
+    }
+
+    .section-title-leavers {
+      margin-top: 36px;
+    }
+
+    .section-subtitle {
+      font-size: 14px;
+      margin: 12px 0;
+    }
+
+    .emp-row {
+      display: table;
+      width: 100%;
+      border-top: 1px solid #d1d5db;
+      padding: 10px 0;
+    }
+
+    .emp-image-wrap {
+      display: table-cell;
+      width: 105px;
+      vertical-align: top;
+    }
+
+    .emp-image {
+      max-width: 90px;
+      max-height: 90px;
+      width: auto;
+      height: auto;
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      margin: auto;
+    }
+
+    .emp-image-frame {
+      position: relative;
+      width: 90px;
+      height: 90px;
+      border-radius: 4px;
+      border: 1px solid #e5e7eb;
+      background: #f3f4f6;
+      overflow: hidden;
+    }
+
+    .emp-content {
+      display: table-cell;
+      vertical-align: top;
+    }
+
+    .emp-name {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .emp-line {
+      margin-bottom: 2px;
+    }
+  </style>
+</head>
+<body>
+  <div class="print-format-gutter">
+    <div class="print-format">
+      <div id="header-html" class="hidden-pdf">
+        {{ header_html }}
+      </div>
+
+      <div id="footer-html" class="hidden-pdf">
+        {{ footer_html }}
+      </div>
+
+      {% if joiners %}
+        <div class="section-title">We warmly welcome</div>
+        {% for employee in joiners %}
+          <div class="emp-row">
+            <div class="emp-image-wrap">
+              <div class="emp-image-frame">
+                {% if employee.image_url %}
+                  <img src="{{ employee.image_url }}" class="emp-image"/>
+                {% endif %}
+              </div>
+            </div>
+            <div class="emp-content">
+              <div class="emp-name">{{ employee.employee_name | e }}</div>
+              <div class="emp-line">{{ employee.qm_or_department | e }}</div>
+              <div class="emp-line"><b>Date of Joining:</b> {{ employee.date_of_joining | e }}</div>
+              {% if employee.relieving_date %}
+                <div class="emp-line"><b>Date of Leaving:</b> {{ employee.relieving_date | e }}</div>
+              {% endif %}
+            </div>
+          </div>
+        {% endfor %}
+        <div class="section-subtitle">and wish them a great start.</div>
+      {% endif %}
+
+      {% if leavers %}
+        <div class="section-title section-title-leavers">Unfortunately, the following colleagues are leaving us</div>
+        {% for employee in leavers %}
+          <div class="emp-row">
+            <div class="emp-image-wrap">
+              <div class="emp-image-frame">
+                {% if employee.image_url %}
+                  <img src="{{ employee.image_url }}" class="emp-image"/>
+                {% endif %}
+              </div>
+            </div>
+            <div class="emp-content">
+              <div class="emp-name">{{ employee.employee_name | e }}</div>
+              <div class="emp-line">{{ employee.qm_or_department | e }}</div>
+              <div class="emp-line"><b>Date of Joining:</b> {{ employee.date_of_joining | e }}</div>
+              {% if employee.relieving_date %}
+                <div class="emp-line"><b>Date of Leaving:</b> {{ employee.relieving_date | e }}</div>
+              {% endif %}
+            </div>
+          </div>
+        {% endfor %}
+      {% endif %}
+    </div>
+  </div>
+</body>
+</html>

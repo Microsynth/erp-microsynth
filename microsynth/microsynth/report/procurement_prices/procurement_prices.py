@@ -4,6 +4,7 @@
 from __future__ import unicode_literals
 import frappe
 from frappe import _
+from frappe.utils import cint
 
 
 def get_columns():
@@ -33,6 +34,8 @@ def get_order_history(filters):
 		"`tabPurchase Order`.`docstatus` = 1",
 		"`tabPurchase Order Item`.`item_code` != 'P020000'",
 	]
+	if not cint(filters.get("include_disabled_items")):
+		conditions.append("IFNULL(`tabItem`.`disabled`, 0) = 0")
 	if filters.get("from_date"):
 		conditions.append("`tabPurchase Order`.`transaction_date` >= %(from_date)s")
 	if filters.get("to_date"):
@@ -95,8 +98,11 @@ def get_order_history(filters):
 
 
 def get_buying_prices(filters):
-	conditions = ["`tabItem`.`item_group` = 'Purchasing'", "`tabItem`.`disabled` = 0"]
+	conditions = ["`tabItem`.`item_group` = 'Purchasing'"]
 	item_default_join = "`tabItem Default`.`parent` = `tabItem`.`name` AND `tabItem Default`.`idx` = 1"
+
+	if not cint(filters.get("include_disabled_items")):
+		conditions.append("`tabItem`.`disabled` = 0")
 
 	if filters.get("from_date"):
 		conditions.append("IFNULL(`tabItem Price`.`valid_from`, `tabItem Price`.`creation`) >= %(from_date)s")

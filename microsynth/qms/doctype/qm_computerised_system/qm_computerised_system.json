@@ -10,6 +10,7 @@
   "gamp5_class",
   "regulatory_classification",
   "primary_version_control_method",
+  "atr_frequency",
   "column_break_6",
   "version",
   "status",
@@ -18,6 +19,8 @@
   "responsible_user",
   "section_break_12",
   "description",
+  "section_break_14",
+  "qm_documents",
   "naming_series"
  ],
  "fields": [
@@ -102,7 +105,7 @@
    "fieldname": "responsible_user",
    "fieldtype": "Link",
    "in_standard_filter": 1,
-   "label": "Responsible User",
+   "label": "Responsible Person",
    "options": "User"
   },
   {
@@ -122,9 +125,25 @@
    "hidden": 1,
    "label": "Naming Series",
    "options": "QMCS-.#####"
+  },
+  {
+   "fieldname": "section_break_14",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "qm_documents",
+   "fieldtype": "Table",
+   "label": "QM Documents",
+   "options": "QM Document Link"
+  },
+  {
+   "description": "Audit Trail Review frequency in months (0 = never)",
+   "fieldname": "atr_frequency",
+   "fieldtype": "Int",
+   "label": "ATR frequency"
   }
  ],
- "modified": "2026-08-10 13:42:32.345904",
+ "modified": "2026-08-18 16:46:50.027163",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Computerised System",

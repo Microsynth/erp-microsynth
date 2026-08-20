@@ -8,10 +8,13 @@ import frappe
 def execute(filters=None):
     if not filters:
         filters = {}
+    else:
+        filters = dict(filters)
 
     from_date = filters.get("from_date")
     to_date = filters.get("to_date")
     product_type = filters.get("product_type")
+    territory = filters.get("territory")
 
     conditions = ["docstatus = 1", "base_total > 0"]
 
@@ -21,6 +24,16 @@ def execute(filters=None):
         conditions.append("transaction_date <= %(to_date)s")
     if product_type:
         conditions.append("product_type = %(product_type)s")
+    if territory:
+        territory_node = frappe.db.get_value(
+            "Territory", territory, ["lft", "rgt"], as_dict=True
+        )
+        if territory_node:
+            filters["territory_lft"] = territory_node.lft
+            filters["territory_rgt"] = territory_node.rgt
+            conditions.append(
+                "territory IN (SELECT name FROM `tabTerritory` WHERE lft >= %(territory_lft)s AND rgt <= %(territory_rgt)s)"
+            )
 
     condition_sql = " AND ".join(conditions)
 

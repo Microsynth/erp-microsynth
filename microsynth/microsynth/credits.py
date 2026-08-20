@@ -72,16 +72,33 @@ def get_applicable_customer_credits(customer, company, credit_accounts):
     """
     Return the customer credits for the specified credit accounts. Excludes unpaid deposits.
     Run
-    bench execute microsynth.microsynth.credits.get_applicable_customer_credits --kwargs "{ 'customer': '35444224', 'company': 'Microsynth Austria GmbH', 'credit_accounts': [ 'CA-001022' ] }"
+    bench execute microsynth.microsynth.credits.get_applicable_customer_credits --kwargs "{ 'customer': '12636', 'company': 'Microsynth AG', 'credit_accounts': [ 'CA-000129', 'CA-001061', 'CA-001239' ] }"
     """
     raw_customer_credits = get_customer_credits({'customer': customer, 'company': company, 'credit_accounts': credit_accounts, 'exclude_unpaid_deposits': True})
 
     applicable_credits = []
 
-    for credit in reversed(raw_customer_credits):  # raw_customer_credits are sorted newest to oldest. We want to allocate oldest credits first.
+    for credit in raw_customer_credits:
         if 'outstanding' in credit and flt(credit['outstanding']) >= 0.01:
             if credit['credit_account'] in credit_accounts:
                 applicable_credits.append(credit)
+
+    def get_account_type_priority(account_type):
+        # Priority for allocation: Enforced Credit -> Legacy -> Standard/other
+        priority = {
+            'Enforced Credit': 0,
+            'Legacy': 1,
+            'Standard': 2
+        }
+        return priority.get(account_type, 2)
+
+    applicable_credits.sort(
+        key=lambda credit: (
+            get_account_type_priority(credit.get('account_type')),
+            credit.get('date') or date.min,
+            credit.get('creation') or datetime.min,
+        )
+    )
 
     return applicable_credits
 
@@ -1416,7 +1433,7 @@ def report_credit_account_low_balance_warnings(email_template_name="Credit Accou
     Forecast includes open Sales Orders and unpaid deposit invoices.
 
     Should be run by a daily cronjob, e.g.:
-    25 16 * * * cd /home/frappe/frappe-bench && /usr/local/bin/bench --site erp.microsynth.local execute microsynth.microsynth.credits.report_credit_account_low_balance_warnings
+    30 6 * * * cd /home/frappe/frappe-bench && /usr/local/bin/bench --site erp.microsynth.local execute microsynth.microsynth.credits.report_credit_account_low_balance_warnings
 
     sudo bench execute microsynth.microsynth.credits.report_credit_account_low_balance_warnings
     """

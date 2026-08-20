@@ -55,8 +55,11 @@ def get_data(filters):
     data = frappe.db.sql(sql_query, as_dict=True)
     if len(data) > 0:
         first_currency = data[0]['currency']
+        first_invoice = data[0]['sales_invoice']
         for entry in data:
             if entry['currency'] != first_currency:
+                frappe.throw(f"Currency mismatch: Sales Invoice {first_invoice} has currency <b>{first_currency}</b>, but Sales Invoice {entry['sales_invoice']} has currency <b>{entry['currency']}</b>. "
+                             f"<br>Unable to display different currencies at once. Please filter by a single currency.")
                 data = [{'currency': 'mismatch'}]
                 break
     return data

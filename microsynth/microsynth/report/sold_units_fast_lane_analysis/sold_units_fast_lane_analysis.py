@@ -187,7 +187,7 @@ def get_sales_invoice_list_url(filters, item_codes, child_territories, month=Non
 	params = [
 		"docstatus=1",
 		"is_return=0",
-		f"status={encode_list_filter(['!=', 'Credit Note Issued'])}",
+		f"per_returned={encode_list_filter(['=', 0])}",
 		f"posting_date={encode_list_filter(date_filter)}",
 	]
 

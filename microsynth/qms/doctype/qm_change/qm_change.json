@@ -32,6 +32,7 @@
   "qm_documents",
   "customers",
   "instruments",
+  "computerised_systems",
   "classification_section",
   "regulatory_classification",
   "device_classification",
@@ -324,11 +325,17 @@
    "fieldtype": "Table",
    "label": "Instruments",
    "options": "QM Instrument Link"
+  },
+  {
+   "fieldname": "computerised_systems",
+   "fieldtype": "Table",
+   "label": "Computerised Systems",
+   "options": "QM Computerised System Link"
   }
  ],
  "is_submittable": 1,
- "modified": "2026-06-03 12:32:09.417255",
- "modified_by": "jens.petermann@microsynth.ch",
+ "modified": "2026-08-17 14:23:31.590864",
+ "modified_by": "Administrator",
  "module": "QMS",
  "name": "QM Change",
  "owner": "Administrator",
