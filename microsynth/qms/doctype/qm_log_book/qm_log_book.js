@@ -45,7 +45,7 @@ frappe.ui.form.on('QM Log Book', {
         var target ="span[data-label='" + __("New QM Log Book") + "']";
         $(target).parent().parent().remove();
 
-        if (frm.doc.document_type === "QM Instrument" && frm.doc.status === "To Review" && frm.doc.docstatus === 1) {
+        if (["QM Instrument", "QM Computerised System"].includes(frm.doc.document_type) && frm.doc.status === "To Review" && frm.doc.docstatus === 1) {
             if (frappe.user_roles.includes('QAU')) {
                 allow_write_access(frm);
                 show_approve_button(frm);
