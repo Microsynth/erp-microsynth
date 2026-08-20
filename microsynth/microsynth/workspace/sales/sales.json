@@ -252,7 +252,7 @@
    "hidden": 0,
    "is_query_report": 0,
    "label": "Reporting",
-   "link_count": 4,
+   "link_count": 6,
    "link_type": "DocType",
    "onboard": 0,
    "type": "Card Break"
@@ -296,9 +296,29 @@
    "link_type": "Report",
    "onboard": 0,
    "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Sold Units Oligo Synthesis",
+   "link_count": 0,
+   "link_to": "Oligo Accounting",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Sold Units Fast Lane Analysis",
+   "link_count": 0,
+   "link_to": "Sold Units Fast Lane Analysis",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
   }
  ],
- "modified": "2026-08-14 17:05:49.989142",
+ "modified": "2026-08-20 09:42:12.669493",
  "modified_by": "rolf.suter@microsynth.ch",
  "module": "Microsynth",
  "name": "Sales",
