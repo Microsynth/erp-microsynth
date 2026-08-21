@@ -64,6 +64,7 @@
    "allow_on_submit": 1,
    "fieldname": "costs",
    "fieldtype": "Link",
+   "hidden": 1,
    "label": "Costs",
    "options": "Purchase Invoice"
   },
@@ -164,7 +165,7 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2026-07-10 11:54:06.386973",
+ "modified": "2026-08-21 16:08:26.644064",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Log Book",
