@@ -7045,3 +7045,93 @@ def set_preferred_express_shipping_items(dry_run=False):
         frappe.db.commit()
 
     print(f"\nDone. Updated: {updated}, Skipped with warnings: {skipped}")
+
+
+def create_version_user_permissions(doctypes, users, dry_run=False):
+    """
+    Create User Permissions so the given users can read Version records
+    linked to the given reference DocTypes.
+
+    A User Permission is created on:
+      - allow: "DocType"
+      - for_value: <reference doctype>
+      - applicable_for: "Version"
+
+    This function is idempotent: existing matching User Permissions are kept.
+
+    Args:
+        doctypes (list[str] | tuple[str]): Reference DocTypes visible in Version.ref_doctype.
+        users (list[str] | tuple[str]): User IDs (usually email addresses).
+        dry_run (bool): If True, only print what would be created.
+
+    bench execute microsynth.microsynth.migration.create_version_user_permissions --kwargs "{'doctypes': ['QM Log Book', 'QM Instrument', 'QM Action', 'QM Change', 'QM Nonconformity', 'QM Document'], 'users': ['lisa.grabner@microsynth.ch', 'johanna.braendli@microsynth.ch', 'sahadete.trupi@microsynth.ch', 'almedina.mustafa@microsynth.ch'], 'dry_run': True}"
+    """
+    if not isinstance(doctypes, (list, tuple)) or not isinstance(users, (list, tuple)):
+        frappe.throw("Arguments 'doctypes' and 'users' must both be lists or tuples.")
+
+    # Keep order while removing duplicates and empty values
+    clean_doctypes = []
+    for dt in doctypes:
+        dt_name = (dt or "").strip() if isinstance(dt, str) else ""
+        if dt_name and dt_name not in clean_doctypes:
+            clean_doctypes.append(dt_name)
+
+    clean_users = []
+    for user in users:
+        user_name = (user or "").strip() if isinstance(user, str) else ""
+        if user_name and user_name not in clean_users:
+            clean_users.append(user_name)
+
+    if not clean_doctypes:
+        frappe.throw("No valid DocTypes provided.")
+    if not clean_users:
+        frappe.throw("No valid users provided.")
+
+    created = 0
+    existing = 0
+    skipped = 0
+
+    for dt_name in clean_doctypes:
+        if not frappe.db.exists("DocType", dt_name):
+            print(f"[WARNING] DocType '{dt_name}' does not exist. Skipping.")
+            skipped += len(clean_users)
+            continue
+
+        for user_name in clean_users:
+            if not frappe.db.exists("User", user_name):
+                print(f"[WARNING] User '{user_name}' does not exist. Skipping.")
+                skipped += 1
+                continue
+
+            permission_filters = {
+                "user": user_name,
+                "allow": "DocType",
+                "for_value": dt_name,
+                "applicable_for": "Version",
+            }
+
+            if frappe.db.exists("User Permission", permission_filters):
+                existing += 1
+                continue
+
+            print(
+                f"[CREATE] User Permission: user='{user_name}', "
+                f"allow='DocType', for_value='{dt_name}', applicable_for='Version'"
+            )
+            if not dry_run:
+                frappe.get_doc({
+                    "doctype": "User Permission",
+                    "user": user_name,
+                    "allow": "DocType",
+                    "for_value": dt_name,
+                    "applicable_for": "Version",
+                }).insert(ignore_permissions=True)
+            created += 1
+
+    if not dry_run and created > 0:
+        frappe.db.commit()
+
+    print(
+        f"Done. Created: {created}, Existing: {existing}, "
+        f"Skipped: {skipped}, Dry run: {dry_run}"
+    )
