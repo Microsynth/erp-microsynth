@@ -17,7 +17,7 @@ welcome_email_subject = "Activate your new Micosynth ERP account"
 # ------------------
 
 # include js, css files in header of desk.html
-app_include_css = "/public/css/microsynth_common.css"
+app_include_css = "/assets/microsynth/css/microsynth_common.css"
 app_include_js = [
     "assets/js/microsynth_templates.min.js",
     "assets/microsynth/js/microsynth_common.js"
