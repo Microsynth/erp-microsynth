@@ -409,3 +409,59 @@ def import_job_applicants(verbose=False):
                 "Job Applicant Import"
             )
             _move_to_error_folder(fname, frappe.get_traceback())
+
+
+def employee_before_save(self, method):
+    """
+    Hook method that is called before saving an Employee document.
+    Check if the Employee has linked an User.
+    If yes, create an User Permission to restrict Employee access to their own Employee document if not already existing.
+    Exception 1: If the linked User has the role "HR User" or "HR Manager", no User Permission is created.
+    Exception 2: If the linked User has the role "HR User Subsidiary", create a User Permission to restrict Employee access to all Employees of the same company if not already existing.
+    Do not remove existing User Permissions.
+    """
+    if not self.user_id:
+        return
+
+    user_roles = frappe.get_roles(self.user_id)
+    if "HR User" in user_roles or "HR Manager" in user_roles:
+        return
+
+    if "HR User Subsidiary" in user_roles:
+        # Create User Permission for all Employees of the same company
+        existing_permission = frappe.db.exists(
+            "User Permission",
+            {
+                "user": self.user_id,
+                "allow": "Employee",
+                "for_value": self.company,
+                "apply_to_all_doctypes": 1
+            }
+        )
+        if not existing_permission:
+            permission = frappe.get_doc({
+                "doctype": "User Permission",
+                "user": self.user_id,
+                "allow": "Employee",
+                "for_value": self.company,
+                "apply_to_all_doctypes": 1
+            })
+            permission.insert(ignore_permissions=True)
+    else:
+        # Create User Permission for the specific Employee document
+        existing_permission = frappe.db.exists(
+            "User Permission",
+            {
+                "user": self.user_id,
+                "allow": "Employee",
+                "for_value": self.name
+            }
+        )
+        if not existing_permission:
+            permission = frappe.get_doc({
+                "doctype": "User Permission",
+                "user": self.user_id,
+                "allow": "Employee",
+                "for_value": self.name
+            })
+            permission.insert(ignore_permissions=True)

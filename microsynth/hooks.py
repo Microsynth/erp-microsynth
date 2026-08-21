@@ -226,6 +226,9 @@ doc_events = {
     },
     "Job Applicant": {
         "autoname": "microsynth.microsynth.hr.hr_autoname"
+    },
+    "Employee": {
+        "before_save": "microsynth.microsynth.hr.employee_before_save"
     }
     #"Abacus Export File": {
     #    "on_submit": "microsynth.microsynth.doctype.abacus_export_file_addition.abacus_export_file_addition.save_abacus_export_file"
