@@ -307,7 +307,7 @@ def create_logbook_entry(qm_instrument, entry_type, description, date):
 
 def import_qm_instruments(input_filepath, expected_line_length=23):
     """
-    sudo bench --site erp-test.microsynth.local execute microsynth.qms.doctype.qm_instrument.qm_instrument.import_qm_instruments --kwargs "{'input_filepath': '/mnt/erp_share/Migration/QM_Instruments/260604_Import_übrige_Messmittel_v02.csv'}"
+    sudo bench --site erp-test.microsynth.local execute microsynth.qms.doctype.qm_instrument.qm_instrument.import_qm_instruments --kwargs "{'input_filepath': '/mnt/erp_share/Migration/QM_Instruments/260813_Import_Instruments_3.5_v01.csv'}"
     """
     def parse_date(value):
         try:
