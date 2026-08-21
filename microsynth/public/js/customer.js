@@ -30,6 +30,24 @@ function has_credits(frm) {
 
 frappe.ui.form.on('Customer', {
     refresh(frm) {
+        var print_btns = document.getElementsByClassName("fa-print");
+        // remove default print buttons
+        for (var i = 0; i < print_btns.length; i++) {
+            print_btns[i].remove();
+        }
+        // add custom print functionality
+        cur_frm.page.add_action_icon(__("fa fa-print"), function() {
+            const encodedCustomer = encodeURIComponent(frm.doc.name);
+            const url = frappe.urllib.get_full_url(
+                "/api/method/microsynth.microsynth.portfolio.prepare_customer_pdf_download?customer=" + encodedCustomer
+            );
+            const w = window.open(url);
+            if (!w) {
+                frappe.msgprint(__("Please enable pop-ups"));
+                return;
+            }
+        });
+
         // show button "Contacts" if Customer has not Status "Disabled", directing to the Customer Finder
         if (frm.doc.disabled != 1) {
             frm.add_custom_button(__("Contacts"), function() {
