@@ -13,7 +13,12 @@ frappe.query_reports["Contract Research Sales"] = {
             "fieldname": "to_date",
             "label": __("To Date"),
             "fieldtype": "Date"
+        },
+        {
+            "fieldname": "territory",
+            "label": __("Territory"),
+            "fieldtype": "Link",
+            "options": "Territory"
         }
     ]
 };
-
