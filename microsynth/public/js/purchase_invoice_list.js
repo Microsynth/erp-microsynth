@@ -7,5 +7,4 @@ frappe.listview_settings['Purchase Invoice'].onload = function (doclist) {
     if (global_onload) {
         global_onload(doclist);
     }
-    add_clear_button();
 }

@@ -27,8 +27,6 @@ frappe.listview_settings['Material Request'] = {
 		}
 	},
     onload: function(listview) {
-        add_clear_button();
-
         // TODO: How to get the following working?
         // // Override the New button action
         // listview.page.set_primary_action(__('New'), function() {

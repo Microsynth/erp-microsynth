@@ -7,7 +7,6 @@ frappe.listview_settings['Supplier'].onload = function (doclist) {
     if (global_onload) {
         global_onload(doclist);
     }
-    //add_clear_button();
     add_simplified_supplier_button();
 }
 
