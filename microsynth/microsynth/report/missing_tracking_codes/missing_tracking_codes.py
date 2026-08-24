@@ -78,7 +78,6 @@ def get_data(filters):
             FROM `tabSales Order Item`
             WHERE
                 `tabSales Order Item`.`item_code` IN ({placeholders})
-                AND `tabSales Order Item`.`item_code` NOT IN ('1105', '1140')
         ) AS `tabSales Order Item`
             ON `tabSales Order Item`.`parent` = `tabSales Order`.`name`
         LEFT JOIN `tabTracking Code`
