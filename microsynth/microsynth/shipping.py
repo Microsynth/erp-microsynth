@@ -19,12 +19,13 @@ TRACKING_URLS = {
     '1106': "https://www.deutschepost.de/de/s/sendungsverfolgung.html?piececode=",
     '1108': "https://www.ups.com/track?tracknum=",
     '1113': "https://www.ups.com/track?tracknum=",
-    '1114': "https://www.ups.com/track?tracknum=",  # should be disabled once all open invoices are paid (replaced by 1160 and 1165)
+    #'1114': "https://www.ups.com/track?tracknum=",  # replaced by 1160 and 1165
     '1115': "https://www.ups.com/track?tracknum=",
     '1117': "https://www.ups.com/track?tracknum=",  # should be disabled once all open invoices are paid
     '1120': "https://www.dhl.com/en/express/tracking.html?brand=DHL&AWB=",
     '1123': "https://www.dhl.com/ch-en/home/tracking/tracking-express.html?submit=1&tracking-id=",
     '1126': "https://www.fedex.com/fedextrack/?trknbr=",
+    '1140': "https://www.post.at/sv/sendungssuche?snr=",
     '1160': "https://www.ups.com/track?tracknum=",
     '1161': "https://www.ups.com/track?tracknum=",
     '1162': "https://www.ups.com/track?tracknum=",

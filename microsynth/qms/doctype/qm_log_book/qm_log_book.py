@@ -272,6 +272,8 @@ def import_log_book_entries_from_file(path, BASE_PATH=None, verbose=False, print
             raise Exception(f"Invalid row: {line}")
 
         instrument_id, date_str, entry_type, description, target_status_logbook_entry, target_status_instrument, pdf_name = parts
+        if verbose:
+            print(f"Processing {instrument_id} - {date_str} - {entry_type} - {description} - {target_status_logbook_entry} - {target_status_instrument} - {pdf_name} from {line=}")
 
         if not frappe.db.exists("QM Instrument", instrument_id):
             raise Exception(f"Instrument '{instrument_id}' not found")
@@ -360,9 +362,9 @@ def import_log_book_entries(verbose=False):
         if not fname.lower().endswith(".txt"):
             continue
 
-        path = "/mnt/erp_share/JPe/260505_QM_Log_Book_Testimport.csv"
+        path = safe_join_path(BASE_PATH, fname)
         if verbose:
-            print(f"\nProcessing {fname}")
+            print(f"\nProcessing {fname} from {path}")
 
         try:
             lines = import_log_book_entries_from_file(path, verbose=verbose, print_label=True)

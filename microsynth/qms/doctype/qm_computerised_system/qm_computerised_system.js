@@ -36,6 +36,17 @@ frappe.ui.form.on('QM Computerised System', {
             add_custom_buttons(frm, false);
         }
 
+        if (!frm.doc.__islocal) {
+            // display an advanced dashboard
+            frappe.call({
+                'method': 'get_advanced_dashboard',
+                'doc': frm.doc,
+                'callback': function(r) {
+                    cur_frm.set_df_property('overview', 'options', r.message);
+                }
+            });
+        }
+
         ensure_dashboard_reference_entries(frm);
         hide_selected_dashboard_add_buttons(frm);
         update_dashboard_reference_links(frm);
@@ -208,18 +219,80 @@ function add_custom_buttons(frm, isProcessOwner) {
     });
 
 	frm.add_custom_button(__('New Version'), function() {
-		frappe.call({
-			'method': 'microsynth.qms.doctype.qm_computerised_system.qm_computerised_system.create_new_version',
-			'args': {
-				'doc': frm.doc.name,
-				'user': frappe.session.user
-			},
-			'callback': function(r) {
-				if (r.message && r.message.name) {
-					frappe.set_route('Form', 'QM Computerised System', r.message.name);
-				}
-			}
-		});
+        const dialog = new frappe.ui.Dialog({
+            title: __('New Version'),
+            fields: [
+                {
+                    fieldname: 'new_version',
+                    label: __('New Version Number'),
+                    fieldtype: 'Data',
+                    reqd: 1,
+                    default: frm.doc.version || ''
+                },
+                {
+                    fieldname: 'entry_type',
+                    label: __('Log Book Type'),
+                    fieldtype: 'Select',
+                    options: [
+                        '',
+                        'Bugfix',
+                        'Update',
+                        '(Re-)Validation',
+                        'Audit Trail Review',
+                        'Other'
+                    ].join('\n'),
+                    reqd: 1,
+                    default: 'Update'
+                },
+                {
+                    fieldname: 'date',
+                    label: __('Date of occurence'),
+                    fieldtype: 'Date',
+                    reqd: 1,
+                    default: frappe.datetime.get_today()
+                },
+                {
+                    fieldname: 'description',
+                    label: __('Description of change'),
+                    fieldtype: 'Small Text',
+                    reqd: 1
+                }
+            ],
+            primary_action_label: __('Create'),
+            primary_action: function(values) {
+                if (values.new_version === frm.doc.version) {
+                    frappe.msgprint(__('Please provide a version number different from the current version.'));
+                    return;
+                }
+
+                frappe.call({
+                    'method': 'microsynth.qms.doctype.qm_computerised_system.qm_computerised_system.create_logbook_entry',
+                    'freeze': true,
+                    'freeze_message': __('Creating Log Book entry and updating version...'),
+                    'args': {
+                        'qm_computerised_system': frm.doc.name,
+                        'entry_type': values.entry_type,
+                        'description': values.description,
+                        'date': values.date
+                    },
+                    callback: function(r) {
+                        if (r.exc) {
+                            return;
+                        }
+                        dialog.hide();
+                        frm.set_value('version', values.new_version);
+                        frm.save().then(() => {
+                            frappe.show_alert({
+                                message: __('New version set and Log Book entry created.'),
+                                indicator: 'green'
+                            });
+                        });
+                    }
+                });
+            }
+        });
+
+        dialog.show();
 	}, __('Create'));
 
 	frm.add_custom_button(__('Log Book Entry'), function() {

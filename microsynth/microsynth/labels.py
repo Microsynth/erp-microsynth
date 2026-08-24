@@ -412,9 +412,13 @@ def create_daily_ups_batch_files():
         SELECT `name`
         FROM `tabSales Order`
         WHERE
-            `docstatus` = 1
-            AND DATE(`transaction_date`) > %(cutoff_date)s
-            AND (`shipping_batch_file_exported_on` IS NULL OR `shipping_batch_file_exported_on` = '')
+            `tabSales Order`.`docstatus` = 1
+            AND DATE(`tabSales Order`.`transaction_date`) > %(cutoff_date)s
+            AND (`tabSales Order`.`shipping_batch_file_exported_on` IS NULL OR `tabSales Order`.`shipping_batch_file_exported_on` = '')
+            AND `tabSales Order`.`product_type` = "Oligos"
+            AND `tabSales Order`.`company` = "Microsynth AG"
+            AND `tabSales Order`.`status` NOT IN ('Closed', 'Completed')
+            AND `tabSales Order`.`hold_order` <> 1
         """,
         {"cutoff_date": cutoff_date},
         as_list=True

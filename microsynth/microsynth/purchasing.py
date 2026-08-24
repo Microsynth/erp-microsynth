@@ -300,6 +300,8 @@ def create_po_document_for_items(material_request_rows, total_quantity_by_item_c
         quotation_choice_key = (item_code_key, requested_uom or '')
         consolidated_total_qty = flt(total_quantity_by_item_code.get(item_code_key, 0.0))
         original_rate = flt(original_row.get('rate') or 0.0)
+        requested_schedule_date = getdate(original_row.get('schedule_date') or today_date)
+        schedule_date = requested_schedule_date if requested_schedule_date >= today_date else today_date
 
         # reuse cached selection or compute it
         if quotation_choice_key in quotation_choice_cache:
@@ -362,7 +364,7 @@ def create_po_document_for_items(material_request_rows, total_quantity_by_item_c
         po_item_row = {
             'item_code': original_item_code,
             'item_name': original_row.get('item_name'),
-            'schedule_date': getdate(original_row.get('schedule_date') or today_date),
+            'schedule_date': schedule_date,
             'qty': flt(original_row.get('qty') or 0),
             'rate': flt(selection.get('rate') or original_rate),
             'uom': chosen_item_purchase_uom or original_row.get('uom'),

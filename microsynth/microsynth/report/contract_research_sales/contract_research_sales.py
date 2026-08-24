@@ -22,11 +22,22 @@ def get_columns():
 
 
 def get_data(filters):
+    filters = filters or {}
     conditions = ""
     if filters.get("from_date"):
         conditions += " AND `tabSales Invoice`.`posting_date` >= %(from_date)s"
     if filters.get("to_date"):
         conditions += " AND `tabSales Invoice`.`posting_date` <= %(to_date)s"
+    if filters.get("territory"):
+        conditions += """
+            AND `tabCustomer`.`territory` IN (
+                SELECT child.`name`
+                FROM `tabTerritory` child
+                INNER JOIN `tabTerritory` parent ON parent.`name` = %(territory)s
+                WHERE child.`lft` >= parent.`lft`
+                  AND child.`rgt` <= parent.`rgt`
+            )
+        """
 
     return frappe.db.sql("""
         SELECT DISTINCT

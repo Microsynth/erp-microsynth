@@ -1,0 +1,4 @@
+/* disable the browser-print button */
+a.btn-print-print {
+    display: none;
+}

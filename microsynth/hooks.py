@@ -17,7 +17,7 @@ welcome_email_subject = "Activate your new Micosynth ERP account"
 # ------------------
 
 # include js, css files in header of desk.html
-# app_include_css = "/assets/microsynth/css/microsynth.css"
+app_include_css = "/assets/microsynth/css/microsynth_common.css"
 app_include_js = [
     "assets/js/microsynth_templates.min.js",
     "assets/microsynth/js/microsynth_common.js"
@@ -226,6 +226,9 @@ doc_events = {
     },
     "Job Applicant": {
         "autoname": "microsynth.microsynth.hr.hr_autoname"
+    },
+    "Employee": {
+        "before_save": "microsynth.microsynth.hr.employee_before_save"
     }
     #"Abacus Export File": {
     #    "on_submit": "microsynth.microsynth.doctype.abacus_export_file_addition.abacus_export_file_addition.save_abacus_export_file"

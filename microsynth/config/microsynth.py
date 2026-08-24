@@ -456,6 +456,13 @@ def get_data():
                        "description": _("Employee")
                    },
                    {
+                       "type": "report",
+                       "name": "Employee Entries and Exits",
+                       "label": _("Employee Entries and Exits"),
+                       "doctype": "Employee",
+                       "is_query_report": True
+                   },
+                   {
                         "type": "report",
                         "name": "Worktime Overview",
                         "label": _("Worktime Overview"),

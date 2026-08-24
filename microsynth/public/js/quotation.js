@@ -311,6 +311,7 @@ frappe.ui.form.on('Quotation', {
     },
 
     product_type(frm){
+        clear_taxes_fields(frm);
         if (frm.doc.product_type == 'Oligos') {
             frm.set_value('quotation_type', 'Synthesis');
         } else if (frm.doc.product_type == 'Labels') {
@@ -325,10 +326,18 @@ frappe.ui.form.on('Quotation', {
     },
 
     customer(frm) {
-        if (!frm.doc.customer) return;
+        clear_taxes_fields(frm);
         if (frm.doc.docstatus == 0) {
             set_company_read_only(frm);
         }
+    },
+
+    shipping_address_name(frm) {
+        clear_taxes_fields(frm);
+    },
+
+    transaction_date(frm) {
+        clear_taxes_fields(frm);
     },
 
     customer_name(frm) {
@@ -339,6 +348,7 @@ frappe.ui.form.on('Quotation', {
     },
 
     company(frm) {
+        clear_taxes_fields(frm);
         if (!frm.doc.company) return;
         // Fetch company abbreviation
         frappe.call({
@@ -388,15 +398,25 @@ function set_company_read_only(frm) {
             );
             if (has_invoice_by_default_company) {
                 frm.set_df_property('company', 'read_only', 1);
-                if (customer.default_company && frm.doc.company !== customer.default_company) {
-                    frm.set_value('company', customer.default_company);
-                }
             } else {
                 frm.set_df_property('company', 'read_only', 0);
             }
+            if (customer.default_company && frm.doc.company !== customer.default_company) {
+                frm.set_value('company', customer.default_company);
+            }
             frm.refresh_field('company');
+            if (customer.account_manager && frm.doc.sales_manager !== customer.account_manager) {
+                frm.set_value('sales_manager', customer.account_manager);
+            }
+            frm.refresh_field('sales_manager');
         }
     });
+}
+
+function clear_taxes_fields(frm) {
+    frm.set_value('taxes_and_charges', null);
+    frm.clear_table('taxes');
+    frm.refresh_field('taxes');
 }
 
 /* this function will pull

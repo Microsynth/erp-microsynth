@@ -3,6 +3,62 @@ from frappe.utils.data import today, get_first_day, get_last_day, add_months
 from datetime import datetime
 
 
+def get_sales_portfolio_pdf(contact):
+    """
+    Render the Contact print format "Sales Portfolio" and return it as PDF bytes.
+    """
+    if not contact or not frappe.db.exists("Contact", contact):
+        frappe.throw("Please provide a valid Contact ID.")
+
+    return frappe.get_print(
+        "Contact",
+        contact,
+        "Sales Portfolio",
+        doc=None,
+        as_pdf=True,
+        no_letterhead=False,
+    )
+
+
+@frappe.whitelist()
+def prepare_sales_portfolio_pdf_download(contact):
+    """
+    Generate and return the Sales Portfolio PDF for a Contact as direct download.
+    """
+    pdf = get_sales_portfolio_pdf(contact)
+    frappe.local.response.filename = f"Sales_Portfolio_{contact.replace(' ', '_')}.pdf"
+    frappe.local.response.filecontent = pdf
+    frappe.local.response.type = "download"
+
+
+def get_customer_pdf(customer):
+    """
+    Render the Customer print format "Customer" and return it as PDF bytes.
+    """
+    if not customer or not frappe.db.exists("Customer", customer):
+        frappe.throw("Please provide a valid Customer ID.")
+
+    return frappe.get_print(
+        "Customer",
+        customer,
+        "Customer",
+        doc=None,
+        as_pdf=True,
+        no_letterhead=False,
+    )
+
+
+@frappe.whitelist()
+def prepare_customer_pdf_download(customer):
+    """
+    Generate and return the Customer print format PDF as direct download.
+    """
+    pdf = get_customer_pdf(customer)
+    frappe.local.response.filename = f"Customer_{customer.replace(' ', '_')}.pdf"
+    frappe.local.response.filecontent = pdf
+    frappe.local.response.type = "download"
+
+
 def get_sales_volume(contact):
     if not contact:
         frappe.throw("Bitte einen Kontakt angeben")
