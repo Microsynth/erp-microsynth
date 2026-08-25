@@ -7064,7 +7064,7 @@ def create_version_user_permissions(doctypes, users, dry_run=False):
         users (list[str] | tuple[str]): User IDs (usually email addresses).
         dry_run (bool): If True, only print what would be created.
 
-    bench execute microsynth.microsynth.migration.create_version_user_permissions --kwargs "{'doctypes': ['QM Log Book', 'QM Instrument', 'QM Action', 'QM Change', 'QM Nonconformity', 'QM Document'], 'users': ['lisa.grabner@microsynth.ch', 'johanna.braendli@microsynth.ch', 'sahadete.trupi@microsynth.ch', 'almedina.mustafa@microsynth.ch'], 'dry_run': True}"
+    bench execute microsynth.microsynth.migration.create_version_user_permissions --kwargs "{'doctypes': ['QM Log Book', 'QM Instrument', 'QM Action', 'QM Change', 'QM Nonconformity', 'QM Document'], 'users': ['firstname.lastname@microsynth.ch'], 'dry_run': True}"
     """
     if not isinstance(doctypes, (list, tuple)) or not isinstance(users, (list, tuple)):
         frappe.throw("Arguments 'doctypes' and 'users' must both be lists or tuples.")
