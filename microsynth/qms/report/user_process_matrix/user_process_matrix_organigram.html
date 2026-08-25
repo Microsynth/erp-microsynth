@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="generator" content="frappe"/>
+  <title>Process Assignment Overview {{ company | e }}</title>
+  <link href="/assets/css/printview.css" rel="stylesheet" type="text/css"/>
+  <style>
+    @page {
+      margin: 12mm;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      color: #1f2937;
+      font-size: 11px;
+      margin: 0;
+      padding: 0;
+    }
+
+    .header {
+      border: 1px solid #1f2937;
+      padding: 12px 14px;
+      margin-bottom: 14px;
+      text-align: center;
+    }
+
+    .title {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+      margin-bottom: 4px;
+    }
+
+    .meta {
+      font-size: 10px;
+      color: #374151;
+    }
+
+    .owners-box {
+      border: 1px dashed #6b7280;
+      padding: 8px 10px;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+
+    .owners-title {
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .owners-list {
+      line-height: 1.45;
+    }
+
+    .grid-wrap {
+      width: 100%;
+      text-align: center;
+    }
+
+    .process-card {
+      display: inline-block;
+      vertical-align: top;
+      width: 18.2%;
+      min-height: 140px;
+      margin: 0 0.85% 14px 0.85%;
+      border: 1px solid #111827;
+      text-align: left;
+      page-break-inside: avoid;
+    }
+
+    .process-head {
+      border-bottom: 1px solid #111827;
+      padding: 7px 8px;
+      font-weight: 700;
+      font-size: 12px;
+      min-height: 34px;
+    }
+
+    .section {
+      padding: 7px 8px 0 8px;
+    }
+
+    .section-label {
+      font-weight: 700;
+      font-size: 10px;
+      color: #374151;
+      text-transform: uppercase;
+      margin-bottom: 3px;
+    }
+
+    .name-list {
+      margin: 0;
+      padding: 0 0 8px 16px;
+      line-height: 1.35;
+    }
+
+    .name-list li {
+      margin-bottom: 1px;
+    }
+
+    .empty {
+      color: #6b7280;
+      font-style: italic;
+      padding-bottom: 8px;
+    }
+
+    .footer {
+      margin-top: 8px;
+      border-top: 1px solid #d1d5db;
+      padding-top: 6px;
+      font-size: 10px;
+      color: #4b5563;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="title">Process Assignment Overview {{ company | e }}</div>
+    <div class="meta">
+      Generated {{ frappe.utils.format_datetime(generated_on, "yyyy-MM-dd HH:mm") }}
+    </div>
+  </div>
+
+  <div class="grid-wrap">
+    {% for card in process_cards %}
+      <div class="process-card">
+        <div class="process-head">{{ card.qm_process | e }} ({{ card.person_count }})</div>
+
+        <div class="section">
+          <div class="section-label">Owners</div>
+          {% if card.owners %}
+            <ul class="name-list">
+              {% for owner in card.owners %}
+                <li>{{ owner | e }}</li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <div class="empty">No owner assigned</div>
+          {% endif %}
+        </div>
+
+        <div class="section">
+          <div class="section-label">Assigned Users</div>
+          {% if card.members %}
+            <ul class="name-list">
+              {% for member in card.members %}
+                <li>{{ member | e }}</li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <div class="empty">No additional users</div>
+          {% endif %}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <div class="footer">
+    Company: {{ filters.company | e }}
+    {% if filters.user %} | User filter: {{ filters.user | e }}{% endif %}
+    {% if filters.qm_process %} | QM Process filter: {{ filters.qm_process | e }}{% endif %}
+    {% if filters.is_process_owner %} | Process Owner filter: {{ filters.is_process_owner | e }}{% endif %}
+  </div>
+</body>
+</html>
