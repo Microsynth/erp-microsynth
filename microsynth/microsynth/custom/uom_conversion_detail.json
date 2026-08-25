@@ -1,0 +1,31 @@
+{
+ "custom_fields": [],
+ "custom_perms": [],
+ "doctype": "UOM Conversion Detail",
+ "property_setters": [
+  {
+   "_assign": null,
+   "_comments": null,
+   "_liked_by": null,
+   "_user_tags": null,
+   "creation": "2026-08-25 13:24:38.207779",
+   "default_value": null,
+   "doc_type": "UOM Conversion Detail",
+   "docstatus": 0,
+   "doctype_or_field": "DocField",
+   "field_name": "uom",
+   "idx": 0,
+   "modified": "2026-08-25 13:24:38.207779",
+   "modified_by": "jens.petermann@microsynth.ch",
+   "name": "UOM Conversion Detail-uom-label",
+   "owner": "jens.petermann@microsynth.ch",
+   "parent": null,
+   "parentfield": null,
+   "parenttype": null,
+   "property": "label",
+   "property_type": "Data",
+   "value": "Unit"
+  }
+ ],
+ "sync_on_migrate": 1
+}

@@ -126,7 +126,7 @@ def check_tracking_code(web_order_id, tracking_code):
 
         if shipping_item == '1126':  # FedEx
             regex_str = '^7\d{11}$'
-        elif shipping_item == '1105':  # Post AT
+        elif shipping_item in ['1105', '1140']:  # Post AT
             regex_str = '^\d{22}$'
         elif shipping_item in ['1106']:  # Post DE
             regex_str = '^A[A-Z0-9]{19}$'

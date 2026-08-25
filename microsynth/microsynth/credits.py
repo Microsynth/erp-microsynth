@@ -1418,7 +1418,7 @@ def send_credit_account_balance_warning(credit_account, forecast_balance, email_
         email_template,
         rendered_content,
         rendered_subject=rendered_subject,
-        recipients=None,  # None will fall back to the recipients on the Email Template. TODO: Replace "None" by "recipient" once testing is done.
+        recipients=recipient,
         attachments=attachments,
     )
 

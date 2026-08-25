@@ -367,7 +367,7 @@ def import_log_book_entries(verbose=False):
             print(f"\nProcessing {fname} from {path}")
 
         try:
-            lines = import_log_book_entries_from_file(path, verbose=verbose, print_label=True)
+            lines = import_log_book_entries_from_file(path, BASE_PATH=BASE_PATH, verbose=verbose, print_label=True)
 
             # Archive
             archive_root = safe_join_path(BASE_PATH, ARCHIVE_FOLDER)
