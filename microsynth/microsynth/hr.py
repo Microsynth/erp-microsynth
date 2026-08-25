@@ -411,6 +411,38 @@ def import_job_applicants(verbose=False):
             _move_to_error_folder(fname, frappe.get_traceback())
 
 
+@frappe.whitelist()
+def update_employee_emergency_contact(employee, emergency_contact=None, emergency_phone=None, emergency_relation=None):
+    if not employee:
+        frappe.throw("Missing Employee")
+
+    if not frappe.has_permission("Employee", "read", employee):
+        raise frappe.PermissionError
+
+    employee_doc = frappe.get_doc("Employee", employee)
+
+    updated = {}
+
+    if employee_doc.meta.has_field("person_to_be_contacted"):
+        employee_doc.person_to_be_contacted = emergency_contact
+        updated["person_to_be_contacted"] = True
+
+    if employee_doc.meta.has_field("emergency_phone_number"):
+        employee_doc.emergency_phone_number = emergency_phone
+        updated["emergency_phone_number"] = True
+
+    if employee_doc.meta.has_field("relation"):
+        employee_doc.relation = emergency_relation
+        updated["relation"] = True
+
+    employee_doc.save(ignore_permissions=True)
+
+    return {
+        "employee": employee_doc.name,
+        "updated_fields": [k for k, v in updated.items() if v]
+    }
+
+
 def employee_before_save(self, method):
     """
     Hook method that is called before saving an Employee document.
