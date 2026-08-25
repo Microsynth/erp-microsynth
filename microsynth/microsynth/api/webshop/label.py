@@ -365,6 +365,13 @@ def register_labels(registered_to, item, barcode_start_range, barcode_end_range)
             return {'success': False, 'message': "Failed to register labels.", 'internal_message': 'Unable to register any labels. ' + messages, 'ranges': partition_into_ranges(registered_labels)}
     except Exception as err:
         msg = f"Error registering labels for registered_to {registered_to}, item {item}, barcode_start_range {barcode_start_range}, barcode_end_range {barcode_end_range}: {err}. Check ERP Error Log for details."
+        if "The given barcode_start_range must be smaller or equal than the given barcode_end_range." in str(err):
+            return {
+                'success': False,
+                'message': "Failed to register labels: First Number > Second Number. Please correct the range.",
+                'internal_message': "The given barcode_start_range must be smaller or equal than the given barcode_end_range.",
+                'ranges': None
+            }
         frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.register_labels")
         return {'success': False, 'message': "Failed to register labels.", 'internal_message': msg, 'ranges': None}
 
