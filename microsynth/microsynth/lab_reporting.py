@@ -23,7 +23,7 @@ from microsynth.microsynth.utils import (
 
 def get_sales_order_samples(sales_order_id):
     """
-    bench execute microsynth.microsynth.lab_reporting.get_sales_order_samples --kwargs "{'sales_order': 'SO-BAL-24028200'}"
+    bench execute microsynth.microsynth.lab_reporting.get_sales_order_samples --kwargs "{'sales_order_id': 'SO-WIE-24000808'}"
     """
     samples_to_return = []
     sales_order_doc = frappe.get_doc("Sales Order", sales_order_id)
@@ -34,6 +34,7 @@ def get_sales_order_samples(sales_order_id):
             "name": sample_doc.name,
             "sample_name": sample_doc.sample_name,
             "sequencing_label_id": sample_doc.sequencing_label,
+            "label_barcode": sample_doc.sequencing_label_id,
             "web_id": sample_doc.web_id
         })
 
