@@ -41,18 +41,6 @@ window.onload = async function () {
     }
 }
 
-// access protection of the file manager
-$(document).ready(function() {
-    // access protection: user shall not go to the file manager
-    if (!frappe.user.has_role("System Manager")) {
-        // TODO: fix access protection to files. it does not work. Task #26421
-        if (window.location.href.includes("/app/file"))  {
-            window.location.replace("/desk");
-        }
-    }
-    // disable stop_drop handler by default - i.e. on each access, potentially lingering stop_drops are disabled
-    // window.removeEventListener("drop", stop_drop, true); // disabled because this trigger only works once and not on each document refresh
-});
 
 function sleep(milliseconds) {
    return new Promise(resolve => setTimeout(resolve, milliseconds));
