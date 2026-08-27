@@ -22,9 +22,9 @@ frappe.ui.form.on('QM Log Book', {
             frm.set_df_property("document_name", "read_only", true);
         }
         if (frm.doc.status != "Draft") {
-            // Lock all fields
+            // Lock all fields except amount and currency
             frm.fields.forEach(field => {
-                if (field.df?.fieldname) {
+                if (field.df?.fieldname && !["amount", "currency"].includes(field.df.fieldname)) {
                     frm.set_df_property(field.df.fieldname, 'read_only', 1);
                 }
             });
