@@ -118,7 +118,7 @@ def get_data(filters):
             # URL for clickable cell
             date_filter = ["Between", [f"{year}-{mon:02d}-01", f"{year}-{mon:02d}-{last_day}"]]
             encoded_filter = urllib.parse.quote(str(date_filter).replace("'", '"'))
-            url = f'desk#List/Delivery%20Note/List?item_code={item_code}&posting_date={encoded_filter}&docstatus=1'
+            url = f'/app/delivery-note?item_code={item_code}&posting_date={encoded_filter}&docstatus=1'
 
             # HTML cell with link
             row[month] = f'<a href="{url}" target="_blank">{count}</a>'

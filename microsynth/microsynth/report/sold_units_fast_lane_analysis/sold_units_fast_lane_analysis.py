@@ -203,7 +203,7 @@ def get_sales_invoice_list_url(filters, item_codes, child_territories, month=Non
 		else:
 			params.append(f"territory={encode_list_filter(['in', sorted(child_territories)])}")
 
-	return "desk#List/Sales%20Invoice/List?" + "&".join(params)
+	return "/app/sales-invoice?" + "&".join(params)
 
 
 def get_linked_value(value, url):
