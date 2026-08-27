@@ -20,9 +20,6 @@ frappe.listview_settings['QM Log Book'] = {
             return [__("Draft"), "red", "docstatus,=,0"];
         }
     },
-    onload: function(listview) {
-        add_clear_button();
-    },
     refresh: function(listview) {
         if (frappe.user.has_role('System Manager')) return;
         // Hide the New button

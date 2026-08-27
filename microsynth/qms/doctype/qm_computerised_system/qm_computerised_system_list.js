@@ -10,8 +10,5 @@ frappe.listview_settings['QM Computerised System'] = {
             "Decommissioned": "darkgrey"
         };
         return [__(doc.status), status_color[doc.status], "status,=," + doc.status];
-    },
-    onload: function(listview) {
-        add_clear_button();
     }
 };

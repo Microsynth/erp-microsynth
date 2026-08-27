@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Microsynth, libracore and contributors
+// Copyright (c) 2024-2026, Microsynth, libracore and contributors
 // For license information, please see license.txt
 
 
@@ -17,8 +17,5 @@ frappe.listview_settings['QM Nonconformity'] = {
             "Cancelled": "red"
         };
         return [__(doc.status), status_color[doc.status], "status,=,"+doc.status];
-    },
-    onload: function(doc) {
-        add_clear_button();
     }
 };

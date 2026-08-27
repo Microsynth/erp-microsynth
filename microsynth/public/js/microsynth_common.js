@@ -89,16 +89,6 @@ function remove_access_protection() {
     $('style').remove();
 }
 
-// QM Documents: remove action button for list and report to prevent illegal actions
-// TODO: fix access protection to the action button. it does not work. Task #26422
-if (window.location.href.includes("/app/qm-document")) {
-    var css = ".btn-primary.dropdown-toggle { display: none; }";
-    var head = document.head || document.getElementsByTagName('head')[0];
-    var style = document.createElement('style');
-    head.appendChild(style);
-    style.type = 'text/css';
-    style.appendChild(document.createTextNode(css));
-}
 
 function force_cancel(dt, dn) {
     frappe.confirm(

@@ -13,8 +13,5 @@ frappe.listview_settings['QM Instrument'] = {
         } else {
             return [__(doc.status), "blue", "status,=," + doc.status];
         }
-    },
-    onload: function(listview) {
-        add_clear_button();
     }
 };
