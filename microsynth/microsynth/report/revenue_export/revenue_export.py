@@ -78,6 +78,11 @@ def get_item_revenue(filters, month, item_groups, debug=False):
     else:
         territory_condition = ""
 
+    if filters and filters.get("item_code"):
+        item_condition = f"AND `tabSales Invoice Item`.`item_code` = '{filters.get('item_code')}' "
+    else:
+        item_condition = ""
+
     credit_item_code = frappe.get_value("Microsynth Settings", "Microsynth Settings", "credit_item")
     last_day = calendar.monthrange(cint(filters.get("fiscal_year")), month)
     group_condition = "'{0}'".format("', '".join(item_groups))
@@ -137,15 +142,19 @@ def get_item_revenue(filters, month, item_groups, debug=False):
                 {company_condition}
                 {territory_condition}
                 AND `tabSales Invoice Item`.`item_group` IN ({group_condition})
+                {item_condition}
             ORDER BY `tabSales Invoice`.`posting_date`, `tabSales Invoice`.`posting_time`, `tabSales Invoice`.`name`, `tabSales Invoice Item`.`idx`;
         """.format(company_condition=company_condition, year=filters.get("fiscal_year"), month=month, to_day=last_day[1],
-            territory_condition=territory_condition, group_condition=group_condition, intercompany_condition=intercompany_condition, credit_item_code=credit_item_code)
+            territory_condition=territory_condition, group_condition=group_condition, intercompany_condition=intercompany_condition,
+            credit_item_code=credit_item_code, item_condition=item_condition)
     items = frappe.db.sql(query, as_dict=True)
 
     return items
 
 
 def get_revenue_details(filters, debug=False):
+    validate_item_group_item_code(filters)
+
     if filters and filters.get("item_group"):
         item_groups = [ filters.get("item_group") ]
     else:
@@ -166,6 +175,44 @@ def get_revenue_details(filters, debug=False):
             details += calculate_chf_eur(exchange_rate, records)
 
     return details
+
+
+def validate_item_group_item_code(filters):
+    """
+    Validate that the selected item belongs to the selected item group when both filters are set.
+    """
+    if not filters:
+        return
+
+    selected_item_group = filters.get("item_group")
+    selected_item_code = filters.get("item_code")
+
+    if not selected_item_group or not selected_item_code:
+        return
+
+    item_group = frappe.get_cached_value("Item", selected_item_code, "item_group")
+    if not item_group:
+        frappe.throw(
+            title=_("Invalid Item Code"),
+            msg=_(
+                "The selected Item Code <b>{0}</b> could not be found, or it has no Item Group assigned. "
+                "Please verify the Item and try again."
+            ).format(selected_item_code)
+        )
+
+    if item_group != selected_item_group:
+        frappe.throw(
+            title=_("Item Filter Conflict"),
+            msg=_(
+                "The selected filters are inconsistent.<br><br>"
+                "You selected Item Group <b>{0}</b> and Item Code <b>{1}</b>, "
+                "but this Item belongs to Item Group <b>{2}</b>.<br><br>"
+                "Please either:<br>"
+                "1. Clear the Item Group filter and keep the Item Code filter, or<br>"
+                "2. Change the Item Group filter to <b>{2}</b>, or<br>"
+                "3. Select an Item Code that belongs to Item Group <b>{0}</b>."
+            ).format(selected_item_group, selected_item_code, item_group)
+        )
 
 
 def get_data(filters):

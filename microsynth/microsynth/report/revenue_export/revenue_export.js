@@ -16,12 +16,28 @@ frappe.query_reports["Revenue Export"] = {
             "fieldtype": "Link",
             "options": "Territory"
         },
-        ,
         {
             "fieldname": "item_group",
             "label": __("Item Group"),
             "fieldtype": "Link",
             "options": "Item Group"
+        },
+        {
+            "fieldname": "item_code",
+            "label": __("Item Code"),
+            "fieldtype": "Link",
+            "options": "Item",
+            "get_query": function() {
+                const item_group = frappe.query_report.get_filter_value("item_group");
+                if (!item_group) {
+                    return {};
+                }
+                return {
+                    "filters": {
+                        "item_group": item_group
+                    }
+                };
+            }
         },
         {
             "fieldname": "fiscal_year",
