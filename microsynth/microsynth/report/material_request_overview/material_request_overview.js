@@ -242,6 +242,35 @@ function create_purchase_order(filters, report) {
             return;
         }
     }
+
+    const draftMaterialRequests = Array.from(new Set((report.data || [])
+        .filter(row =>
+            row &&
+            row.request_type === "Material Request" &&
+            String(row.supplier || '') === String(filters.supplier || '') &&
+            Number(row.material_request_docstatus) === 0 &&
+            row.material_request
+        )
+        .map(row => row.material_request)
+    )).sort();
+
+    if (draftMaterialRequests.length > 0) {
+        const draftLinks = draftMaterialRequests
+            .map(name => `<li><a href="#Form/Material Request/${encodeURIComponent(name)}" target="_blank">${frappe.utils.escape_html(name)}</a></li>`)
+            .join('');
+
+        frappe.msgprint({
+            title: __('Draft Material Requests Selected'),
+            indicator: 'red',
+            message: __(
+                'Create Purchase Order is not possible, due to <b>{0} Draft</b> Material Request(s) for Supplier <b>{1}</b>:<br>' +
+                '<ul>{2}</ul>Please:<ol><li>Check the Draft Material Request(s)</li><li>Submit, Stop or Force Cancel them</li><li>Try again</li></ol>',
+                [draftMaterialRequests.length, frappe.utils.escape_html(filters.supplier || ''), draftLinks]
+            )
+        });
+        return;
+    }
+
     // Check for pending Item Requests in report data
     const pendingItemRequests = (report.data || []).filter(row =>
         row.request_type === "Item Request" &&

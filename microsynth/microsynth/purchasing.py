@@ -400,6 +400,30 @@ def create_po_from_open_mr(filters):
     supplier_doc = frappe.get_doc('Supplier', filters.get('supplier'))
     company = filters.get('company')
 
+    draft_material_requests = []
+    for item in items:
+        if item.get('request_type') != 'Material Request':
+            continue
+        try:
+            is_draft = int(item.get('material_request_docstatus')) == 0
+        except (TypeError, ValueError):
+            is_draft = False
+        if is_draft and item.get('material_request'):
+            draft_material_requests.append(item.get('material_request'))
+
+    unique_draft_material_requests = sorted(set(draft_material_requests))
+    if unique_draft_material_requests:
+        links = [
+            f'<li><a href="{get_url_to_form("Material Request", mr_name)}" target="_blank">{mr_name}</a></li>'
+            for mr_name in unique_draft_material_requests
+        ]
+        frappe.throw(
+            f"Create Purchase Order is not possible, due to <b>{len(unique_draft_material_requests)} Draft</b> "
+            f"Material Request(s) for Supplier <b>{supplier_doc.name}</b>:<br>"
+            f"<ul>{''.join(links)}</ul>Please:<ol><li>Check the Draft Material Request(s)</li><li>Submit, Stop or Force Cancel them</li><li>Try again</li></ol>",
+            _("Draft Material Requests Selected")
+        )
+
     if len(currencies) > 1:
         frappe.throw(
             _("The selected Material Requests contain items with different currencies ({0}). Please create separate Purchase Orders for each currency.").format(

@@ -121,6 +121,7 @@ def get_data(filters):
             SELECT
                 `tabMaterial Request`.`name` AS `material_request`,
                 'Material Request' AS `request_type`,
+                `tabMaterial Request`.`docstatus` AS `material_request_docstatus`,
                 `tabMaterial Request`.`transaction_date`,
                 `pr_receipts`.`receipt_date`,
                 DATEDIFF(`pr_receipts`.`receipt_date`, `tabMaterial Request`.`transaction_date`) AS `turnaround_time`,
@@ -194,7 +195,7 @@ def get_data(filters):
                 ON `tabItem Supplier`.`supplier` = `tabSupplier`.`name`
             WHERE
                 `tabMaterial Request`.`material_request_type` = 'Purchase'
-                AND `tabMaterial Request`.`docstatus` = 1
+                AND `tabMaterial Request`.`docstatus` < 2
                 AND `tabMaterial Request`.`status` != 'Stopped'
                 {conditions}
             ORDER BY `tabMaterial Request`.`transaction_date`, `pr_receipts`.`receipt_date`, `tabMaterial Request Item`.`supplier` ASC
@@ -206,6 +207,7 @@ def get_data(filters):
                 SELECT
                     `tabMaterial Request`.`name` AS `material_request`,
                     'Material Request' AS `request_type`,
+                    `tabMaterial Request`.`docstatus` AS `material_request_docstatus`,
                     `tabMaterial Request`.`transaction_date`,
                     `tabMaterial Request Item`.`schedule_date`,
                     `tabMaterial Request Item`.`item_code`,
@@ -272,7 +274,7 @@ def get_data(filters):
                     ON `tabItem Supplier`.`supplier` = `tabSupplier`.`name`
                 WHERE
                     `tabMaterial Request`.`material_request_type` = 'Purchase'
-                    AND `tabMaterial Request`.`docstatus` = 1
+                    AND `tabMaterial Request`.`docstatus` < 2
                     AND `tabMaterial Request`.`status` != 'Stopped'
                     {conditions}
             ) AS `raw`
@@ -287,6 +289,7 @@ def get_data(filters):
             SELECT
                 `tabMaterial Request`.`name` AS `material_request`,
                 'Material Request' AS `request_type`,
+                `tabMaterial Request`.`docstatus` AS `material_request_docstatus`,
                 `tabMaterial Request`.`transaction_date`,
                 `tabMaterial Request Item`.`schedule_date`,
                 `tabMaterial Request Item`.`item_code`,
@@ -326,7 +329,7 @@ def get_data(filters):
                 AND `tabPurchase Order Item`.`docstatus` = 1
             WHERE
                 `tabMaterial Request`.`material_request_type` = 'Purchase'
-                AND `tabMaterial Request`.`docstatus` = 1
+                AND `tabMaterial Request`.`docstatus` < 2
                 AND `tabMaterial Request`.`status` != 'Stopped'
                 {conditions}
             GROUP BY
@@ -339,6 +342,7 @@ def get_data(filters):
             SELECT
                 `tabItem Request`.`name` AS `material_request`,
                 'Item Request' AS `request_type`,
+                1 AS `material_request_docstatus`,
                 DATE(`tabItem Request`.`creation`) AS transaction_date,
                 `tabItem Request`.`schedule_date`,
                 '-' AS `item_code`,
