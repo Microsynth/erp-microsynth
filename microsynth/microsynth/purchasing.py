@@ -258,8 +258,8 @@ def select_quotation_for_item(item_code, consolidated_total_qty, supplier_doc, c
             "conversion_rate": conversion_rate,
             "doctype": "Purchase Order",
         })
-        if item_details and item_details.get("rate") is not None:
-            selection['rate'] = flt(item_details.get("rate"))
+        if item_details and item_details.get("price_list_rate") is not None:
+            selection['rate'] = flt(item_details.get("price_list_rate"))
         else:
             selection['warnings'].append(
                 f"Item {item_code}: no valid Item Price found in price list {supplier_doc.default_price_list}."
@@ -2221,6 +2221,23 @@ def create_material_request(item_code, qty, schedule_date, company, item_name=No
         frappe.throw(f"Currency mismatch: Item {item_code} belongs to Supplier {supplier} with currency {supplier_currency} and cannot be purchased in currency {currency}.")
     elif not currency:
         currency = frappe.get_value("Company", company, "default_currency")
+
+    if not rate:
+        supplier_doc = frappe.get_doc("Supplier", supplier)
+        item_doc = frappe.get_doc("Item", item_code)
+        requested_uom = item_doc.purchase_uom or item_doc.stock_uom
+        quotation_selection = select_quotation_for_item(
+            item_code=item_code,
+            consolidated_total_qty=flt(qty),
+            supplier_doc=supplier_doc,
+            currency=currency,
+            today_date=getdate(today()),
+            original_rate=0,
+            company=company,
+            requested_uom=requested_uom
+        )
+        rate = flt(quotation_selection.get("rate") or 0)
+
     mr.append("items", {
         "item_code": item_code,
         "item_name": item_name,
@@ -2256,9 +2273,23 @@ def _create_material_request_draft(item_code, qty, schedule_date, company, suppl
     if not (item_code and qty and schedule_date and company and supplier):
         frappe.throw("Required parameters missing for Material Request draft creation")
 
-    supplier_currency = frappe.get_value("Supplier", supplier, "default_currency")
+    supplier_doc = frappe.get_doc("Supplier", supplier)
+    supplier_currency = supplier_doc.default_currency
     currency = supplier_currency or frappe.get_value("Company", company, "default_currency")
-    item_name = frappe.get_value("Item", item_code, "item_name")
+    item_doc = frappe.get_doc("Item", item_code)
+    item_name = item_doc.item_name
+    requested_uom = item_doc.purchase_uom or item_doc.stock_uom
+    quotation_selection = select_quotation_for_item(
+        item_code=item_code,
+        consolidated_total_qty=flt(qty),
+        supplier_doc=supplier_doc,
+        currency=currency,
+        today_date=getdate(today()),
+        original_rate=0,
+        company=company,
+        requested_uom=requested_uom
+    )
+    rate = flt(quotation_selection.get("rate") or 0)
 
     mr = frappe.new_doc("Material Request")
     mr.material_request_type = "Purchase"
@@ -2273,7 +2304,7 @@ def _create_material_request_draft(item_code, qty, schedule_date, company, suppl
         "supplier": supplier,
         "qty": qty,
         "schedule_date": schedule_date,
-        "rate": 0,
+        "rate": rate,
         "item_request_currency": currency
     })
     mr.insert()
