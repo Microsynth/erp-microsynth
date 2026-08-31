@@ -124,6 +124,37 @@ function set_dashboard_route_handler($link, doctype, names) {
 }
 
 
+function escape_html(value) {
+    return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+
+function build_version_update_description(currentVersion, newVersion, userDescription) {
+    const fromVersion = (currentVersion || '').toString().trim() || __('unknown');
+    const toVersion = (newVersion || '').toString().trim() || __('unknown');
+    const summaryText = __('Update from version {0} to version {1}', [fromVersion, toVersion]);
+
+    const description = (userDescription || '').toString().trim();
+
+    // Avoid duplicating the summary when users manually include it.
+    if (description && description.toLowerCase().includes(summaryText.toLowerCase())) {
+        return description;
+    }
+
+    const summaryHtml = `<p><strong>${escape_html(summaryText)}</strong></p>`;
+    if (!description) {
+        return summaryHtml;
+    }
+
+    return `${summaryHtml}<p>${escape_html(__('Details:'))}</p>${description}`;
+}
+
+
 function update_dashboard_reference_links(frm) {
     if (frm.doc.__islocal || !frm.doc.name) {
         return;
@@ -218,9 +249,9 @@ function add_custom_buttons(frm, isProcessOwner) {
         }).addClass(color);
     });
 
-	frm.add_custom_button(__('New Version'), function() {
+	frm.add_custom_button(__('Update Version'), function() {
         const dialog = new frappe.ui.Dialog({
-            title: __('New Version'),
+            title: __('Update Version'),
             fields: [
                 {
                     fieldname: 'new_version',
@@ -233,16 +264,10 @@ function add_custom_buttons(frm, isProcessOwner) {
                     fieldname: 'entry_type',
                     label: __('Log Book Type'),
                     fieldtype: 'Select',
-                    options: [
-                        '',
-                        'Bugfix',
-                        'Update',
-                        '(Re-)Validation',
-                        'Audit Trail Review',
-                        'Other'
-                    ].join('\n'),
                     reqd: 1,
-                    default: 'Update'
+                    default: 'Update',
+                    read_only: 1,
+                    options: ['Update']
                 },
                 {
                     fieldname: 'date',
@@ -254,16 +279,25 @@ function add_custom_buttons(frm, isProcessOwner) {
                 {
                     fieldname: 'description',
                     label: __('Description of change'),
-                    fieldtype: 'Small Text',
+                    fieldtype: 'Text Editor',
                     reqd: 1
                 }
             ],
             primary_action_label: __('Create'),
             primary_action: function(values) {
-                if (values.new_version === frm.doc.version) {
+                const currentVersion = (frm.doc.version || '').toString().trim();
+                const newVersion = (values.new_version || '').toString().trim();
+
+                if (newVersion === currentVersion) {
                     frappe.msgprint(__('Please provide a version number different from the current version.'));
                     return;
                 }
+
+                const descriptionWithVersionUpdate = build_version_update_description(
+                    currentVersion,
+                    newVersion,
+                    values.description
+                );
 
                 frappe.call({
                     'method': 'microsynth.qms.doctype.qm_computerised_system.qm_computerised_system.create_logbook_entry',
@@ -272,7 +306,7 @@ function add_custom_buttons(frm, isProcessOwner) {
                     'args': {
                         'qm_computerised_system': frm.doc.name,
                         'entry_type': values.entry_type,
-                        'description': values.description,
+                        'description': descriptionWithVersionUpdate,
                         'date': values.date
                     },
                     callback: function(r) {
@@ -280,7 +314,7 @@ function add_custom_buttons(frm, isProcessOwner) {
                             return;
                         }
                         dialog.hide();
-                        frm.set_value('version', values.new_version);
+                        frm.set_value('version', newVersion);
                         frm.save().then(() => {
                             frappe.show_alert({
                                 message: __('New version set and Log Book entry created.'),
@@ -293,7 +327,7 @@ function add_custom_buttons(frm, isProcessOwner) {
         });
 
         dialog.show();
-	}, __('Create'));
+	});
 
 	frm.add_custom_button(__('Log Book Entry'), function() {
 		frappe.new_doc('QM Log Book', {
