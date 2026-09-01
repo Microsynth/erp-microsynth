@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Microsynth, libracore and contributors
+// Copyright (c) 2024-2026, Microsynth, libracore and contributors
 // For license information, please see license.txt
 
 // render
@@ -15,7 +15,11 @@ frappe.listview_settings['QM Document'] = {
         };
         return [__(doc.status), status_color[doc.status], "status,=,"+doc.status];
     },
-    onload: function(doc) {
-        add_clear_button();
+    refresh: function(listview) {
+        // remove action menu (#26422)
+        let action_menu = document.querySelector('button.btn-primary[data-toggle="dropdown"]');
+        if (action_menu) {
+            action_menu.remove();
+        }
     }
 };
