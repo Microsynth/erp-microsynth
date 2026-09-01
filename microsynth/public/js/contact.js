@@ -139,31 +139,11 @@ frappe.ui.form.on('Contact', {
         // remove 'Invite as User' button from ERPNext
         $("button[data-label='" + encodeURI(__("Invite as User")) + "']").remove();
 
-        // lock all fields except Institute Key, Group Leader, Cost Center if First Name = "Anonymous" or if source = Punchout
-        if (!frappe.user.has_role("System Manager") && (frm.doc.first_name == "Anonymous" || (frm.doc.contact_source && frm.doc.contact_source == "Punchout"))) {
-            cur_frm.set_df_property('first_name', 'read_only', true);
-            cur_frm.set_df_property('middle_name', 'read_only', true);
-            cur_frm.set_df_property('last_name', 'read_only', true);
-            cur_frm.set_df_property('user', 'read_only', true);
-            cur_frm.set_df_property('address', 'read_only', true);
-            cur_frm.set_df_property('status', 'read_only', true);
-            cur_frm.set_df_property('salutation', 'read_only', true);
-            cur_frm.set_df_property('designation', 'read_only', true);
-            cur_frm.set_df_property('gender', 'read_only', true);
-            cur_frm.set_df_property('email_ids', 'read_only', true);
-            cur_frm.set_df_property('phone_nos', 'read_only', true);
-            cur_frm.set_df_property('is_primary_contact', 'read_only', true);
-            cur_frm.set_df_property('links', 'read_only', true);
-            cur_frm.set_df_property('institute', 'read_only', true);
-            cur_frm.set_df_property('department', 'read_only', true);
-            cur_frm.set_df_property('room', 'read_only', true);
-            cur_frm.set_df_property('unsubscribed', 'read_only', true);
-            cur_frm.set_df_property('interests', 'read_only', true);
-            cur_frm.set_df_property('punchout_identifier', 'read_only', true);
-            cur_frm.set_df_property('punchout_shop', 'read_only', true);
-            cur_frm.set_df_property('receive_newsletter', 'read_only', true);
-            cur_frm.set_df_property('subscribe_date', 'read_only', true);
-            cur_frm.set_df_property('unsubscribe_date', 'read_only', true);
+        // Apply read-only state only when it changes to avoid repeated UI work on refresh.
+        const should_lock_restricted_fields = !frappe.user.has_role("System Manager") && (frm.doc.first_name == "Anonymous" || (frm.doc.contact_source && frm.doc.contact_source == "Punchout"));
+        if (frm.__restricted_fields_locked !== should_lock_restricted_fields) {
+            set_restricted_contact_fields_read_only(frm, should_lock_restricted_fields);
+            frm.__restricted_fields_locked = should_lock_restricted_fields;
         }
 
         // lock email_ids if has_webshop_account == 1
@@ -252,45 +232,13 @@ frappe.ui.form.on('Contact', {
                 frm.dashboard.add_comment('This is a lead.', 'green', true);
             }
 
-            // Show potential duplicates immediately (do not defer to a button)
+            // Show potential duplicates (cached + deferred fetch for refresh responsiveness)
             if (!frm.doc.__islocal && frm.doc.status === 'Open' && frm.doc.has_webshop_account) {  // only Webshop Contacts are Open, therefore use has_webshop_account to only show duplicates on a shipping Co0ntact
-                frappe.call({
-                    "method": "microsynth.microsynth.utils.get_potential_contact_duplicates",
-                    'args': {
-                        'contact_id': frm.doc.name
-                    },
-                    callback: function (response) {
-                        const contacts = response.message || [];
-                        if (contacts.length > 0) {
-                            const label = contacts.length === 1 ? "potential Duplicate:" : "potential Duplicates:";
-                            let html = `<br>${contacts.length} ${label}<br>`;
-                            contacts.slice(0, 10).forEach(c => {
-                                html += `<b>${c.name}</b>: ${c.first_name} ${c.last_name || ''}, Institute: ${c.institute || ''} (<a href="/desk#contact_merger?contact_1=${frm.doc.name}&contact_2=${c.name}">Open in Contact Merger</a>)<br>`;
-                            });
-                            if (contacts.length > 10) {
-                                html += "<b>...</b><br>";
-                            }
-                            frm.dashboard.add_comment(html, 'red', true);
-                        }
-                    }
-                });
+                show_cached_or_fetch_duplicates(frm);
             }
 
-            // Get and show Customer Name
-            frappe.call({
-                "method": "frappe.client.get_value",
-                "args": {
-                    "doctype": "Customer",
-                    "filters": { name: link_name },
-                    "fieldname": "customer_name"
-                },
-                "callback": function(response) {
-                    const customer_name = response.message?.customer_name;
-                    if (customer_name) {
-                        frm.dashboard.add_comment("Customer: " + customer_name, "blue", true);
-                    }
-                }
-            });
+            // Get and show Customer Name (cached)
+            show_cached_or_fetch_customer_name(frm, link_name);
 
             // Custom email dialog
             frm.add_custom_button(__("Email"), function () {
@@ -335,21 +283,8 @@ frappe.ui.form.on('Contact', {
                 frappe.set_route("Form", "Supplier", link_name);
             });
 
-            // Get and show Supplier Name
-            frappe.call({
-                "method": "frappe.client.get_value",
-                "args": {
-                    "doctype": "Supplier",
-                    "filters": { "name": link_name },
-                    "fieldname": "supplier_name"
-                },
-                callback: function(response) {
-                    const supplier_name = response.message?.supplier_name;
-                    if (supplier_name) {
-                        frm.dashboard.add_comment("Supplier: " + supplier_name, "blue", true);
-                    }
-                }
-            });
+            // Get and show Supplier Name (cached)
+            show_cached_or_fetch_supplier_name(frm, link_name);
 
         } else {
             // No Customer or Supplier link
@@ -357,6 +292,161 @@ frappe.ui.form.on('Contact', {
         }
     }
 });
+
+
+const contact_refresh_cache = {
+    customer_names: {},
+    supplier_names: {},
+    duplicate_contacts: {}
+};
+
+// lock all fields except Institute Key, Group Leader, Cost Center if First Name = "Anonymous" or if source = Punchout
+const restricted_contact_fields = [
+    'first_name',
+    'middle_name',
+    'last_name',
+    'user',
+    'address',
+    'status',
+    'salutation',
+    'designation',
+    'gender',
+    'email_ids',
+    'phone_nos',
+    'is_primary_contact',
+    'links',
+    'institute',
+    'department',
+    'room',
+    'unsubscribed',
+    'interests',
+    'punchout_identifier',
+    'punchout_shop',
+    'receive_newsletter',
+    'subscribe_date',
+    'unsubscribe_date'
+];
+
+
+function get_cached_name(cache_bucket, key) {
+    if (!key) return null;
+    return cache_bucket[key] || null;
+}
+
+
+function set_cached_name(cache_bucket, key, value) {
+    if (!key || !value) return;
+    cache_bucket[key] = value;
+}
+
+
+function get_cached_duplicates(contact_id) {
+    if (!contact_id) return null;
+    return contact_refresh_cache.duplicate_contacts[contact_id] || null;
+}
+
+
+function set_cached_duplicates(contact_id, contacts) {
+    if (!contact_id) return;
+    contact_refresh_cache.duplicate_contacts[contact_id] = contacts || [];
+}
+
+
+function render_duplicate_comment(frm, contacts) {
+    if (!contacts || !contacts.length) return;
+    const label = contacts.length === 1 ? "potential Duplicate:" : "potential Duplicates:";
+    let html = `<br>${contacts.length} ${label}<br>`;
+    contacts.slice(0, 10).forEach(c => {
+        html += `<b>${c.name}</b>: ${c.first_name} ${c.last_name || ''}, Institute: ${c.institute || ''} (<a href="/desk#contact_merger?contact_1=${frm.doc.name}&contact_2=${c.name}">Open in Contact Merger</a>)<br>`;
+    });
+    if (contacts.length > 10) {
+        html += "<b>...</b><br>";
+    }
+    frm.dashboard.add_comment(html, 'red', true);
+}
+
+
+function show_cached_or_fetch_customer_name(frm, link_name) {
+    const cached_name = get_cached_name(contact_refresh_cache.customer_names, link_name);
+    if (cached_name) {
+        frm.dashboard.add_comment("Customer: " + cached_name, "blue", true);
+        return;
+    }
+    frappe.call({
+        "method": "frappe.client.get_value",
+        "args": {
+            "doctype": "Customer",
+            "filters": { name: link_name },
+            "fieldname": "customer_name"
+        },
+        "callback": function(response) {
+            const customer_name = response.message?.customer_name;
+            if (customer_name) {
+                set_cached_name(contact_refresh_cache.customer_names, link_name, customer_name);
+                frm.dashboard.add_comment("Customer: " + customer_name, "blue", true);
+            }
+        }
+    });
+}
+
+
+function show_cached_or_fetch_supplier_name(frm, link_name) {
+    const cached_name = get_cached_name(contact_refresh_cache.supplier_names, link_name);
+    if (cached_name) {
+        frm.dashboard.add_comment("Supplier: " + cached_name, "blue", true);
+        return;
+    }
+    frappe.call({
+        "method": "frappe.client.get_value",
+        "args": {
+            "doctype": "Supplier",
+            "filters": { "name": link_name },
+            "fieldname": "supplier_name"
+        },
+        callback: function(response) {
+            const supplier_name = response.message?.supplier_name;
+            if (supplier_name) {
+                set_cached_name(contact_refresh_cache.supplier_names, link_name, supplier_name);
+                frm.dashboard.add_comment("Supplier: " + supplier_name, "blue", true);
+            }
+        }
+    });
+}
+
+
+function show_cached_or_fetch_duplicates(frm) {
+    const contact_id = frm.doc.name;
+    if (!contact_id || frm.__duplicate_fetch_inflight) return;
+
+    const cached_contacts = get_cached_duplicates(contact_id);
+    if (cached_contacts) {
+        render_duplicate_comment(frm, cached_contacts);
+        return;
+    }
+    frm.__duplicate_fetch_inflight = true;
+    // Defer heavy duplicate lookup to keep initial refresh responsive.
+    setTimeout(() => {
+        frappe.call({
+            "method": "microsynth.microsynth.utils.get_potential_contact_duplicates",
+            'args': {
+                'contact_id': contact_id
+            },
+            callback: function (response) {
+                frm.__duplicate_fetch_inflight = false;
+                const contacts = response.message || [];
+                set_cached_duplicates(contact_id, contacts);
+                render_duplicate_comment(frm, contacts);
+            }
+        });
+    }, 0);
+}
+
+
+function set_restricted_contact_fields_read_only(frm, read_only) {
+    restricted_contact_fields.forEach((fieldname) => {
+        cur_frm.set_df_property(fieldname, 'read_only', read_only ? 1 : 0);
+    });
+}
 
 
 function update_address_links(frm) {

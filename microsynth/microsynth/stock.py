@@ -65,6 +65,7 @@ def create_stock_entry(item, warehouse, rows, purpose):
     doc = frappe.new_doc("Stock Entry")
     doc.stock_entry_type = purpose
     doc.company = frappe.db.get_value("Warehouse", warehouse, "company")
+    doc.remarks = "Stock correction via Correct Stock"
     if not doc.company:
         frappe.throw(f"Warehouse {warehouse} does not have a company assigned.")
 

@@ -5,6 +5,7 @@
 
 import json
 import csv
+import math
 import re
 import traceback
 from datetime import datetime
@@ -13,7 +14,7 @@ import frappe
 from frappe import _
 from frappe.desk.form.assign_to import add, clear
 from frappe.core.doctype.communication.email import make
-from frappe.utils import get_url_to_form, flt, getdate, now_datetime
+from frappe.utils import add_days, get_url_to_form, flt, getdate, now_datetime
 from frappe.utils.data import today
 from frappe.utils.password import get_decrypted_password
 from frappe.core.doctype.user.user import test_password_strength
@@ -257,8 +258,8 @@ def select_quotation_for_item(item_code, consolidated_total_qty, supplier_doc, c
             "conversion_rate": conversion_rate,
             "doctype": "Purchase Order",
         })
-        if item_details and item_details.get("rate") is not None:
-            selection['rate'] = flt(item_details.get("rate"))
+        if item_details and item_details.get("price_list_rate") is not None:
+            selection['rate'] = flt(item_details.get("price_list_rate"))
         else:
             selection['warnings'].append(
                 f"Item {item_code}: no valid Item Price found in price list {supplier_doc.default_price_list}."
@@ -399,6 +400,30 @@ def create_po_from_open_mr(filters):
     currencies = {item.get('currency') for item in items if item.get('currency') is not None}
     supplier_doc = frappe.get_doc('Supplier', filters.get('supplier'))
     company = filters.get('company')
+
+    draft_material_requests = []
+    for item in items:
+        if item.get('request_type') != 'Material Request':
+            continue
+        try:
+            is_draft = int(item.get('material_request_docstatus')) == 0
+        except (TypeError, ValueError):
+            is_draft = False
+        if is_draft and item.get('material_request'):
+            draft_material_requests.append(item.get('material_request'))
+
+    unique_draft_material_requests = sorted(set(draft_material_requests))
+    if unique_draft_material_requests:
+        links = [
+            f'<li><a href="{get_url_to_form("Material Request", mr_name)}" target="_blank">{mr_name}</a></li>'
+            for mr_name in unique_draft_material_requests
+        ]
+        frappe.throw(
+            f"Create Purchase Order is not possible, due to <b>{len(unique_draft_material_requests)} Draft</b> "
+            f"Material Request(s) for Supplier <b>{supplier_doc.name}</b>:<br>"
+            f"<ul>{''.join(links)}</ul>Please:<ol><li>Check the Draft Material Request(s)</li><li>Submit, Stop or Force Cancel them</li><li>Try again</li></ol>",
+            _("Draft Material Requests Selected")
+        )
 
     if len(currencies) > 1:
         frappe.throw(
@@ -2196,6 +2221,23 @@ def create_material_request(item_code, qty, schedule_date, company, item_name=No
         frappe.throw(f"Currency mismatch: Item {item_code} belongs to Supplier {supplier} with currency {supplier_currency} and cannot be purchased in currency {currency}.")
     elif not currency:
         currency = frappe.get_value("Company", company, "default_currency")
+
+    if not rate:
+        supplier_doc = frappe.get_doc("Supplier", supplier)
+        item_doc = frappe.get_doc("Item", item_code)
+        requested_uom = item_doc.purchase_uom or item_doc.stock_uom
+        quotation_selection = select_quotation_for_item(
+            item_code=item_code,
+            consolidated_total_qty=flt(qty),
+            supplier_doc=supplier_doc,
+            currency=currency,
+            today_date=getdate(today()),
+            original_rate=0,
+            company=company,
+            requested_uom=requested_uom
+        )
+        rate = flt(quotation_selection.get("rate") or 0)
+
     mr.append("items", {
         "item_code": item_code,
         "item_name": item_name,
@@ -2208,6 +2250,166 @@ def create_material_request(item_code, qty, schedule_date, company, item_name=No
     mr.insert()
     mr.submit()
     return mr.name
+
+
+def _get_first_verified_supplier(item_code):
+    suppliers = frappe.get_all(
+        "Item Supplier",
+        filters={
+            "parent": item_code,
+            "parenttype": "Item",
+            "substitute_status": "Verified"
+        },
+        fields=["supplier", "idx"],
+        order_by="idx ASC"
+    )
+    for row in suppliers:
+        if row.get("supplier"):
+            return row.get("supplier")
+    return None
+
+
+def _create_material_request_draft(item_code, qty, schedule_date, company, supplier, requested_by, comment):
+    if not (item_code and qty and schedule_date and company and supplier):
+        frappe.throw("Required parameters missing for Material Request draft creation")
+
+    supplier_doc = frappe.get_doc("Supplier", supplier)
+    supplier_currency = supplier_doc.default_currency
+    currency = supplier_currency or frappe.get_value("Company", company, "default_currency")
+    item_doc = frappe.get_doc("Item", item_code)
+    item_name = item_doc.item_name
+    requested_uom = item_doc.purchase_uom or item_doc.stock_uom
+    quotation_selection = select_quotation_for_item(
+        item_code=item_code,
+        consolidated_total_qty=flt(qty),
+        supplier_doc=supplier_doc,
+        currency=currency,
+        today_date=getdate(today()),
+        original_rate=0,
+        company=company,
+        requested_uom=requested_uom
+    )
+    rate = flt(quotation_selection.get("rate") or 0)
+
+    mr = frappe.new_doc("Material Request")
+    mr.material_request_type = "Purchase"
+    mr.transaction_date = today()
+    mr.schedule_date = schedule_date
+    mr.company = company
+    mr.comment = comment
+    mr.requested_by = requested_by
+    mr.append("items", {
+        "item_code": item_code,
+        "item_name": item_name,
+        "supplier": supplier,
+        "qty": qty,
+        "schedule_date": schedule_date,
+        "rate": rate,
+        "item_request_currency": currency
+    })
+    mr.insert()
+    return mr.name
+
+
+def create_material_request_drafts_from_stock_overview(dry_run=False):
+    """Create draft Material Requests from Stock Overview rows.
+
+    Scope:
+    - Company fixed to "Microsynth AG"
+    - Only items present in "Oligo Modifier Stock"
+    - Only items with at least one verified Item Supplier
+    - Qty is always ceil(to_order)
+    - One draft Material Request per qualifying row
+
+    Run manually:
+    bench execute microsynth.microsynth.purchasing.create_material_request_drafts_from_stock_overview --kwargs "{'dry_run': True}"
+    """
+    from microsynth.microsynth.report.stock_overview.stock_overview import get_data as get_stock_overview_data
+    from microsynth.microsynth.report.oligo_modifier_stock.oligo_modifier_stock import get_data as get_oligo_modifier_stock_data
+
+    company = "Microsynth AG"
+    requested_by = "Administrator"
+    mr_comment = "Automatically created from Stock Overview"
+    schedule_date = add_days(today(), 14)
+
+    previous_user = frappe.session.user
+    if previous_user != requested_by:
+        frappe.set_user(requested_by)
+
+    try:
+        stock_rows = get_stock_overview_data({"company": company}) or []
+        oligo_rows = get_oligo_modifier_stock_data({"mode": "Filled Locations"}) or []
+        oligo_item_codes = {row.get("item_code") for row in oligo_rows if row.get("item_code")}
+
+        created = []
+        planned = []
+        skipped = []
+
+        for row in stock_rows:
+            item_code = row.get("item_code")
+            if not item_code:
+                skipped.append({"item_code": None, "reason": "missing_item_code"})
+                continue
+
+            if item_code not in oligo_item_codes:
+                #skipped.append({"item_code": item_code, "reason": "not_in_oligo_modifier_stock"})
+                continue
+
+            to_order = flt(row.get("to_order"))
+            if to_order <= 0:
+                #skipped.append({"item_code": item_code, "reason": "non_positive_to_order", "to_order": to_order})
+                continue
+
+            qty = int(math.ceil(to_order))
+            if qty <= 0:
+                skipped.append({"item_code": item_code, "reason": "rounded_qty_non_positive", "to_order": to_order})
+                continue
+
+            supplier = _get_first_verified_supplier(item_code)
+            if not supplier:
+                skipped.append({"item_code": item_code, "reason": "no_verified_supplier"})
+                continue
+
+            if dry_run:
+                planned.append({
+                    "item_code": item_code,
+                    "qty": qty,
+                    "supplier": supplier,
+                    "schedule_date": str(schedule_date),
+                    "company": company
+                })
+                continue
+
+            mr_name = _create_material_request_draft(
+                item_code=item_code,
+                qty=qty,
+                schedule_date=schedule_date,
+                company=company,
+                supplier=supplier,
+                requested_by=requested_by,
+                comment=mr_comment
+            )
+            created.append({"material_request": mr_name, "item_code": item_code, "qty": qty, "supplier": supplier})
+
+        summary = {
+            "company": company,
+            "requested_by": requested_by,
+            "schedule_date": str(schedule_date),
+            "dry_run": dry_run,
+            "source_rows": len(stock_rows),
+            "oligo_items": len(oligo_item_codes),
+            "created_count": len(created),
+            "planned_count": len(planned),
+            "skipped_count": len(skipped),
+            "created": created,
+            "planned": planned,
+            "skipped": skipped
+        }
+        frappe.log_error(json.dumps(summary, indent=2), "purchasing.create_material_request_drafts_from_stock_overview")
+        return summary
+    finally:
+        if frappe.session.user != previous_user:
+            frappe.set_user(previous_user)
 
 
 @frappe.whitelist()

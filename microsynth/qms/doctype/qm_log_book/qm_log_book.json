@@ -12,6 +12,10 @@
   "date",
   "costs",
   "document_name",
+  "costs_section",
+  "amount",
+  "column_break_11",
+  "currency",
   "section_break_6",
   "closed_on",
   "column_break_10",
@@ -162,10 +166,33 @@
    "fieldtype": "Table",
    "label": "QM Nonconformities",
    "options": "QM Nonconformity Link"
+  },
+  {
+   "fieldname": "costs_section",
+   "fieldtype": "Section Break",
+   "label": "Costs"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "amount",
+   "fieldtype": "Currency",
+   "label": "Amount",
+   "options": "currency"
+  },
+  {
+   "fieldname": "column_break_11",
+   "fieldtype": "Column Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "currency",
+   "fieldtype": "Link",
+   "label": "Currency",
+   "options": "Currency"
   }
  ],
  "is_submittable": 1,
- "modified": "2026-08-21 16:08:26.644064",
+ "modified": "2026-08-27 15:27:16.006343",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Log Book",

@@ -74,7 +74,7 @@ def get_data(filters):
                 INNER JOIN `tabMaterial Request`
                     ON `tabMaterial Request`.`name` = `tabMaterial Request Item`.`parent`
                 WHERE
-                    `tabMaterial Request`.`docstatus` = 1
+                    `tabMaterial Request`.`docstatus` < 2
                     AND `tabMaterial Request`.`status` != 'Stopped'
                     AND `tabMaterial Request Item`.`item_code` = `tabItem`.`name`
                     AND `tabMaterial Request Item`.`warehouse` = `tabBin`.`warehouse`
@@ -116,6 +116,7 @@ def get_data(filters):
                 WHERE
                     `tabStock Entry`.`docstatus` = 1
                     AND `tabStock Entry`.`stock_entry_type` = 'Material Issue'
+                    AND IFNULL(`tabStock Entry`.`remarks`, '') NOT LIKE 'Stock correction via Correct Stock%%'
                     AND `tabStock Entry Detail`.`item_code` = `tabItem`.`name`
                     AND `tabStock Entry Detail`.`s_warehouse` = `tabBin`.`warehouse`
             ) AS `avg_consumption`

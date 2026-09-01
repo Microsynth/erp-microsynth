@@ -161,6 +161,8 @@ frappe.ui.form.on('Sales Order', {
         //update_taxes(frm.doc.company, frm.doc.customer, frm.doc.shipping_address_name, category, frm.doc.delivery_date);
     },
     validate(frm) {
+        normalize_payment_schedule_due_dates(frm);
+
         // block Product Type NGS
         if (frm.doc.product_type === "NGS") {
             frappe.throw(__("Product Type NGS is deprecated. Please use Genetic Analysis instead."))
@@ -265,6 +267,20 @@ frappe.ui.form.on('Sales Order', {
             cur_frm.set_value("amended_from", null);
             set_naming_series(frm);                 // common function
         }
+    },
+    delivery_date(frm) {
+        if (!frm.doc.delivery_date || !frm.doc.items || frm.doc.items.length === 0) {
+            return;
+        }
+
+        (frm.doc.items || []).forEach(item => {
+            frappe.model.set_value(item.doctype, item.name, "delivery_date", frm.doc.delivery_date);
+        });
+
+        normalize_payment_schedule_due_dates(frm);
+    },
+    transaction_date(frm) {
+        normalize_payment_schedule_due_dates(frm);
     },
     customer(frm) {
         fetch_default_company_from_customer(frm.doc.customer);
@@ -552,4 +568,31 @@ function show_credit_account_dialog(frm) {
             dialog.show();
         }
     });
+}
+
+function normalize_payment_schedule_due_dates(frm) {
+    if (!frm.doc.transaction_date || !frm.doc.payment_schedule || frm.doc.payment_schedule.length === 0) {
+        return;
+    }
+
+    let corrected_rows = 0;
+    const posting_date = frm.doc.transaction_date;
+
+    (frm.doc.payment_schedule || []).forEach(row => {
+        if (row.due_date && frappe.datetime.str_to_obj(row.due_date) < frappe.datetime.str_to_obj(posting_date)) {
+            frappe.model.set_value(row.doctype, row.name, "due_date", posting_date);
+            corrected_rows += 1;
+        }
+    });
+
+    if (corrected_rows > 0) {
+        frappe.msgprint({
+            title: __('Payment Schedule Updated'),
+            indicator: 'orange',
+            message: __(
+                "Adjusted {0} payment schedule due date(s) to Posting Date {1} because payment schedule due dates were earlier than Posting Date (not yet saved).",
+                [corrected_rows, posting_date]
+            )
+        });
+    }
 }
