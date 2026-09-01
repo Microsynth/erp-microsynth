@@ -300,7 +300,7 @@
   {
    "hidden": 0,
    "is_query_report": 1,
-   "label": "Sold Units Oligo Synthesis",
+   "label": "Sold Units: Oligo Synthesis",
    "link_count": 0,
    "link_to": "Oligo Accounting",
    "link_type": "Report",
@@ -310,7 +310,7 @@
   {
    "hidden": 0,
    "is_query_report": 1,
-   "label": "Sold Units Fast Lane Analysis",
+   "label": "Sold Units: Fast Lane Analysis",
    "link_count": 0,
    "link_to": "Sold Units Fast Lane Analysis",
    "link_type": "Report",
@@ -318,7 +318,7 @@
    "type": "Link"
   }
  ],
- "modified": "2026-08-20 09:42:12.669493",
+ "modified": "2026-09-01 16:32:58.674519",
  "modified_by": "rolf.suter@microsynth.ch",
  "module": "Microsynth",
  "name": "Sales",
