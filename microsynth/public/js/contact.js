@@ -744,7 +744,7 @@ function preview_address(frm, customer) {
                 console.log(address_layout);
                 var d = new frappe.ui.Dialog({
                     'fields': [
-                        {'fieldname': 'address_preview', 'fieldtype': 'Data', 'read_only': 1, 'default': address_layout}
+                        {'fieldname': 'address_preview', 'fieldtype': 'HTML' }
                     ],
                     'primary_action': function(){
                         //var values = d.get_values();
@@ -764,6 +764,7 @@ function preview_address(frm, customer) {
                     'primary_action_label': __('Print Label'),
                     'title': __('Address Preview')
                 });
+                d.fields_dict.address_preview.$wrapper.html(address_layout);
                 d.show();
             }
         });
