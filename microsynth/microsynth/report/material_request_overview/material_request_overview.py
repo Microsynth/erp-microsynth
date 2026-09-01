@@ -36,6 +36,7 @@ def get_columns(mode=None):
             {"label": _("Pur. Receipt"), "fieldname": "receipt", "fieldtype": "Link", "options": "Purchase Receipt", "width": 90},
         ]
     columns += [
+        {"label": _("Amount"), "fieldname": "amount", "fieldtype": "Currency", "options": "currency", "width": 90},
         {"label": _("Supplier"), "fieldname": "supplier", "fieldtype": "Link", "options": "Supplier", "width": 65},
         {"label": _("Supplier Name"), "fieldname": "supplier_name", "fieldtype": "Data", "width": 220},
         {"label": _("Supplier Item Code"), "fieldname": "supplier_part_no", "fieldtype": "Data", "width": 125},
@@ -152,6 +153,24 @@ def get_data(filters):
                 IFNULL(`tabMaterial Request Item`.`supplier`, `tabItem Supplier`.`supplier`) AS `supplier`,
                 IFNULL(`tabMaterial Request Item`.`supplier_name`, `tabSupplier`.`supplier_name`) AS `supplier_name`,
                 `tabItem Supplier`.`supplier_part_no`,
+                `tabMaterial Request Item`.`item_request_currency` AS `currency`,
+                CASE
+                    WHEN EXISTS (
+                        SELECT 1
+                        FROM `tabPurchase Order Item`
+                        WHERE
+                            `tabPurchase Order Item`.`docstatus` = 1
+                            AND `tabPurchase Order Item`.`material_request_item` = `tabMaterial Request Item`.`name`
+                    )
+                    THEN (
+                        SELECT IFNULL(SUM(`tabPurchase Order Item`.`amount`), 0)
+                        FROM `tabPurchase Order Item`
+                        WHERE
+                            `tabPurchase Order Item`.`docstatus` = 1
+                            AND `tabPurchase Order Item`.`material_request_item` = `tabMaterial Request Item`.`name`
+                    )
+                    ELSE IFNULL(`tabMaterial Request Item`.`amount`, (IFNULL(`tabMaterial Request Item`.`qty`, 0) * IFNULL(`tabMaterial Request Item`.`rate`, 0)))
+                END AS `amount`,
                 IFNULL(`tabMaterial Request`.`requested_by`, `tabMaterial Request`.`owner`) AS `requested_by`,
                 `tabMaterial Request`.`comment` AS `comment`
             FROM
@@ -250,6 +269,14 @@ def get_data(filters):
                     IFNULL(`tabMaterial Request Item`.`supplier`, `tabItem Supplier`.`supplier`) AS `supplier`,
                     IFNULL(`tabMaterial Request Item`.`supplier_name`, `tabSupplier`.`supplier_name`) AS `supplier_name`,
                     `tabItem Supplier`.`supplier_part_no`,
+                    `tabMaterial Request Item`.`item_request_currency` AS `currency`,
+                    (
+                        SELECT IFNULL(SUM(`tabPurchase Order Item`.`amount`), 0)
+                        FROM `tabPurchase Order Item`
+                        WHERE
+                            `tabPurchase Order Item`.`docstatus` = 1
+                            AND `tabPurchase Order Item`.`material_request_item` = `tabMaterial Request Item`.`name`
+                    ) AS `amount`,
                     IFNULL(`tabMaterial Request`.`requested_by`, `tabMaterial Request`.`owner`) AS `requested_by`,
                     `tabMaterial Request`.`comment` AS `comment`
                 FROM
@@ -299,6 +326,14 @@ def get_data(filters):
                 `tabMaterial Request Item`.`name` AS `material_request_item`,
                 `tabMaterial Request Item`.`rate`,
                 `tabMaterial Request Item`.`item_request_currency` AS `currency`,
+                (
+                    IFNULL(`tabMaterial Request Item`.`amount`, (IFNULL(`tabMaterial Request Item`.`qty`, 0) * IFNULL(`tabMaterial Request Item`.`rate`, 0)))
+                    *
+                    (
+                        (`tabMaterial Request Item`.`qty` - IFNULL(SUM(`tabPurchase Order Item`.`qty`), 0))
+                        / NULLIF(`tabMaterial Request Item`.`qty`, 0)
+                    )
+                ) AS `amount`,
                 IFNULL(`tabMaterial Request Item`.`supplier`, `tabItem Supplier`.`supplier`) AS `supplier`,
                 IFNULL(`tabMaterial Request Item`.`supplier_name`, `tabSupplier`.`supplier_name`) AS `supplier_name`,
                 `tabItem Supplier`.`supplier_part_no`,
@@ -352,6 +387,7 @@ def get_data(filters):
                 NULL AS `material_request_item`,
                 `tabItem Request`.`rate`,
                 `tabItem Request`.`currency`,
+                (IFNULL(`tabItem Request`.`qty`, 0) * IFNULL(`tabItem Request`.`rate`, 0)) AS `amount`,
                 `tabItem Request`.`supplier`,
                 `tabItem Request`.`supplier_name`,
                 `tabItem Request`.`supplier_part_no`,
