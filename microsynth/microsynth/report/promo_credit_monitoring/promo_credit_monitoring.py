@@ -99,6 +99,14 @@ def get_data(filters):
             WHERE `tabContact`.`name` = `tabCredit Account`.`contact_person`
             LIMIT 1) AS `institute_key`,
             SUM(`tabSales Invoice Item`.`net_amount`) AS `amount`,
+            SUM(
+                CASE
+                    WHEN `tabSales Invoice`.`is_return` = 1
+                        AND `tabSales Invoice`.`posting_date` > `tabCredit Account`.`expiry_date`
+                    THEN 0
+                    ELSE `tabSales Invoice Item`.`net_amount`
+                END
+            ) AS `given_credits`,
             `tabCredit Account`.`currency`
         FROM `tabSales Invoice`
         INNER JOIN `tabSales Invoice Item`
@@ -176,9 +184,10 @@ def get_data(filters):
 
     for d in deposit_rows:
         credit_account_doc = frappe.get_doc("Credit Account", d.credit_account)
-        given = d.amount or 0
+        given = d.given_credits or 0
+        base_amount = d.amount or 0
         used = abs(allocation_map.get(d.credit_account, 0) or 0)
-        remaining = given - used
+        remaining = base_amount - used
         sales_amount = sales_map.get(d.contact_person, 0)
 
         # expiry logic
