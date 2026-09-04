@@ -2874,9 +2874,29 @@ def create_cn_and_invoice_draft(sales_invoice_id):
     Creates and submits a credit note for the given Sales Invoice.
     Creates a new Sales Invoice with the exact_copy_sales_invoice function (docstatus = 0, inserted).
     Returns the name of the created Sales Invoice draft.
+
+    If any linked Sales Orders are in status "Closed", they are temporarily reopened before
+    creating the credit note / draft invoice and then closed again afterwards.
     """
+    reopened_sales_orders = []
+    closed_sales_orders = []
+
     try:
         original_invoice_doc = frappe.get_doc("Sales Invoice", sales_invoice_id)
+
+        # Some invoice workflows require a closed Sales Order to be reopened before a
+        # return draft is created, otherwise the linked order status blocks the operation.
+        sales_order_ids = []
+        for item in original_invoice_doc.items:
+            if item.sales_order and item.sales_order not in sales_order_ids:
+                sales_order_ids.append(item.sales_order)
+
+        for sales_order_id in sales_order_ids:
+            sales_order_doc = frappe.get_doc("Sales Order", sales_order_id)
+            if sales_order_doc.docstatus == 1 and sales_order_doc.status == "Closed":
+                sales_order_doc.update_status("To Bill")
+                reopened_sales_orders.append(sales_order_id)
+
         credit_note_id = create_full_return(sales_invoice_id)
         invoice_draft_id = exact_copy_sales_invoice(sales_invoice_id)
         invoice_draft_doc = frappe.get_doc("Sales Invoice", invoice_draft_id)
@@ -2899,20 +2919,93 @@ def create_cn_and_invoice_draft(sales_invoice_id):
         invoice_draft_doc.prev_invoice_returned = 1
         invoice_draft_doc.calculate_taxes_and_totals()
         invoice_draft_doc.save()
+
+        for sales_order_id in reopened_sales_orders:
+            sales_order_doc = frappe.get_doc("Sales Order", sales_order_id)
+            if sales_order_doc.docstatus == 1 and sales_order_doc.status != "Closed":
+                sales_order_doc.update_status("Closed")
+                closed_sales_orders.append(sales_order_id)
+
+        reopened_list = ", ".join(reopened_sales_orders) if reopened_sales_orders else "none"
+        closed_list = ", ".join(closed_sales_orders) if closed_sales_orders else "none"
         return {
             "success": True,
             "credit_note_id": credit_note_id,
             "invoice_draft_id": invoice_draft_id,
-            "message": f"Credit note {credit_note_id} created and submitted, invoice draft {invoice_draft_id} created for Sales Invoice {sales_invoice_id}."
+            "reopened_sales_orders": reopened_sales_orders,
+            "closed_sales_orders": closed_sales_orders,
+            "message": f"Credit note {credit_note_id} created and submitted, invoice draft {invoice_draft_id} created for Sales Invoice {sales_invoice_id}. Reopened Sales Orders: {reopened_list}. Closed Sales Orders: {closed_list}."
         }
     except Exception as e:
-        #frappe.log_error(f"Error creating credit note and invoice draft for Sales Invoice {sales_invoice_id}: {traceback.format_exc()}\n{e}")
+        for sales_order_id in reopened_sales_orders:
+            try:
+                sales_order_doc = frappe.get_doc("Sales Order", sales_order_id)
+                if sales_order_doc.docstatus == 1 and sales_order_doc.status != "Closed":
+                    sales_order_doc.update_status("Closed")
+                    closed_sales_orders.append(sales_order_id)
+            except Exception:
+                pass
+
+        reopened_list = ", ".join(reopened_sales_orders) if reopened_sales_orders else "none"
+        closed_list = ", ".join(closed_sales_orders) if closed_sales_orders else "none"
         return {
             "success": False,
             "credit_note_id": None,
             "invoice_draft_id": None,
-            "message": str(e)
+            "reopened_sales_orders": reopened_sales_orders,
+            "closed_sales_orders": closed_sales_orders,
+            "message": f"{str(e)} Reopened Sales Orders: {reopened_list}. Closed Sales Orders: {closed_list}."
         }
+
+
+@frappe.whitelist()
+def reopen_closed_sales_orders_for_invoice_save(sales_order_ids):
+    """
+    Temporarily reopen linked closed Sales Orders before saving a Sales Invoice draft.
+    """
+    if isinstance(sales_order_ids, str):
+        try:
+            sales_order_ids = json.loads(sales_order_ids)
+        except Exception:
+            sales_order_ids = [sales_order_ids]
+
+    sales_order_ids = [so_id for so_id in sales_order_ids if so_id]
+    reopened_sales_orders = []
+    for sales_order_id in sales_order_ids:
+        try:
+            sales_order_doc = frappe.get_doc("Sales Order", sales_order_id)
+            if sales_order_doc.docstatus == 1 and sales_order_doc.status == "Closed":
+                sales_order_doc.update_status("To Bill")
+                reopened_sales_orders.append(sales_order_id)
+        except Exception:
+            frappe.log_error(frappe.get_traceback(), "Error reopening Sales Order")
+            continue
+    return {"reopened_sales_orders": reopened_sales_orders}
+
+
+@frappe.whitelist()
+def close_reopened_sales_orders_for_invoice_save(sales_order_ids):
+    """
+    Close previously reopened Sales Orders again after a Sales Invoice save.
+    """
+    if isinstance(sales_order_ids, str):
+        try:
+            sales_order_ids = json.loads(sales_order_ids)
+        except Exception:
+            sales_order_ids = [sales_order_ids]
+
+    sales_order_ids = [so_id for so_id in sales_order_ids if so_id]
+    closed_sales_orders = []
+    for sales_order_id in sales_order_ids:
+        try:
+            sales_order_doc = frappe.get_doc("Sales Order", sales_order_id)
+            if sales_order_doc.docstatus == 1 and sales_order_doc.status != "Closed":
+                sales_order_doc.update_status("Closed")
+                closed_sales_orders.append(sales_order_id)
+        except Exception:
+            frappe.log_error(frappe.get_traceback(), "Error closing Sales Order")
+            continue
+    return {"closed_sales_orders": closed_sales_orders}
 
 
 @frappe.whitelist()
