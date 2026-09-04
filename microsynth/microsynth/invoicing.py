@@ -2898,7 +2898,13 @@ def create_cn_and_invoice_draft(sales_invoice_id):
                 reopened_sales_orders.append(sales_order_id)
 
         credit_note_id = create_full_return(sales_invoice_id)
-        invoice_draft_id = exact_copy_sales_invoice(sales_invoice_id)
+        try:
+            invoice_draft_id = exact_copy_sales_invoice(sales_invoice_id)
+        except frappe.DuplicateEntryError as e:
+            # TODO: Avoid the Credit Note beeing already inserted before creating the draft invoice.
+            msg = f"Please cancel Credit Note {credit_note_id}: Duplicate entry error while creating draft invoice for Sales Invoice {sales_invoice_id}: {str(e)}"
+            frappe.log_error(msg, "create_cn_and_invoice_draft")
+            frappe.throw(msg)
         invoice_draft_doc = frappe.get_doc("Sales Invoice", invoice_draft_id)
 
         # Keep the copied item links/prices identical to the original invoice to avoid
