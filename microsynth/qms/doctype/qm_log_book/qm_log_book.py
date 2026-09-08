@@ -41,10 +41,10 @@ class QMLogBook(Document):
             frappe.db.commit()
         elif self.document_type and self.document_name and self.document_type == "QM Computerised System":
             cs_doc = frappe.get_doc(self.document_type, self.document_name)
-            if cs_doc.regulatory_classification == 'GMP':
-                self.status = "To Review"
-            else:
-                self.status = "Closed"
+            self.status = determine_qmcs_logbook_status(
+                cs_doc.regulatory_classification,
+                set(frappe.get_roles(frappe.session.user))
+            )
             self.save()
             frappe.db.commit()
 
@@ -94,6 +94,20 @@ def validate_entry_type_for_document_type(document_type, entry_type):
         frappe.throw(
             _("Entry Type '{0}' is not allowed for document type '{1}'.").format(entry_type, document_type)
         )
+
+
+def determine_qmcs_logbook_status(regulatory_classification, user_roles=None):
+    user_roles = set(user_roles or [])
+    if regulatory_classification == "GMP":
+        return "Closed" if "QAU" in user_roles else "To Review"
+    return "Closed"
+
+
+def can_approve_qm_logbook_entry(document_type, regulatory_classification, user_roles=None):
+    if document_type != "QM Computerised System":
+        return True
+    user_roles = set(user_roles or [])
+    return regulatory_classification == "GMP" and "QAU" in user_roles
 
 
 @frappe.whitelist()
@@ -184,7 +198,7 @@ def approve_and_close_log_book(dn, approval_password=None, expected_modified=Non
     """
     Robust wrapper for closing a QM Log Book entry.
     - Verifies the client did not start from a stale document.
-    - If linked instrument is GMP, signs closure_signature via signing.sign().
+    - If linked instrument/ computerised system is GMP, signs closure_signature via signing.sign().
     - Reloads the document after signing because signing.sign() saves and commits.
     - Sets closed_on, closed_by and status server-side.
     - Avoids any stale frm.save() from the browser.
@@ -200,9 +214,16 @@ def approve_and_close_log_book(dn, approval_password=None, expected_modified=Non
         frappe.throw(
             _("This Log Book Entry was modified after you opened it. Please reload and try again.")
         )
-    gmp = doc.document_type == "QM Instrument" and is_gmp(doc.document_name)
+
+    gmp = False
+    if doc.document_type == "QM Instrument":
+        gmp = is_gmp(doc.document_name)
+    elif doc.document_type == "QM Computerised System":
+        gmp = frappe.db.get_value("QM Computerised System", doc.document_name, "regulatory_classification") == "GMP"
 
     if gmp:
+        if not frappe.user.has_role("QAU"):
+            frappe.throw(_("Only QAU can approve and close GMP log book entries."))
         if not approval_password:
             frappe.throw(_("Approval password is required."))
         sign(
