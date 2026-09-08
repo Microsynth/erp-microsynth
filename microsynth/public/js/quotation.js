@@ -214,7 +214,9 @@ frappe.ui.form.on('Quotation', {
                     }
                 },
                 callback: function(r){
-                    frm.doc.sales_manager = r.message.account_manager;
+                    if (r.message && r.message.account_manager && (!frm.doc.sales_manager || frm.doc.sales_manager == "")) {
+                        frm.doc.sales_manager = r.message.account_manager;
+                    }
                 }
             });
         }
@@ -405,7 +407,7 @@ function set_company_read_only(frm) {
                 frm.set_value('company', customer.default_company);
             }
             frm.refresh_field('company');
-            if (customer.account_manager && frm.doc.sales_manager !== customer.account_manager) {
+            if (customer.account_manager && (!frm.doc.sales_manager || frm.doc.sales_manager == "")) {
                 frm.set_value('sales_manager', customer.account_manager);
             }
             frm.refresh_field('sales_manager');
