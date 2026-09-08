@@ -17,6 +17,12 @@ frappe.query_reports["Revenue Export"] = {
             "options": "Territory"
         },
         {
+            "fieldname": "sales_channel",
+            "label": __("Sales Channel"),
+            "fieldtype": "Select",
+            "options": "\nTerritory Sales\nContract Research"
+        },
+        {
             "fieldname": "item_group",
             "label": __("Item Group"),
             "fieldtype": "Link",
