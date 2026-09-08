@@ -205,6 +205,35 @@ def validate_quotation(doc, event=None):
     validate_contact_customer_consistency(doc, event)
 
 
+def _sales_manager_is_contract_research(sales_manager):
+    """Return True if the sales manager is assigned to QM process 1.4 Contract Research."""
+    if not sales_manager:
+        return False
+
+    user_settings_name = frappe.db.get_value("User Settings", {"user": sales_manager}, "name")
+    if not user_settings_name:
+        return False
+
+    return frappe.db.exists(
+        "QM User Process Assignment",
+        {
+            "parent": user_settings_name,
+            "qm_process": "1.4 Contract Research"
+        },
+    )
+
+
+def quotation_on_submit(doc, event=None):
+    """
+    Check if the Sales Manager is part of QM Process "1.4 Contract Research" according to "QM User Process Assignment".
+    If yes, set the field sales_channel to "Contract Research", else to "Territory Sales".
+    """
+    sales_channel = "Contract Research" if _sales_manager_is_contract_research(doc.sales_manager) else "Territory Sales"
+    if doc.sales_channel != sales_channel:
+        doc.sales_channel = sales_channel
+        doc.db_set("sales_channel", sales_channel)
+
+
 @frappe.whitelist()
 def get_sales_orders_linked_to_quotation(quotation_name):
     return frappe.db.sql("""
