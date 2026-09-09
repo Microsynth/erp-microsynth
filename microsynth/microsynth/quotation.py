@@ -68,7 +68,7 @@ def link_quotation_to_order(sales_order, quotation):
     Link the Quotation to the Sales Order Items.
     Return the name of the (new) Sales Order.
     If the Sales Manager of the Quotation belongs to Contract Research,
-    set Sales Order.sales_channel to "Contract Research" else set it to "Territory Sales".
+    set Sales Order.sales_channel to "Contract Research" else set it to "Sales".
 
     bench execute microsynth.microsynth.quotation.link_quotation_to_order --kwargs "{'sales_order': 'SO-WIE-24001533-3', 'quotation': 'QTN-2402702'}"
     """
@@ -130,7 +130,7 @@ def link_quotation_to_order(sales_order, quotation):
         except Exception as err:
             frappe.log_error(err, "quotation.link_quotation_to_order")
 
-    sales_channel = "Contract Research" if _sales_manager_is_contract_research(qtn.sales_manager) else "Territory Sales"
+    sales_channel = "Contract Research" if _sales_manager_is_contract_research(qtn.sales_manager) else "Sales"
     so_doc.sales_channel = sales_channel
 
     # write the Quotation ID into the field Sales Order Item.prevdoc_docname
@@ -232,9 +232,9 @@ def _sales_manager_is_contract_research(sales_manager):
 def quotation_on_submit(doc, event=None):
     """
     Check if the Sales Manager is part of QM Process "1.4 Contract Research" according to "QM User Process Assignment".
-    If yes, set the field sales_channel to "Contract Research", else to "Territory Sales".
+    If yes, set the field sales_channel to "Contract Research", else to "Sales".
     """
-    sales_channel = "Contract Research" if _sales_manager_is_contract_research(doc.sales_manager) else "Territory Sales"
+    sales_channel = "Contract Research" if _sales_manager_is_contract_research(doc.sales_manager) else "Sales"
     if doc.sales_channel != sales_channel:
         doc.sales_channel = sales_channel
         doc.db_set("sales_channel", sales_channel)

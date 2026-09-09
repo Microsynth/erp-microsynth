@@ -79,7 +79,8 @@ def get_item_revenue(filters, month, item_groups, debug=False):
         territory_condition = ""
 
     if filters and filters.get("sales_channel"):
-        sales_channel_condition = f"AND `tabSales Invoice`.`sales_channel` = '{filters.get('sales_channel')}' "
+        sales_channel_value = "Sales" if filters.get("sales_channel") == "Territory Sales" else filters.get("sales_channel")
+        sales_channel_condition = f"AND `tabSales Invoice`.`sales_channel` = '{sales_channel_value}' "
     else:
         sales_channel_condition = ""
 
