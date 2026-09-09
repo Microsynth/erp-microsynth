@@ -33,6 +33,13 @@ frappe.ui.form.on('Material Request', {
                 };
         }, 1000);
 
+        // allow force cancel for Purchase Manager on draft Material Requests
+        if ((!frm.doc.__islocal) && (frm.doc.docstatus === 0) && frappe.user.has_role('Purchase Manager')) {
+            frm.add_custom_button(__("Force Cancel"), function() {
+                force_cancel(cur_frm.doc.doctype, cur_frm.doc.name);
+            });
+        }
+
         hide_in_words();
     },
     company(frm) {
