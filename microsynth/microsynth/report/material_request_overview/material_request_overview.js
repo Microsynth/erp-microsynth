@@ -185,7 +185,11 @@ function create_purchase_order(filters, report) {
                 supplierMap[String(row.supplier)] = row.supplier_name || '';
             }
         });
-        const suppliers = Object.keys(supplierMap);
+        // Sort by supplier name first, then supplier id/code for stable tie-breaking.
+        const supplierSortKey = s => `${String(supplierMap[s] || s).trim()}\u0000${String(s).trim()}`;
+        const suppliers = Object.keys(supplierMap).sort((a, b) =>
+            supplierSortKey(a).localeCompare(supplierSortKey(b), undefined, { sensitivity: 'base' })
+        );
 
         if (suppliers.length === 0) {
             frappe.msgprint(__('No Supplier found in report data. Please set the Supplier filter or ensure the report contains suppliers.'), __('Validation'));
