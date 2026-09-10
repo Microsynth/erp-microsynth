@@ -299,6 +299,12 @@ def get_item_revenues(filters, month, item_groups, debug=False):
     else:
         territory_condition = ""
 
+    if filters.get("sales_channel"):
+        sales_channel_value = "Sales" if filters.get("sales_channel") == "Territory Sales" else filters.get("sales_channel")
+        sales_channel_condition = f"AND `tabSales Invoice`.`sales_channel` = '{sales_channel_value}' "
+    else:
+        sales_channel_condition = ""
+
     credit_item_code = frappe.get_value("Microsynth Settings", "Microsynth Settings", "credit_item")
     last_day = calendar.monthrange(cint(filters.get("fiscal_year")), month)
     group_condition = "'{0}'".format("', '".join(item_groups))
@@ -326,10 +332,12 @@ def get_item_revenues(filters, month, item_groups, debug=False):
                 AND `tabSales Invoice`.`posting_date` BETWEEN "{year}-{month:02d}-01" AND "{year}-{month:02d}-{to_day:02d}"
                 {company_condition}
                 {territory_condition}
+                {sales_channel_condition}
                 AND `tabSales Invoice Item`.`item_group` IN ({group_condition})
             ORDER BY `tabSales Invoice`.`posting_date`, `tabSales Invoice`.`posting_time`, `tabSales Invoice`.`name`, `tabSales Invoice Item`.`idx`;
         """.format(company_condition=company_condition, year=filters.get("fiscal_year"), month=month, to_day=last_day[1],
-            territory_condition=territory_condition, group_condition=group_condition, intercompany_condition=get_intercompany_condition(), credit_item_code=credit_item_code)
+            territory_condition=territory_condition, sales_channel_condition=sales_channel_condition,
+            group_condition=group_condition, intercompany_condition=get_intercompany_condition(), credit_item_code=credit_item_code)
     items = frappe.db.sql(query, as_dict=True)
 
     return items
@@ -347,6 +355,12 @@ def get_invoice_revenues(filters, month, item_groups, debug=False):
         territory_condition = "AND `tabSales Invoice`.`territory` IN ('{0}')".format("', '".join(get_child_territories(filters.get("territory"))))
     else:
         territory_condition = ""
+
+    if filters.get("sales_channel"):
+        sales_channel_value = "Sales" if filters.get("sales_channel") == "Territory Sales" else filters.get("sales_channel")
+        sales_channel_condition = f"AND `tabSales Invoice`.`sales_channel` = '{sales_channel_value}' "
+    else:
+        sales_channel_condition = ""
 
     last_day = calendar.monthrange(cint(filters.get("fiscal_year")), month)
     group_condition = "'{0}'".format("', '".join(item_groups))
@@ -378,6 +392,7 @@ def get_invoice_revenues(filters, month, item_groups, debug=False):
                 AND `tabSales Invoice`.`posting_date` BETWEEN "{year}-{month:02d}-01" AND "{year}-{month:02d}-{to_day:02d}"
                 {company_condition}
                 {territory_condition}
+                {sales_channel_condition}
                 AND (
                     SELECT `tabSales Invoice Item`.`item_group`
                     FROM `tabSales Invoice Item`
@@ -390,7 +405,8 @@ def get_invoice_revenues(filters, month, item_groups, debug=False):
                 ) IN ({group_condition})
             ;
         """.format(company_condition=company_condition, year=filters.get("fiscal_year"), month=month, to_day=last_day[1],
-            territory_condition=territory_condition, group_condition=group_condition, intercompany_condition=get_intercompany_condition())
+            territory_condition=territory_condition, sales_channel_condition=sales_channel_condition,
+            group_condition=group_condition, intercompany_condition=get_intercompany_condition())
     invoices = frappe.db.sql(query, as_dict=True)
 
     return invoices

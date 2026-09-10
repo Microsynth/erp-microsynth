@@ -97,12 +97,12 @@ frappe.query_reports["Material Request Overview"] = {
                 let row = target.getAttribute("data-row-index");
                 let column = target.getAttribute("data-col-index");
                 if (row == null || column == null) return;
-                let target_column_number = 15;
+                let target_column_number = 16;
                 let my_filters = frappe.query_report.get_filter_values();
                 if (my_filters.mode === "To Order") {
-                    target_column_number = 11;
+                    target_column_number = 12;
                 } else if (my_filters.mode === "All Material Requests") {
-                    target_column_number = 16;
+                    target_column_number = 17;
                 }
                 if (parseInt(column) === target_column_number) {
                     let rowData = frappe.query_report.data[row];
@@ -185,7 +185,11 @@ function create_purchase_order(filters, report) {
                 supplierMap[String(row.supplier)] = row.supplier_name || '';
             }
         });
-        const suppliers = Object.keys(supplierMap);
+        // Sort by supplier name first, then supplier id/code for stable tie-breaking.
+        const supplierSortKey = s => `${String(supplierMap[s] || s).trim()}\u0000${String(s).trim()}`;
+        const suppliers = Object.keys(supplierMap).sort((a, b) =>
+            supplierSortKey(a).localeCompare(supplierSortKey(b), undefined, { sensitivity: 'base' })
+        );
 
         if (suppliers.length === 0) {
             frappe.msgprint(__('No Supplier found in report data. Please set the Supplier filter or ensure the report contains suppliers.'), __('Validation'));

@@ -46,7 +46,28 @@ frappe.ui.form.on('QM Log Book', {
         $(target).parent().parent().remove();
 
         if (["QM Instrument", "QM Computerised System"].includes(frm.doc.document_type) && frm.doc.status === "To Review" && frm.doc.docstatus === 1) {
-            if (frappe.user_roles.includes('QAU')) {
+            if (frm.doc.document_type === "QM Computerised System") {
+                frappe.call({
+                    'method': "frappe.client.get_value",
+                    'args': {
+                        'doctype': "QM Computerised System",
+                        'name': frm.doc.document_name,
+                        'fieldname': ["regulatory_classification"]
+                    },
+                    'callback': function(r) {
+                        const regulatoryClassification = r.message && r.message.regulatory_classification;
+                        const isGmp = regulatoryClassification === "GMP";
+                        const isQau = frappe.user_roles.includes('QAU');
+                        if (isGmp && isQau) {
+                            allow_write_access(frm);
+                            show_approve_button(frm);
+                        } else if (!isGmp && (frappe.user_roles.includes('QAU') || frappe.user_roles.includes('System Manager'))) {
+                            allow_write_access(frm);
+                            show_approve_button(frm);
+                        }
+                    }
+                });
+            } else if (frappe.user_roles.includes('QAU')) {
                 allow_write_access(frm);
                 show_approve_button(frm);
             } else {
@@ -186,6 +207,38 @@ function show_approve_button(frm) {
             frappe.msgprint(__('Please save your changes before closing this Log Book Entry.'));
             return;
         }
+
+        const isComputerisedSystem = frm.doc.document_type === 'QM Computerised System';
+        if (isComputerisedSystem) {
+            frappe.call({
+                'method': "frappe.client.get_value",
+                'args': {
+                    'doctype': 'QM Computerised System',
+                    'name': frm.doc.document_name,
+                    'fieldname': ['regulatory_classification']
+                },
+                'callback': function(r) {
+                    const regulatoryClassification = r.message && r.message.regulatory_classification;
+                    if (regulatoryClassification === 'GMP') {
+                        if (!frappe.user_roles.includes('QAU')) {
+                            frappe.msgprint(__('Only QAU can approve and close GMP log book entries.'), 'Warning');
+                            return;
+                        }
+                        frappe.prompt({
+                            fieldtype: 'Password',
+                            label: 'Approval Password',
+                            fieldname: 'approval_password'
+                        }, function(values) {
+                            approve_and_close_log_book(frm, values.approval_password);
+                        }, __('Approval Required'), __('Approve'));
+                    } else {
+                        approve_and_close_log_book(frm);
+                    }
+                }
+            });
+            return;
+        }
+
         frappe.call({
             'method': "microsynth.qms.doctype.qm_instrument.qm_instrument.is_gmp",
             'args': {
@@ -193,6 +246,10 @@ function show_approve_button(frm) {
             },
             'callback': function(r) {
                 if (r.message === true) {
+                    if (!frappe.user_roles.includes('QAU')) {
+                        frappe.msgprint(__('Only QAU can approve and close GMP log book entries.'), 'Warning');
+                        return;
+                    }
                     // GMP: ask for approval password
                     frappe.prompt({
                         fieldtype: 'Password',

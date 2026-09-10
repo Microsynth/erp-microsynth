@@ -3,38 +3,47 @@
 
 frappe.ui.form.on('Item Request', {
     refresh: function(frm) {
-        // Show Reject button only for Purchase Manager and Purchase User
+        // Show Search Item button only for Purchase Manager and Purchase User
         if (frappe.user.has_role('Purchase Manager') || frappe.user.has_role('Purchase User')) {
             if (frm.doc.docstatus === 1 && frm.doc.status === "Pending") {
                 frm.add_custom_button(__('Search Item'), function() {
                     open_search_dialog(frm);
                 }).addClass('btn-primary');
-
-                frm.add_custom_button(__('Reject'), function () {
-                    frappe.prompt([
-                        {
-                            'label': 'Reject Reason',
-                            'fieldname': 'reject_reason',
-                            'fieldtype': 'Small Text',
-                            'reqd': 1
-                        }
-                    ], function(values) {
-                        frappe.call({
-                            'method': "microsynth.microsynth.doctype.item_request.item_request.reject_item_request",
-                            'args': {
-                                'item_request': frm.doc.name,
-                                'reject_reason': values.reject_reason || ''
-                            },
-                            'callback': function(r) {
-                                if (!r.exc) {
-                                    frappe.show_alert({message: __('Item Request rejected'), indicator: 'red'});
-                                    frm.reload_doc();
-                                }
-                            }
-                        });
-                    }, __('Reject Item Request'), __('Reject'));
-                }).addClass('btn-danger');
             }
+        }
+
+        // Allow Microsynth Users to reject only their own submitted, pending requests
+        const is_pending_submitted = frm.doc.docstatus === 1 && frm.doc.status === "Pending";
+        const is_microsynth_user = frappe.user.has_role('Microsynth User');
+        const is_owner = frm.doc.owner === frappe.session.user;
+        if (is_pending_submitted && is_microsynth_user && is_owner) {
+            // Remove first to avoid duplicates on refresh for users with multiple roles
+            frm.remove_custom_button(__('Reject'));
+
+            frm.add_custom_button(__('Reject'), function () {
+                frappe.prompt([
+                    {
+                        'label': 'Reject Reason',
+                        'fieldname': 'reject_reason',
+                        'fieldtype': 'Small Text',
+                        'reqd': 1
+                    }
+                ], function(values) {
+                    frappe.call({
+                        'method': "microsynth.microsynth.doctype.item_request.item_request.reject_item_request",
+                        'args': {
+                            'item_request': frm.doc.name,
+                            'reject_reason': values.reject_reason || ''
+                        },
+                        'callback': function(r) {
+                            if (!r.exc) {
+                                frappe.show_alert({message: __('Item Request rejected'), indicator: 'red'});
+                                frm.reload_doc();
+                            }
+                        }
+                    });
+                }, __('Reject Item Request'), __('Reject'));
+            }).addClass('btn-danger');
         }
 
         frm.add_custom_button(__('Material Request Overview'), function() {

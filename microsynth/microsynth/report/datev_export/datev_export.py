@@ -243,6 +243,36 @@ def create_pdf(path, dt, dn, print_format):
     return file_name
 
 
+def _get_prioritized_attachment(attachments, dt, dn):
+    document_name = (dn or "").lower()
+    pdf_attachments = []
+
+    for attachment in attachments:
+        file_name = (attachment.get("file_name") or "").lower()
+        file_url = (attachment.get("file_url") or "").lower()
+        if not file_name and file_url:
+            file_name = os.path.basename(file_url).lower()
+
+        if not file_name:
+            continue
+
+        if not file_name.endswith(".pdf"):
+            continue
+
+        # Prefer actual invoice file names and reject unrelated attachments like PO PDFs.
+        if document_name in file_name:
+            pdf_attachments.append(attachment)
+        elif file_name.startswith("si-") and dt == "Sales Invoice":
+            pdf_attachments.append(attachment)
+        elif file_name.startswith("pi-") and dt == "Purchase Invoice":
+            pdf_attachments.append(attachment)
+
+    if pdf_attachments:
+        return pdf_attachments[0]
+
+    return attachments[0] if attachments else None
+
+
 def download_pdf(path, dt, dn, allow_attachment_repair=True):
     file_name = "{0}.pdf".format(dn)
     content_file_name = "{0}/{1}".format(path, file_name)
@@ -250,23 +280,15 @@ def download_pdf(path, dt, dn, allow_attachment_repair=True):
     attachments = frappe.get_all(
         "File",
         filters={'attached_to_doctype': dt, 'attached_to_name': dn},
-        fields=['name', 'file_url'],
+        fields=['name', 'file_url', 'file_name'],
         order_by='creation DESC'
     )
     if attachments and len(attachments) > 0:
-        source_path = None
-        if len(attachments) == 1:
-            source_path = attachments[0]['file_url']
-        else:
-            # check for name-specific attachment
-            for a in attachments:
-                if dn in (a.get('file_name') or ""):
-                    source_path = a['file_url']
-                    break
+        source_attachment = _get_prioritized_attachment(attachments, dt, dn)
+        source_path = source_attachment.get('file_url') if source_attachment else None
 
-            if not source_path:
-                # fallback to first entry if file is not found
-                source_path = attachments[0]['file_url']
+        if source_path is None:
+            source_path = attachments[0].get('file_url')
 
         source_file = os.path.join(frappe.utils.get_bench_path(), "sites", frappe.utils.get_site_path()[2:], source_path[1:])
         if "\"" in source_file:

@@ -16,6 +16,7 @@
   "column_break_6",
   "version",
   "status",
+  "cs_source",
   "qm_process",
   "company",
   "responsible_user",
@@ -42,7 +43,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Type",
-   "options": "\nModule\nExcel\nExecutable Code\nStandalone\nApplication Script\nSponsor Tool",
+   "options": "\nModule\nFORM / LIST\nApplication\nScript / Pipeline\nSponsor Tool",
    "reqd": 1
   },
   {
@@ -68,7 +69,7 @@
    "fieldtype": "Select",
    "in_standard_filter": 1,
    "label": "Primary Version Control Method",
-   "options": "\nVersion Control Tool\nQM Document\nLogbook / Controlled Version Register\nManual Controlled Record\nBuilt-in Version History\nSupplier Release Records",
+   "options": "\nVersion Control Tool\nQM Document\nLogbook\nBuilt-in Version History\nSupplier Release Records",
    "reqd": 1
   },
   {
@@ -151,9 +152,15 @@
   {
    "fieldname": "section_break_2",
    "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "cs_source",
+   "fieldtype": "Select",
+   "label": "Source",
+   "options": "In-house\nExternal"
   }
  ],
- "modified": "2026-08-20 17:05:27.846245",
+ "modified": "2026-09-02 17:35:50.079274",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Computerised System",

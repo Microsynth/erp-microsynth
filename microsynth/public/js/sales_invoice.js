@@ -239,6 +239,42 @@ frappe.ui.form.on('Sales Invoice', {
         set_income_accounts(frm);
         // set goodwill period to 5 days
         cur_frm.set_value("exclude_from_payment_reminder_until", frappe.datetime.add_days(frm.doc.due_date, 5));
+        const sales_order_ids = [...new Set((frm.doc.items || []).filter(row => row.sales_order).map(row => row.sales_order))];
+        if (sales_order_ids.length) {
+            frappe.call({
+                'method': 'microsynth.microsynth.invoicing.reopen_closed_sales_orders_for_invoice_save',
+                'args': {
+                    'sales_order_ids': sales_order_ids,
+                    'sales_invoice_name': frm.doc.name || ''
+                },
+                'async': false,
+                'callback': function(r) {
+                    const reopened = (r.message && r.message.reopened_sales_orders) || [];
+                    frm._reopened_sales_orders = reopened;
+                }
+            });
+        } else {
+            delete frm._reopened_sales_orders;
+        }
+    },
+    after_save(frm) {
+        if (!frm._reopened_sales_orders || !frm._reopened_sales_orders.length) {
+            return;
+        }
+        frappe.call({
+            'method': 'microsynth.microsynth.invoicing.close_reopened_sales_orders_for_invoice_save',
+            'args': {
+                'sales_order_ids': frm._reopened_sales_orders
+            },
+            'callback': function(r) {
+                const closed = (r.message && r.message.closed_sales_orders) || frm._reopened_sales_orders;
+                frappe.show_alert({
+                    message: __('Re-opened and closed again Sales Orders: {0}', [closed.join(', ')]),
+                    indicator: 'blue'
+                });
+            }
+        });
+        delete frm._reopened_sales_orders;
     },
     is_return(frm) {
         prepare_naming_series(frm);

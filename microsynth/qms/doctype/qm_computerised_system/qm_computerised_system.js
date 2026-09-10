@@ -248,6 +248,10 @@ function add_custom_buttons(frm, isProcessOwner) {
             frm.save()
         }).addClass(color);
     });
+    // Add custom buttons for version update and Create Log Book entry only if the status is 'Validated'
+	if (frm.doc.status !== 'Validated') {
+		return;
+	}
 
 	frm.add_custom_button(__('Update Version'), function() {
         const dialog = new frappe.ui.Dialog({

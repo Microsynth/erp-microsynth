@@ -2311,36 +2311,37 @@ def _create_material_request_draft(item_code, qty, schedule_date, company, suppl
     return mr.name
 
 
-def create_material_request_drafts_from_stock_overview(dry_run=False):
-    """Create draft Material Requests from Stock Overview rows.
+def create_material_request_drafts_from_stock_overview(company="Microsynth AG", required_by_days=14, dry_run=False):
+    """
+    Create draft Material Requests from Stock Overview rows.
 
     Scope:
-    - Company fixed to "Microsynth AG"
     - Only items present in "Oligo Modifier Stock"
-    - Only items with at least one verified Item Supplier
+    - Only items with at least one Verified Item Supplier
     - Qty is always ceil(to_order)
-    - One draft Material Request per qualifying row
+    - One Material Request Draft per qualifying row
+
+    Cron job example (execution weekly on Wednesday at 03:35):
+    # Create Material Request Drafts from Stock Overview
+    35 3 * * 3 cd /home/frappe/frappe-bench && /usr/local/bin/bench --site erp.microsynth.local execute microsynth.microsynth.purchasing.create_material_request_drafts_from_stock_overview
 
     Run manually:
-    bench execute microsynth.microsynth.purchasing.create_material_request_drafts_from_stock_overview --kwargs "{'dry_run': True}"
+    bench execute microsynth.microsynth.purchasing.create_material_request_drafts_from_stock_overview --kwargs "{'company': 'Microsynth AG', 'required_by_days': 14, 'dry_run': True}"
     """
     from microsynth.microsynth.report.stock_overview.stock_overview import get_data as get_stock_overview_data
     from microsynth.microsynth.report.oligo_modifier_stock.oligo_modifier_stock import get_data as get_oligo_modifier_stock_data
 
-    company = "Microsynth AG"
     requested_by = "Administrator"
     mr_comment = "Automatically created from Stock Overview"
-    schedule_date = add_days(today(), 14)
+    schedule_date = add_days(today(), required_by_days)
 
     previous_user = frappe.session.user
     if previous_user != requested_by:
         frappe.set_user(requested_by)
-
     try:
         stock_rows = get_stock_overview_data({"company": company}) or []
-        oligo_rows = get_oligo_modifier_stock_data({"mode": "Filled Locations"}) or []
-        oligo_item_codes = {row.get("item_code") for row in oligo_rows if row.get("item_code")}
-
+        oligo_modifier_rows = get_oligo_modifier_stock_data({"mode": "Filled Locations"}) or []
+        oligo_item_codes = {row.get("item_code") for row in oligo_modifier_rows if row.get("item_code")}
         created = []
         planned = []
         skipped = []

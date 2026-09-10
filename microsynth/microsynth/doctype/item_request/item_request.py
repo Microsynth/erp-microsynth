@@ -15,10 +15,17 @@ class ItemRequest(Document):
 
 @frappe.whitelist()
 def reject_item_request(item_request, reject_reason=None):
-    user = frappe.session.user
-    if not (user_has_role(user, 'Purchase Manager') or user_has_role(user, 'Purchase User')):
-        frappe.throw("You are not permitted to reject this request.")
     doc = frappe.get_doc("Item Request", item_request)
+    user = frappe.session.user
+
+    is_microsynth_user = user_has_role(user, 'Microsynth User')
+    is_owner = doc.owner == user
+    if not (is_microsynth_user and is_owner):
+        frappe.throw("You are not permitted to reject this request.")
+
+    if doc.docstatus != 1 or doc.status != "Pending":
+        frappe.throw("Only submitted pending Item Requests can be rejected.")
+
     doc.status = "Rejected"
     doc.reject_message = reject_reason or "No reason provided."
     doc.save()
