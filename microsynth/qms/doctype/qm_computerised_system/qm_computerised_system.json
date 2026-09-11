@@ -144,6 +144,7 @@
    "options": "QM Document Link"
   },
   {
+   "default": "0",
    "description": "Audit Trail Review frequency in months (0 = never)",
    "fieldname": "atr_frequency",
    "fieldtype": "Int",
@@ -160,7 +161,7 @@
    "options": "In-house\nExternal"
   }
  ],
- "modified": "2026-09-02 17:35:50.079274",
+ "modified": "2026-09-11 09:29:01.325392",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Computerised System",
