@@ -211,22 +211,43 @@ def validate_quotation(doc, event=None):
     validate_contact_customer_consistency(doc, event)
 
 
-def _sales_manager_is_contract_research(sales_manager):
-    """Return True if the sales manager is assigned to QM process 1.4 Contract Research."""
-    if not sales_manager:
-        return False
-
-    user_settings_name = frappe.db.get_value("User Settings", {"user": sales_manager}, "name")
-    if not user_settings_name:
-        return False
-
-    return frappe.db.exists(
+def get_contract_research_sales_managers():
+    """Return the set of Sales Managers assigned to QM process 1.4 Contract Research."""
+    contract_research_user_settings = frappe.db.get_all(
         "QM User Process Assignment",
-        {
-            "parent": user_settings_name,
-            "qm_process": "1.4 Contract Research"
-        },
+        filters={"qm_process": "1.4 Contract Research"},
+        fields=["parent"],
     )
+    parent_ids = {
+        row.get("parent")
+        for row in (contract_research_user_settings or [])
+        if row.get("parent")
+    }
+    if not parent_ids:
+        return set()
+
+    user_settings = frappe.db.get_all(
+        "User Settings",
+        filters=[["name", "in", list(parent_ids)]],
+        fields=["user"],
+    )
+    return {row.get("user") for row in user_settings if row.get("user")}
+
+
+def resolve_sales_channel_from_sales_manager(sales_manager, contract_research_sales_managers=None):
+    """Return the proper sales channel for a sales manager, defaulting to Sales."""
+    if not sales_manager:
+        return "Sales"
+
+    if contract_research_sales_managers is None:
+        contract_research_sales_managers = get_contract_research_sales_managers()
+
+    return "Contract Research" if sales_manager in contract_research_sales_managers else "Sales"
+
+
+def _sales_manager_is_contract_research(sales_manager, contract_research_sales_managers=None):
+    """Return True if the sales manager is assigned to QM process 1.4 Contract Research."""
+    return resolve_sales_channel_from_sales_manager(sales_manager, contract_research_sales_managers) == "Contract Research"
 
 
 def quotation_on_submit(doc, event=None):

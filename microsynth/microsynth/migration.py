@@ -19,6 +19,7 @@ from erpnextswiss.scripts.crm_tools import get_primary_customer_address
 from erpnextswiss.scripts.crm_tools import get_primary_customer_contact
 
 from microsynth.microsynth.naming_series import get_naming_series
+from microsynth.microsynth.quotation import get_contract_research_sales_managers, resolve_sales_channel_from_sales_manager
 from microsynth.microsynth.utils import (find_label,
                                          get_sql_list,
                                          configure_territory,
@@ -7135,3 +7136,131 @@ def create_version_user_permissions(doctypes, users, dry_run=False):
         f"Done. Created: {created}, Existing: {existing}, "
         f"Skipped: {skipped}, Dry run: {dry_run}"
     )
+
+
+def set_open_document_sales_channels(verbose=False, dry_run=True):
+    """
+    Set sales_channel on all open valid Quotations, open Sales Orders, and open Delivery Notes.
+
+    Sales channel resolution rules:
+    - Quotation: use the Quotation sales_manager and the cached set of sales managers in QM process 1.4 Contract Research.
+    - Sales Order: use the linked Quotation sales_manager if available; otherwise use "Sales".
+    - Delivery Note: use the linked Sales Order sales_channel if available; otherwise fallback to the Sales Order's linked Quotation or "Sales".
+
+    This function uses a single fetch for all Contract Research sales managers,
+    and supports verbose dry-run logging before any database changes are committed.
+
+    bench execute microsynth.microsynth.migration.set_open_document_sales_channels --kwargs "{'verbose': True, 'dry_run': True}"
+    """
+    today = datetime.today().date().strftime("%Y-%m-%d")
+    contract_research_sales_managers = get_contract_research_sales_managers()
+
+    def update_field(doctype, docname, old_value, new_value, reason):
+        if old_value not in (None, ""):
+            if verbose:
+                print(f"{doctype} {docname}: sales_channel already set to '{old_value}' — skipping ({reason})")
+            return
+
+        if old_value == new_value:
+            if verbose:
+                print(f"{doctype} {docname}: sales_channel already '{new_value}' ({reason})")
+            return
+
+        action = "Would update" if dry_run else "Updating"
+        if verbose:
+            print(f"{action} {doctype} {docname}: sales_channel '{old_value or 'None'}' -> '{new_value}' ({reason})")
+        if not dry_run:
+            frappe.db.set_value(doctype, docname, "sales_channel", new_value, update_modified=False)
+
+    if verbose:
+        print(f"Starting open-document sales channel sync. dry_run={dry_run} date={today}")
+
+    quotation_filters = [["docstatus", "=", 1], ["status", "=", "Open"], ["valid_till", ">=", today], ["sales_channel", "in", [None, ""]]]
+    quotations = frappe.db.get_all("Quotation", filters=quotation_filters, fields=["name", "sales_manager", "sales_channel"], order_by="creation desc")
+    print(f"Found {len(quotations)} open valid Quotations.")
+
+    for quotation in quotations:
+        manager = quotation.get("sales_manager")
+        new_value = resolve_sales_channel_from_sales_manager(manager, contract_research_sales_managers)
+        update_field(
+            "Quotation",
+            quotation["name"],
+            quotation.get("sales_channel") or "",
+            new_value,
+            f"Quotation sales_manager={manager or 'None'}",
+        )
+
+    sales_order_filters = [["docstatus", "<", 2], ["status", "not in", ["Closed", "Cancelled", "Completed"]], ["per_delivered", "<", 0.01], ["total", ">", 0], ["sales_channel", "in", [None, ""]]]
+    sales_orders = frappe.db.get_all("Sales Order", filters=sales_order_filters, fields=["name", "sales_channel"], order_by="creation desc")
+    print(f"Found {len(sales_orders)} open Sales Orders.")
+
+    for sales_order in sales_orders:
+        linked_quotation_rows = frappe.db.get_all(
+            "Sales Order Item",
+            filters=[["parent", "=", sales_order["name"]], ["prevdoc_docname", "is", "set"]],
+            fields=["prevdoc_docname"],
+            order_by="creation desc",
+        ) or []
+        linked_quotation_names = [row.get("prevdoc_docname") for row in linked_quotation_rows if row.get("prevdoc_docname")]
+
+        if linked_quotation_names:
+            qtn = frappe.get_value("Quotation", linked_quotation_names[0], ["sales_manager", "sales_channel"], as_dict=True)
+            if qtn and qtn.get("sales_manager"):
+                new_value = resolve_sales_channel_from_sales_manager(qtn["sales_manager"], contract_research_sales_managers)
+                reason = f"Linked Quotation {linked_quotation_names[0]} sales_manager={qtn['sales_manager']}"
+            else:
+                new_value = "Sales"
+                reason = f"Linked Quotation {linked_quotation_names[0]} has no sales_manager"
+        else:
+            new_value = "Sales"
+            reason = "No Quotation linked to Sales Order"
+
+        update_field("Sales Order", sales_order["name"], sales_order.get("sales_channel") or "", new_value, reason)
+
+    delivery_note_filters = [["docstatus", "<", 2], ["status", "not in", ["Closed", "Cancelled", "Completed"]], ["per_billed", "<", 0.01], ["total", ">", 0], ["sales_channel", "in", [None, ""]]]
+    delivery_notes = frappe.db.get_all("Delivery Note", filters=delivery_note_filters, fields=["name", "sales_channel"], order_by="creation desc")
+    print(f"Found {len(delivery_notes)} open Delivery Notes.")
+
+    for delivery_note in delivery_notes:
+        linked_so_rows = frappe.db.get_all(
+            "Delivery Note Item",
+            filters=[["parent", "=", delivery_note["name"]], ["against_sales_order", "is", "set"]],
+            fields=["against_sales_order"],
+            order_by="creation desc",
+        ) or []
+        linked_so_names = [row.get("against_sales_order") for row in linked_so_rows if row.get("against_sales_order")]
+
+        if linked_so_names:
+            so = frappe.get_value("Sales Order", linked_so_names[0], ["sales_channel", "name"], as_dict=True)
+            if so and so.get("sales_channel"):
+                new_value = so["sales_channel"]
+                reason = f"Linked Sales Order {linked_so_names[0]} sales_channel={so['sales_channel']}"
+            else:
+                so_items_rows = frappe.db.get_all(
+                    "Sales Order Item",
+                    filters=[["parent", "=", linked_so_names[0]], ["prevdoc_docname", "is", "set"]],
+                    fields=["prevdoc_docname"],
+                    order_by="creation desc",
+                ) or []
+                so_items = [row.get("prevdoc_docname") for row in so_items_rows if row.get("prevdoc_docname")]
+                if so_items:
+                    qtn = frappe.get_value("Quotation", so_items[0], ["sales_manager", "sales_channel"], as_dict=True)
+                    if qtn and qtn.get("sales_manager"):
+                        new_value = resolve_sales_channel_from_sales_manager(qtn["sales_manager"], contract_research_sales_managers)
+                        reason = f"Sales Order {linked_so_names[0]} linked to Quotation {so_items[0]} sales_manager={qtn['sales_manager']}"
+                    else:
+                        new_value = "Sales"
+                        reason = f"Sales Order {linked_so_names[0]} linked to Quotation {so_items[0]} has no sales_manager"
+                else:
+                    new_value = "Sales"
+                    reason = f"Sales Order {linked_so_names[0]} has no linked Quotation"
+        else:
+            new_value = "Sales"
+            reason = "No Sales Order linked to Delivery Note"
+
+        update_field("Delivery Note", delivery_note["name"], delivery_note.get("sales_channel") or "", new_value, reason)
+
+    if not dry_run:
+        frappe.db.commit()
+
+    print("Finished setting sales_channel on open documents.")
