@@ -1,0 +1,109 @@
+@font-face {
+    font-family: nimbus;
+    src: url('/files/NimbusSans-Regular.woff');
+}
+
+@font-face {
+    font-family: nimbus-bold;
+    src: url('/files/NimbusSans-Bold.woff');
+}
+
+@font-face {
+    font-family: nimbus-italic;
+    src: url('/files/NimbusSans-Italic.woff');
+}
+
+@font-face {
+    font-family: nimbus-bold-italic;
+    src: url('/files/NimbusSans-BoldItalic.woff');
+}
+
+h2 {
+    color: #e65023 !important;
+    border-bottom: 2px solid #e65023;
+    /* text-transform: uppercase; */
+    font-style: italic;
+    font-weight: 700 !important;
+    font-size: 14px;
+    font-family: nimbus-bold-italic !important;
+}
+
+h3 {
+    font-size: 12px;
+}
+
+h4 {
+    font-size: 12px;
+    font-style: italic;
+    font-weight: normal;
+    margin-top: 10px;
+    margin-bottom: 2px;
+}
+
+hr {
+    width: 100%;
+    border-top: 1px solid silver;
+}
+
+.bold {
+    font-weight: bold;
+}
+
+.print-format { margin-left: 10mm } /* 10mm (original)> gives 20mm left border; 15 mm > gives too much border */
+
+.print-format {
+    /* font-family: sans-serif; */
+    font-family: nimbus;
+}
+
+.print-format b {
+    /* font-family: sans-serif; */
+    font-family: nimbus-bold;
+}
+
+.print-format i {
+    /* font-family: sans-serif; */
+    font-family: nimbus-italic;
+}
+
+.print-format em {
+    /* font-family: sans-serif; */
+    font-family: nimbus-italic;
+}
+
+.print-format b i {
+    /* font-family: sans-serif; */
+    font-family: nimbus-bold-italic;
+}
+
+.justify {
+    text-align: justify;
+    text-justify: inter-word;  /* supported mainly by older IE, safe to include */
+}
+
+#header {
+    height: 65px !important;
+    width: 100% !important;
+}
+
+#subject {
+    font-size: 16px !important;
+    margin-top: 10px !important;
+    margin-bottom: 10px !important
+}
+
+#meta {
+    width: 100%;
+    border-top: 1px solid silver;
+    border-bottom: 1px solid silver;
+}
+
+#meta td {
+    padding: 0px !important;
+    padding-top: 2px !important;
+    padding-bottom: 1px !important;
+}
+
+#qr-invoice td {
+    padding: 0px !important;
+}
