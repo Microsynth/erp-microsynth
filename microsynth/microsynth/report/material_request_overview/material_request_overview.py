@@ -11,7 +11,7 @@ from microsynth.qms.report.users_by_process.users_by_process import get_users
 def get_columns(mode=None):
     columns = [
         {"label": _("Request"), "fieldname": "material_request", "fieldtype": "Dynamic Link", "options": "request_type", "width": 95},
-        {"label": _("Request Date"), "fieldname": "transaction_date", "fieldtype": "Date", "width": 95}
+        {"label": _("Request Date"), "fieldname": "transaction_date", "fieldtype": "Date", "width": 75}
     ]
     if mode == "All Material Requests":
         columns += [
@@ -20,10 +20,10 @@ def get_columns(mode=None):
         ]
     else:
         columns += [
-            {"label": _("Required By"), "fieldname": "schedule_date", "fieldtype": "Date", "width": 85}
+            {"label": _("Required By"), "fieldname": "schedule_date", "fieldtype": "Date", "width": 75}
         ]
     columns += [
-        {"label": _("Item"), "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 330},
+        {"label": _("Item"), "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 275},
         #{"label": _("Item Name"), "fieldname": "item_name", "fieldtype": "Data", "width": 200},
         {"label": _("Qty"), "fieldname": "qty", "fieldtype": "Int", "width": 45},
         {"label": _("Unit"), "fieldname": "uom", "fieldtype": "Data", "width": 60},
@@ -38,10 +38,10 @@ def get_columns(mode=None):
     columns += [
         {"label": _("Amount"), "fieldname": "amount", "fieldtype": "Currency", "options": "currency", "width": 90},
         {"label": _("Supplier"), "fieldname": "supplier", "fieldtype": "Link", "options": "Supplier", "width": 65},
-        {"label": _("Supplier Name"), "fieldname": "supplier_name", "fieldtype": "Data", "width": 220},
-        {"label": _("Supplier Item Code"), "fieldname": "supplier_part_no", "fieldtype": "Data", "width": 125},
-        {"label": _("Requested By"), "fieldname": "requested_by", "fieldtype": "Link", "options": "User", "width": 110},
-        {"label": _("Comment"), "fieldname": "comment", "fieldtype": "Data", "width": 200, "align": "left"},
+        {"label": _("Supplier Name"), "fieldname": "supplier_name", "fieldtype": "Data", "width": 190},
+        {"label": _("Supplier Item Code"), "fieldname": "supplier_part_no", "fieldtype": "Data", "width": 110},
+        {"label": _("Requested By"), "fieldname": "requested_by", "fieldtype": "Link", "options": "User", "width": 100},
+        {"label": _("Comment"), "fieldname": "comment", "fieldtype": "Data", "width": 500, "align": "left"},
         {"label": _("QM Process"), "fieldname": "qm_processes", "fieldtype": "Data", "width": 400, "align": "left"}
     ]
     return columns
