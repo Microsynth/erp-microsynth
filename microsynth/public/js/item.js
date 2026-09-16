@@ -35,14 +35,23 @@ frappe.ui.form.on('Item', {
             });
         }
 
-        if (frm.doc.storage_locations.length > 0) {
+        const storage_locations = frm.doc.storage_locations || [];
+        const supplier_item_codes = (frm.doc.supplier_items || [])
+            .map(row => row.supplier_part_no)
+            .filter(code => code);
+
+        if (storage_locations.length || supplier_item_codes.length) {
             // Remove previous dashboard comments
             frm.dashboard.clear_comment();
 
-            // Collect all location paths
-            const storage_locations = frm.doc.storage_locations || [];
+            const supplierCodesText = supplier_item_codes.length
+                ? `<br><b>Supplier Item Code${supplier_item_codes.length > 1 ? "s" : ""}:</b> ${supplier_item_codes.join(", ")}`
+                : "";
 
-            if (!storage_locations.length) return;
+            if (!storage_locations.length) {
+                frm.dashboard.add_comment(supplierCodesText.slice(4), 'green', true);
+                return;
+            }
 
             const location_promises = storage_locations.map(row => {
                 return frappe.call({
@@ -59,7 +68,7 @@ frappe.ui.form.on('Item', {
 
                 if (!paths.length) return;
 
-                const text = `<b>Storage Location${paths.length > 1 ? "s" : ""}:</b><br>${paths.join("<br>")}`;
+                const text = `<b>Storage Location${paths.length > 1 ? "s" : ""}:</b><br>${paths.join("<br>")}${supplierCodesText}`;
 
                 // Add permanent green dashboard comment
                 frm.dashboard.add_comment(text, 'green', true);
