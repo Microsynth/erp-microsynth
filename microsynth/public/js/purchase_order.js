@@ -29,6 +29,12 @@ frappe.ui.form.on('Purchase Order', {
 
         hide_in_words();
 
+        if ((!frm.doc.__islocal) && (frm.doc.docstatus === 0) && frappe.user.has_role('Purchase Manager')) {
+            frm.add_custom_button(__("Force Cancel"), function() {
+                force_cancel(cur_frm.doc.doctype, cur_frm.doc.name);
+            });
+        }
+
         if (!frm.doc.order_confirmation_no &&
             ['Draft', 'On Hold', 'To Receive and Bill', 'To Receive'].includes(frm.doc.status) &&
             frm.doc.items.length > 0 &&

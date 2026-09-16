@@ -31,9 +31,11 @@ def get_conditions(filters):
 
 	if view == "All ATR-managed systems":
 		return ""
+	if view == "ATR due in next 6 weeks":
+		return f"AND {due_date_expression} <= DATE_ADD(CURDATE(), INTERVAL 6 WEEK)"
 
-	# default: systems due today or overdue
-	return f"AND {due_date_expression} <= CURDATE()"
+	# default: systems overdue
+	return f"AND {due_date_expression} < CURDATE()"
 
 
 def get_data(filters):

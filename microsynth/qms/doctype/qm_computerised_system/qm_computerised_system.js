@@ -375,7 +375,9 @@ function apply_field_permissions(frm, isProcessOwner) {
         'cs_type',
         'primary_version_control_method',
         'version',
-        'responsible_user'
+        'responsible_user',
+        'atr_frequency',
+        'cs_source'
     ];
 
     // Start from unlocked, then apply matrix-based locks.

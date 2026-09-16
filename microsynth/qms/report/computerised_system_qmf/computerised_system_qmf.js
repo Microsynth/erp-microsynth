@@ -2,7 +2,7 @@
 // For license information, please see license.txt
 /* eslint-disable */
 
-frappe.query_reports["Computerized System QMF"] = {
+frappe.query_reports["Computerised System QMF"] = {
     "filters": [
         {
             "fieldname": "cs_type",
