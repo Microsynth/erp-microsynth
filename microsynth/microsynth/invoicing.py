@@ -50,7 +50,8 @@ from microsynth.microsynth.utils import (
     get_sql_list,
     get_customer_from_company,
     exact_copy_sales_invoice,
-    get_email_ids
+    get_email_ids,
+    remove_link_tags
 )
 from microsynth.microsynth.credits import (
     allocate_credits,
@@ -1858,11 +1859,12 @@ def transmit_sales_invoice(sales_invoice_id):
                 destination = get_destination_classification(si = sales_invoice.name)
 
                 if destination == "EU":
-                    footer =  frappe.get_value("Letter Head", "Microsynth AG Wolfurt", "footer")
+                    raw_footer =  frappe.get_value("Letter Head", "Microsynth AG Wolfurt", "footer")
                 else:
-                    footer =  frappe.get_value("Letter Head", sales_invoice.company, "footer")
+                    raw_footer =  frappe.get_value("Letter Head", sales_invoice.company, "footer")
             else:
-                footer = frappe.get_value("Letter Head", sales_invoice.company, "footer")
+                raw_footer = frappe.get_value("Letter Head", sales_invoice.company, "footer")
+            footer = remove_link_tags(raw_footer)
 
             create_pdf_attachment(sales_invoice.name)
 

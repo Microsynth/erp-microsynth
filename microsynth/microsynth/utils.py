@@ -3991,3 +3991,9 @@ def sales_order_before_cancel(sales_order, event):
                 )
         if dn:
             frappe.throw(f"Cancellation not allowed: There is a submitted Delivery Note {dn[0]['name']} linked to this Sales Order.")
+
+
+def remove_link_tags(html):
+        """Remove <link> tags from the given HTML."""
+        html = re.sub(r'<link[^>]*>\s*', '', html, flags=re.IGNORECASE)
+        return html # '\n'.join(filter(None, html.split('\n')))  # remove emtpy lines
