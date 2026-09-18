@@ -223,16 +223,16 @@ def get_linked_qm_documents(qm_computerised_system):
     }
 
 
-def import_qm_computerised_systems(file_path, expected_line_length=14, verbose=False, dry_run=True):
+def import_qm_computerised_systems(file_path, expected_line_length=15, verbose=False, dry_run=True):
     """
     Import QM Computerised Systems from a CSV/TSV export.
 
     Expected columns (first column "ID" is ignored):
-    ID, Name, Type, GAMP5 Class, Regulatory Classification, Version Control,
-    QM Process, Status, Description, ATR frequency, Source, Company,
-    Responsible Person, QM Document
+    ID, Name, Type, GAMP5 Class, Regulatory Classification,
+    Primary Version Control Method, QM Process, Status, Description,
+    Version, ATR frequency, Source, Company, Responsible Person, QM Document
 
-    bench execute microsynth.qms.doctype.qm_computerised_system.qm_computerised_system.import_qm_computerised_systems --kwargs "{'file_path': '/mnt/erp_share/Migration/QM_Computerised_Systems/260911_QM_CS_Template_v01.csv', 'expected_line_length': 14, 'verbose': True, 'dry_run': True}"
+    bench execute microsynth.qms.doctype.qm_computerised_system.qm_computerised_system.import_qm_computerised_systems --kwargs "{'file_path': '/mnt/erp_share/Migration/QM_Computerised_Systems/260911_QM_CS_Template_v01.csv', 'expected_line_length': 15, 'verbose': True, 'dry_run': True}"
     """
     def clean(value):
         if value is None:
@@ -359,11 +359,12 @@ def import_qm_computerised_systems(file_path, expected_line_length=14, verbose=F
             qm_process_raw = line[6]
             status = clean(line[7])
             description = clean(line[8])
-            atr_frequency_raw = clean(line[9])
-            cs_source = clean(line[10])
-            company = clean(line[11])
-            responsible_user = clean(line[12])
-            qm_document_raw = line[13] if len(line) > 13 else None
+            version = clean(line[9])
+            atr_frequency_raw = clean(line[10])
+            cs_source = clean(line[11])
+            company = clean(line[12])
+            responsible_user = clean(line[13])
+            qm_document_raw = line[14] if len(line) > 14 else None
 
             mandatory_fields = {
                 "Name": cs_name,
@@ -499,6 +500,7 @@ def import_qm_computerised_systems(file_path, expected_line_length=14, verbose=F
                 "gamp5_class": gamp5_class,
                 "regulatory_classification": regulatory_classification,
                 "primary_version_control_method": primary_version_control_method,
+                "version": version,
                 "qm_process": qm_process,
                 "status": status,
                 "description": description,
