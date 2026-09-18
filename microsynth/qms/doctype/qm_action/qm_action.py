@@ -13,7 +13,20 @@ from microsynth.microsynth.utils import user_has_role, add_workdays
 
 
 class QMAction(Document):
-	pass
+
+    def before_cancel(self):
+        if not self.document_type or not self.document_name:
+            return
+
+        if self.document_type not in ("QM Change", "QM Nonconformity"):
+            return
+
+        source_status = frappe.db.get_value(self.document_type, self.document_name, "status")
+        if source_status in ("Completed", "Closed"):
+            frappe.throw(
+                f"QM Action {self.name} cannot be cancelled because linked {self.document_type} "
+                f"{self.document_name} is in status '{source_status}'."
+            )
 
 
 @frappe.whitelist()
