@@ -284,3 +284,50 @@ def picking_ready():
     if (datetime.now() - flag).total_seconds() > 300:
         return True
     return False
+
+
+@frappe.whitelist()
+def download_delivery_note(dn):
+    """
+    Download the delivery note as a PDF.
+    """
+    from frappe.utils.pdf import get_pdf
+
+    # # Option 1: manual rendering with microsynth/templates/pages/print.html
+    # #           TODO: there is an issue with code duplication of the CSS styles between
+    # #                 'microsynth/templates/pages/print.html' and 'microsynth/public/css/print_format_common.css'.
+    # delivery_note = frappe.get_doc("Delivery Note", dn)
+
+    # css = frappe.get_value('Print Format', 'Delivery Note', 'css')
+    # raw_html = frappe.get_value('Print Format', 'Delivery Note', 'html')
+    # # create html
+    # css_html = f"<style>{css}</style>{raw_html}"
+
+
+    # rendered_html = frappe.render_template(
+    #     css_html,
+    #     {
+    #         'doc': delivery_note,
+    #     }
+    # )
+    # # need to load the styles and tags
+    # content = frappe.render_template(
+    #     'microsynth/templates/pages/print.html',
+    #     {'html': rendered_html}
+    # )
+    # options = {
+    #     'disable-smart-shrinking': ''
+    # }
+    # pdf = get_pdf(content, options)
+
+    # Option 2: using Frappe's built-in PDF generation for the delivery note
+    pdf = frappe.get_print(
+        doctype="Delivery Note",
+        name=dn,
+        print_format="Delivery Note",
+        as_pdf=True
+    )
+
+    frappe.local.response.filename = f"{dn}.pdf"
+    frappe.local.response.filecontent = pdf
+    frappe.local.response.type = "download"
