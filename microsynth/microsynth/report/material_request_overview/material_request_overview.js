@@ -51,6 +51,22 @@ frappe.query_reports["Material Request Overview"] = {
             fieldtype: "Data"
         },
         {
+            fieldname: "item_code",
+            label: __("Microsynth Item Code"),
+            fieldtype: "Link",
+            options: "Item",
+            get_query: function() {
+                return {
+                    filters: {
+                        "disabled": 0,
+                        "item_group": "Purchasing",
+                        "is_purchase_item": 1,
+                        "item_code": ["!=", "P020000"]
+                    }
+                };
+            }
+        },
+        {
             fieldname: "purchase_order",
             label: __("Purchase Order"),
             fieldtype: "Link",

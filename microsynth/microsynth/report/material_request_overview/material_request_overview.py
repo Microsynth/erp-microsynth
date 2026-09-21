@@ -94,6 +94,9 @@ def get_data(filters):
     if filters and filters.get("item_name"):
         conditions += " AND IFNULL(`tabMaterial Request Item`.`item_name`, '') LIKE CONCAT('%%', %(item_name)s, '%%')"
         item_request_conditions += " AND IFNULL(`tabItem Request`.`item_name`, '') LIKE CONCAT('%%', %(item_name)s, '%%')"
+    if filters and filters.get("item_code"):
+        conditions += " AND `tabMaterial Request Item`.`item_code` = %(item_code)s"
+        item_request_conditions += " AND IFNULL(`tabItem Request`.`material`, '') = %(item_code)s"
     if filters and filters.get("purchase_order"):
         conditions += """
             AND EXISTS (
