@@ -99,14 +99,26 @@ function process_queue() {
                         'number_length': locals.label_queue[0].from_barcode.length
                     },
                     'callback': function(r) {
-                        // open print dialog & print
-                        console.log(r.message);
-                        //if (r.message.includes("DN-")){
-                        // window.open("/printview?doctype=Delivery%20Note&name=" + r.message + "&trigger_print=1&format=Delivery%20Note%20Sequencing%20Labels&no_letterhead=0&_lang=en", '_blank').focus();
-                        download_delivery_note(r.message);
-                        //} else {
-                        //    frappe.show_alert(r.message);
-                        //}
+                        const result = r.message;
+                        if (result && typeof result === 'object') {
+                            if (!result.printed) {
+                                frappe.show_alert({
+                                    message: __("Delivery Note {0} was created but not printed automatically.", [result.delivery_note]),
+                                    indicator: 'orange'
+                                });
+                                download_delivery_note(result.delivery_note);
+                            } else {
+                                frappe.show_alert({
+                                    message: __("Delivery Note {0} sent to printer.", [result.delivery_note]),
+                                    indicator: 'green'
+                                });
+                            }
+                        } else if (result) {
+                            frappe.show_alert({
+                                message: result,
+                                indicator: 'blue'
+                            });
+                        }
                     }
                 });
             // kick first order out and resume

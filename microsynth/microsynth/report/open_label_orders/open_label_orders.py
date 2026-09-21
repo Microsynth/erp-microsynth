@@ -3,11 +3,14 @@
 
 from __future__ import unicode_literals
 import os
+import subprocess
 import frappe
 from frappe import _
 import json
+from frappe.desk.form.load import get_attachments
 from erpnext.selling.doctype.sales_order.sales_order import make_delivery_note
 from microsynth.microsynth.naming_series import get_naming_series
+from microsynth.microsynth.utils import get_document_printer, get_physical_path, create_pdf_attachment
 from datetime import datetime
 
 
@@ -159,15 +162,16 @@ def pick_labels_without_timeout(sales_order, from_barcode, to_barcode, number_le
                     sales_order=sales_order,
                     from_barcode=from_barcode,
                     to_barcode=to_barcode,
-                    number_length=number_length)
-        return f"Need to process {number_of_labels} Labels. Please wait a few minutes, go to the Sales Order {sales_order}, open the Delivery Note and print it."
+                    number_length=number_length,
+                    user=frappe.session.user)
+        return f"Need to process {number_of_labels} Labels. The Delivery Note will be printed automatically when the job finishes."
     else:
-        dn_name = pick_labels(sales_order, from_barcode, to_barcode, number_length)
+        dn_name = pick_labels(sales_order, from_barcode, to_barcode, number_length, user=frappe.session.user)
         return dn_name
 
 
 @frappe.whitelist()
-def pick_labels(sales_order, from_barcode, to_barcode, number_length):
+def pick_labels(sales_order, from_barcode, to_barcode, number_length, user=None):
     # set flag to prevent running duplicate
     frappe.db.set_value("Sequencing Settings", "Sequencing Settings", "flag_picking_labels", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
     frappe.db.commit()
@@ -222,6 +226,31 @@ def pick_labels(sales_order, from_barcode, to_barcode, number_length):
     dn.submit()
     frappe.db.commit()
 
+    create_pdf_attachment("Delivery Note", dn.name, print_format="Delivery Note", title=dn.name, no_letterhead=False)
+
+    attachments = get_attachments("Delivery Note", dn.name)
+    fid = None
+    for a in attachments:
+        if a.get('file_url', '').endswith('.pdf'):
+            fid = a['name']
+
+    printer = get_document_printer(user)
+    printed = False
+    print_error = None
+    if printer and fid:
+        path = get_physical_path(fid)
+        command = ["lp", path, "-d" ] + printer.split(" ") + ["-o", "sides=two-sided-long-edge"]
+        try:
+            subprocess.run(command, check=True)
+            printed = True
+        except subprocess.CalledProcessError as err:
+            print_error = str(err)
+            frappe.log_error(f"Printing of Delivery Note {dn.name} failed: {str(err)}", "open_label_orders.pick_labels")
+    elif not printer:
+        print_error = "No document printer configured"
+    else:
+        print_error = "No PDF attachment found"
+
     assignment_data = {
             "person_id": contact,
             "sales_order": sales_order,
@@ -238,8 +267,12 @@ def pick_labels(sales_order, from_barcode, to_barcode, number_length):
     frappe.db.set_value("Sequencing Settings", "Sequencing Settings", "flag_picking_labels", None)
     frappe.db.commit()
 
-    # return print format
-    return dn.name
+    return {
+        "delivery_note": dn.name,
+        "printed": printed,
+        "printer": printer,
+        "print_error": print_error
+    }
 
 
 @frappe.whitelist()

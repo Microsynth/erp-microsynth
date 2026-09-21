@@ -9,6 +9,7 @@ import json
 from datetime import datetime, date, timedelta
 from frappe.utils import flt, rounded, get_url_to_form, nowdate
 from frappe.core.doctype.communication.email import make
+from erpnextswiss.erpnextswiss.attach_pdf import save_and_attach, create_folder
 from erpnextswiss.scripts.crm_tools import get_primary_customer_contact
 
 
@@ -26,6 +27,51 @@ def get_customer(contact):
         if l.link_doctype == "Customer":
             customer_id = l.link_name
     return customer_id
+
+
+def get_document_printer(user=None):
+    """
+    Returns the configured document printer for the given user.
+    """
+    if not user:
+        user = frappe.session.user
+
+    if user and frappe.db.exists("User Printer", user):
+        printer = frappe.get_value("User Printer", user, "document_printer")
+        if printer:
+            return printer
+
+    return None
+
+
+def create_pdf_attachment(doctype, name, print_format=None, title=None, no_letterhead=False):
+    """
+    Create the PDF file for a given document name and attach the file to the record in the ERP.
+    """
+    if not print_format:
+        print_format = doctype
+    if not title:
+        title = name
+
+    doctype_folder = create_folder(doctype, "Home")
+    title_folder = create_folder(title, doctype_folder)
+    filecontent = frappe.get_print(
+        doctype,
+        name,
+        print_format,
+        doc=None,
+        as_pdf=True,
+        no_letterhead=no_letterhead
+    )
+
+    save_and_attach(
+        content=filecontent,
+        to_doctype=doctype,
+        to_name=name,
+        folder=title_folder,
+        hashname=None,
+        is_private=True
+    )
 
 
 def check_contact_to_customer():
