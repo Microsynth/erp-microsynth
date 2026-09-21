@@ -7,6 +7,7 @@
  "field_order": [
   "user",
   "full_name",
+  "document_printer",
   "label_printer",
   "purchase_label_printer",
   "stock_correction_printer",
@@ -58,9 +59,14 @@
    "fieldtype": "Link",
    "label": "Instrument Certification Label Printer",
    "options": "Brady Printer"
+  },
+  {
+   "fieldname": "document_printer",
+   "fieldtype": "Data",
+   "label": "Document Printer"
   }
  ],
- "modified": "2026-06-05 10:08:17.139412",
+ "modified": "2026-09-21 13:12:16.976414",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "User Printer",
