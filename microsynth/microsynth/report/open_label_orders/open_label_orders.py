@@ -164,7 +164,15 @@ def pick_labels_without_timeout(sales_order, from_barcode, to_barcode, number_le
                     to_barcode=to_barcode,
                     number_length=number_length,
                     user=frappe.session.user)
-        return f"Need to process {number_of_labels} Labels. The Delivery Note will be printed automatically when the job finishes."
+        return {
+            "delivery_note": None,
+            "printed": False,
+            "printer": get_document_printer(frappe.session.user),
+            "print_error": None,
+            "download_delivery_note": False,
+            "message": f"Need to process {number_of_labels} Labels. The Delivery Note will be printed automatically when the job finishes.",
+            "status": "queued"
+        }
     else:
         dn_name = pick_labels(sales_order, from_barcode, to_barcode, number_length, user=frappe.session.user)
         return dn_name
@@ -276,7 +284,10 @@ def pick_labels(sales_order, from_barcode, to_barcode, number_length, user=None)
         "delivery_note": dn.name,
         "printed": printed,
         "printer": printer,
-        "print_error": print_error
+        "print_error": print_error,
+        "download_delivery_note": not printer,
+        "message": None,
+        "status": "printed" if printed else "created"
     }
 
 

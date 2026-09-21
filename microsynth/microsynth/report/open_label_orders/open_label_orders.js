@@ -101,12 +101,19 @@ function process_queue() {
                     'callback': function(r) {
                         const result = r.message;
                         if (result && typeof result === 'object') {
-                            if (!result.printed) {
+                            if (result.status === 'queued') {
+                                frappe.show_alert({
+                                    message: result.message,
+                                    indicator: 'blue'
+                                });
+                            } else if (!result.printed) {
                                 frappe.show_alert({
                                     message: __("Delivery Note {0} was created but not printed automatically.", [result.delivery_note]),
                                     indicator: 'orange'
                                 });
-                                download_delivery_note(result.delivery_note);
+                                if (result.download_delivery_note) {
+                                    download_delivery_note(result.delivery_note);
+                                }
                             } else {
                                 frappe.show_alert({
                                     message: __("Delivery Note {0} sent to printer.", [result.delivery_note]),
