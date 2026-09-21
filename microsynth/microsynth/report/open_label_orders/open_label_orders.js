@@ -102,7 +102,8 @@ function process_queue() {
                         // open print dialog & print
                         console.log(r.message);
                         //if (r.message.includes("DN-")){
-                        window.open("/printview?doctype=Delivery%20Note&name=" + r.message + "&trigger_print=1&format=Delivery%20Note%20Sequencing%20Labels&no_letterhead=0&_lang=en", '_blank').focus();
+                        // window.open("/printview?doctype=Delivery%20Note&name=" + r.message + "&trigger_print=1&format=Delivery%20Note%20Sequencing%20Labels&no_letterhead=0&_lang=en", '_blank').focus();
+                        download_delivery_note(r.message);
                         //} else {
                         //    frappe.show_alert(r.message);
                         //}
@@ -370,4 +371,15 @@ function prio_pick(report_data) {
             }
         }
     });
+}
+
+function download_delivery_note(dn) {
+    const encoded_dn = encodeURIComponent(dn);
+    const url = frappe.urllib.get_full_url(
+        "/api/method/microsynth.microsynth.report.open_label_orders.open_label_orders.download_delivery_note?dn=" + encoded_dn
+    );
+    const w = window.open(url, '_blank');
+    if (!w) {
+        frappe.msgprint(__('Please allow popups for this site to download the delivery note.'));
+    }
 }
