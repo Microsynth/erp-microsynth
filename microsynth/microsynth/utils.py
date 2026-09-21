@@ -37,9 +37,10 @@ def get_document_printer(user=None):
         user = frappe.session.user
 
     if user and frappe.db.exists("User Printer", user):
-        printer = frappe.get_value("User Printer", user, "document_printer")
-        if printer:
-            return printer
+        document_printer = frappe.get_value("User Printer", user, "document_printer")
+        if not document_printer:
+            return None
+        return frappe.get_value("Document Printer", document_printer, "printer")
 
     return None
 
