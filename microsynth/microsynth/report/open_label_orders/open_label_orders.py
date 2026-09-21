@@ -220,6 +220,11 @@ def pick_labels(sales_order, from_barcode, to_barcode, number_length, user=None)
     if len(dn_content.items) == 0:
         frappe.throw(f"Cannot create Delivery Note for {sales_order}. There are no Items left to deliver.")
 
+    barcode_range = f"{from_barcode}-{to_barcode}"
+    for dn_item in dn_content.items:
+        if dn_item.item_code == item:
+            dn_item.item_name = f"{dn_item.item_name} [{barcode_range}]"
+
     dn = frappe.get_doc(dn_content)
     dn.naming_series = get_naming_series("Delivery Note", company)
     dn.insert()
