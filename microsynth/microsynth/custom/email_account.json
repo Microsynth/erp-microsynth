@@ -2,6 +2,7 @@
  "custom_fields": [],
  "custom_perms": [],
  "doctype": "Email Account",
+ "links": [],
  "property_setters": [
   {
    "_assign": null,
@@ -15,8 +16,10 @@
    "doctype_or_field": "DocField",
    "field_name": "enable_outgoing",
    "idx": 0,
-   "modified": "2023-03-10 09:27:43.249033",
-   "modified_by": "rolf.suter@microsynth.ch",
+   "is_system_generated": 0,
+   "modified": "2026-09-22 09:03:54.858575",
+   "modified_by": "Administrator",
+   "module": null,
    "name": "Email Account-enable_outgoing-in_list_view",
    "owner": "rolf.suter@microsynth.ch",
    "parent": null,
@@ -24,6 +27,7 @@
    "parenttype": null,
    "property": "in_list_view",
    "property_type": "Check",
+   "row_name": null,
    "value": "1"
   }
  ],
