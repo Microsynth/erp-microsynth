@@ -97,6 +97,25 @@ def configure_stock_settings():
     settings.save()
 
 
+def apply_sql_configurations():
+    """
+    Apply SQL configurations for the 2025 migration.
+
+    run
+    bench execute microsynth.microsynth.migration.v2025.apply_sql_configurations
+    """
+    print("Applying SQL configurations...")
+    # Note: frappe.db.sql() (via PyMySQL) executes only one statement per call. It doesn't support sending multiple semicolon-separated
+    # statements in a single query string — that requires a special "multi-statement" client flag that Frappe's connection doesn't enable.
+
+    # Switch off setup wizard
+    frappe.db.sql("UPDATE `tabSingles` SET `value` = 1 WHERE `doctype` = 'System Settings' AND `field` = 'setup_complete';")
+    frappe.db.sql("SET SQL_SAFE_UPDATES = 0; ")
+    frappe.db.sql("UPDATE `tabInstalled Application` SET `is_setup_complete` = 1 WHERE `has_setup_wizard` = 1;")
+
+    frappe.db.commit()
+
+
 def migrate2025():
     """
     Perform the 2025 migration tasks.
@@ -108,3 +127,4 @@ def migrate2025():
     configure_system_settings()
     configure_accounts_settings()
     configure_stock_settings()
+    apply_sql_configurations()
