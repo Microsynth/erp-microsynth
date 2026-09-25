@@ -64,6 +64,38 @@ def configure_system_settings():
     settings.save()
 
 
+def configure_accounts_settings():
+    """
+    Configure accounts settings for the 2025 migration.
+
+    run
+    bench execute microsynth.microsynth.migration.v2025.configure_accounts_settings
+    """
+    print("Configuring accounts settings...")
+    settings = frappe.get_doc("Accounts Settings")
+
+    settings.delete_linked_ledger_entries = True
+    settings.check_supplier_invoice_uniqueness = True
+    settings.add_taxes_from_taxes_and_charges_template = True
+
+    settings.save()
+
+
+def configure_stock_settings():
+    """
+    Configure stock settings for the 2025 migration.
+
+    run
+    bench execute microsynth.microsynth.migration.v2025.configure_stock_settings
+    """
+    print("Configuring stock settings...")
+    settings = frappe.get_doc("Stock Settings")
+
+    settings.allow_uom_with_conversion_rate_defined_in_item = True
+
+    settings.save()
+
+
 def migrate2025():
     """
     Perform the 2025 migration tasks.
@@ -73,3 +105,5 @@ def migrate2025():
     """
     hide_standard_workspaces()
     configure_system_settings()
+    configure_accounts_settings()
+    configure_stock_settings()
