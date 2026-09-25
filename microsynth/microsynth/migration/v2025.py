@@ -76,6 +76,7 @@ def configure_accounts_settings():
 
     settings.delete_linked_ledger_entries = True
     settings.check_supplier_invoice_uniqueness = True
+    settings.add_taxes_from_item_tax_template = False
     settings.add_taxes_from_taxes_and_charges_template = True
 
     settings.save()
