@@ -1059,6 +1059,188 @@ def output_discounts(reference_price_list, min_discount=80, max_discount=100):
                     break
 
 
+def _get_valid_item_prices_for_price_list(price_list_name):
+    """
+    Return the currently valid Item Prices of one Price List as a dict keyed by
+    (item_code, min_qty). If multiple currently valid rows exist for the same key,
+    the newest row in the sorted result wins.
+    """
+    rows = frappe.db.sql(
+        """
+        SELECT
+            `tabItem Price`.`name` AS `item_price_name`,
+            `tabItem Price`.`item_code`,
+            `tabItem Price`.`item_name`,
+            `tabItem Price`.`min_qty`,
+            `tabItem Price`.`currency`,
+            `tabItem Price`.`price_list_rate`,
+            `tabItem Price`.`valid_from`,
+            `tabItem Price`.`modified`,
+            `tabItem Price`.`creation`
+        FROM `tabItem Price`
+        JOIN `tabItem`
+            ON `tabItem`.`item_code` = `tabItem Price`.`item_code`
+        WHERE `tabItem Price`.`price_list` = %s
+          AND `tabItem`.`disabled` = 0
+          AND (`tabItem Price`.`valid_from` IS NULL OR `tabItem Price`.`valid_from` <= CURDATE())
+          AND (`tabItem Price`.`valid_upto` IS NULL OR `tabItem Price`.`valid_upto` >= CURDATE())
+        ORDER BY
+            `tabItem Price`.`item_code` ASC,
+            `tabItem Price`.`min_qty` ASC,
+            `tabItem Price`.`valid_from` ASC,
+            `tabItem Price`.`modified` ASC,
+            `tabItem Price`.`creation` ASC,
+            `tabItem Price`.`name` ASC
+        """,
+        (price_list_name,),
+        as_dict=True,
+    )
+
+    item_prices = {}
+    for row in rows:
+        item_prices[(row['item_code'], row['min_qty'])] = row
+    return item_prices
+
+
+def _get_enabled_customer_sales_managers_by_price_list(price_lists):
+    """
+    Return a mapping of Price List name to a comma-separated string of unique Sales Managers
+    of enabled Customers using that Price List as default.
+    """
+    if not price_lists:
+        return {}
+
+    rows = frappe.db.sql(
+        """
+        SELECT
+            `tabCustomer`.`default_price_list`,
+            `tabCustomer`.`account_manager`
+        FROM `tabCustomer`
+                WHERE `tabCustomer`.`disabled` = 0
+                    AND IFNULL(`tabCustomer`.`default_price_list`, '') != ''
+                    AND `tabCustomer`.`default_price_list` IN %(price_lists)s
+                    AND IFNULL(`tabCustomer`.`account_manager`, '') != ''
+                ORDER BY `tabCustomer`.`default_price_list` ASC, `tabCustomer`.`account_manager` ASC
+        """,
+        {'price_lists': tuple(price_lists)},
+        as_dict=True,
+    )
+
+    sales_managers_by_price_list = {price_list: set() for price_list in price_lists}
+    for row in rows:
+        sales_managers_by_price_list[row['default_price_list']].add(row['account_manager'])
+
+    return {
+        price_list: ', '.join(sorted(sales_managers))
+        for price_list, sales_managers in sales_managers_by_price_list.items()
+    }
+
+
+def export_item_prices_higher_than_reference_to_csv(output_file_path, verbose=True):
+    """
+    Export all currently valid Item Prices on enabled Price Lists whose rate is higher than
+    the matching rate on their reference Price List into a single CSV file.
+
+    The export iterates over enabled Price Lists and caches each reference Price List only once.
+    Matching is done on the exact tuple (reference_price_list, item_code, min_qty).
+
+    bench execute microsynth.microsynth.pricing.export_item_prices_higher_than_reference_to_csv --kwargs "{'output_file_path': '/mnt/erp_share/price_list_rates_above_reference.csv', 'verbose': True}"
+    """
+    start_ts = datetime.now()
+    total_rows = 0
+    processed_price_lists = 0
+
+    enabled_price_lists = frappe.get_all(
+        "Price List",
+        filters={"enabled": 1},
+        fields=["name", "reference_price_list"],
+        order_by="reference_price_list asc, name asc"
+    )
+
+    price_lists_by_reference = {}
+    for price_list in enabled_price_lists:
+        reference_price_list = price_list.get('reference_price_list')
+        if not reference_price_list:
+            continue
+        if reference_price_list not in price_lists_by_reference:
+            price_lists_by_reference[reference_price_list] = []
+        price_lists_by_reference[reference_price_list].append(price_list['name'])
+
+    total_price_lists_to_process = sum(len(price_lists) for price_lists in price_lists_by_reference.values())
+    sales_managers_by_price_list = _get_enabled_customer_sales_managers_by_price_list(
+        [price_list['name'] for price_list in enabled_price_lists if price_list.get('reference_price_list')]
+    )
+
+    with open(output_file_path, mode='w', newline='', encoding='utf-8-sig') as csv_file:
+        writer = csv.writer(csv_file, delimiter=';', lineterminator='\n')
+        writer.writerow([
+            'item_price_name',
+            'price_list',
+            'reference_price_list',
+            'item_code',
+            'item_name',
+            'min_qty',
+            'current_rate',
+            'reference_item_price_name',
+            'currency',
+            'reference_currency',
+            'reference_rate',
+            'rate_difference',
+            'sales_managers'
+        ])
+
+        for reference_price_list, price_lists in price_lists_by_reference.items():
+            reference_prices = _get_valid_item_prices_for_price_list(reference_price_list)
+            if verbose:
+                print(
+                    f"Loaded {len(reference_prices)} current reference prices from '{reference_price_list}' "
+                    f"for {len(price_lists)} Price Lists."
+                )
+
+            for price_list_name in price_lists:
+                current_prices = _get_valid_item_prices_for_price_list(price_list_name)
+                sales_managers = sales_managers_by_price_list.get(price_list_name, '')
+                rows_to_write = []
+
+                for key, current_price in current_prices.items():
+                    reference_price = reference_prices.get(key)
+                    if not reference_price:
+                        continue
+                    if current_price['price_list_rate'] <= reference_price['price_list_rate']:
+                        continue
+
+                    rows_to_write.append([
+                        current_price['item_price_name'],
+                        price_list_name,
+                        reference_price_list,
+                        current_price['item_code'],
+                        current_price['item_name'],
+                        current_price['min_qty'],
+                        current_price['price_list_rate'],
+                        current_price['currency'],
+                        reference_price['item_price_name'],
+                        reference_price['currency'],
+                        reference_price['price_list_rate'],
+                        reference_price['price_list_rate'] - current_price['price_list_rate'],
+                        sales_managers
+                    ])
+
+                if rows_to_write:
+                    writer.writerows(rows_to_write)
+                    total_rows += len(rows_to_write)
+                    rows_to_write = []
+
+                processed_price_lists += 1
+                if verbose:
+                    print(
+                        f"Processed Price List {processed_price_lists}/{total_price_lists_to_process}: '{price_list_name}'. "
+                        f"{total_rows} rows written so far."
+                    )
+
+    elapsed_time = timedelta(seconds=(datetime.now() - start_ts).total_seconds())
+    print(f"Wrote {total_rows} rows to '{output_file_path}' in {elapsed_time} hh:mm:ss.")
+
+
 def disable_unused_price_lists(dry_run=True):
     """
     Disable all enabled Price Lists that are not the default Price List of any enabled Customer,
