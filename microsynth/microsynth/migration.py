@@ -2051,7 +2051,6 @@ def activate_fullplasmidseq_dach():
             "Austria" )
         AND `tDLA`.`link_name` IS NOT NULL
     """
-
     customers = frappe.db.sql(query, as_dict=True)
 
     i = 0
@@ -2081,6 +2080,22 @@ def activate_fullplasmidseq_all_customers():
         add_webshop_service(c.name, "FullPlasmidSeq")
         frappe.db.commit()
         i += 1
+
+
+def activate_fullplasmidseqfromecoli_all_customers():
+    """
+    bench execute microsynth.microsynth.migration.activate_fullplasmidseqfromecoli_all_customers
+    """
+    customers = frappe.db.get_all("Customer",
+        filters = {'disabled': 0 },
+        fields = ['name']
+    )
+    length = len(customers)
+
+    for i, c in enumerate(customers):
+        print("{1}% - process customer '{0}'".format(c.name, int(100 * i / length)))
+        add_webshop_service(c.name, "FullPlasmidSeqFromEcoli")
+    frappe.db.commit()
 
 
 def activate_invoicebydefaultcompany(blacklist_customers, territories):
