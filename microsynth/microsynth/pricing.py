@@ -10,6 +10,265 @@ from frappe.utils import flt
 from microsynth.microsynth.report.pricing_configurator.pricing_configurator import set_rate, get_rate_or_none
 
 
+PRICE_EPSILON = 0.0001
+REFERENCE_PRICE_LIST_PREFIX = "Sales Prices"
+REFERENCE_PRICE_LIST_CURRENCIES = ('CHF', 'EUR', 'PLN', 'SEK', 'USD')
+
+
+def _reference_price_list_name(currency):
+    return f"{REFERENCE_PRICE_LIST_PREFIX} {currency}"
+
+
+def _item_group_uses_general_discount(item_group):
+    return bool(item_group) and ("3.1" in item_group or "3.2" in item_group)
+
+
+def _is_reference_price_list(price_list_name, reference_price_list=None):
+    if not price_list_name or not price_list_name.startswith(REFERENCE_PRICE_LIST_PREFIX):
+        return False
+    if reference_price_list is None:
+        reference_price_list = frappe.get_value("Price List", price_list_name, "reference_price_list")
+    return not reference_price_list
+
+
+def _get_referenced_price_lists(reference_price_list_name):
+    """
+    Return all enabled customer Price Lists that reference the given reference list.
+
+    The result contains the Price List name and its general discount so callers
+    can decide whether customer prices should be kept or recalculated.
+    """
+    return frappe.get_all(
+        "Price List",
+        filters={
+            'reference_price_list': reference_price_list_name,
+            'enabled': 1,
+        },
+        fields=['name', 'general_discount']
+    )
+
+
+def _decide_customer_rate(old_reference_rate, new_reference_rate, customer_rate, general_discount, uses_general_discount):
+    """
+    Decide whether a customer Item Price should be kept or recalculated.
+
+    The decision compares the discount of the current customer rate against the
+    previous reference rate with the Price List's general discount for item
+    groups 3.1 and 3.2. If the item specific discount is better than the
+    general discount and the current rate already sits at or below the new
+    discounted target, the existing price is kept. Otherwise the price is
+    recalculated from the new reference rate and the general discount. For all
+    other item groups the customer rate is carried forward with the same item
+    specific discount as before.
+    """
+    general_discount = flt(general_discount or 0)
+    if uses_general_discount:
+        target_rate = round(((100 - general_discount) / 100) * new_reference_rate, 4)
+
+        if abs(old_reference_rate) < PRICE_EPSILON:
+            return {
+                'action': 'recalculate',
+                'general_discount': general_discount,
+                'general_discount_applicable': True,
+                'item_discount': None,
+                'new_customer_rate': target_rate,
+                'reason': 'old reference rate is 0, fallback to general discount'
+            }
+        item_discount = ((old_reference_rate - customer_rate) / old_reference_rate) * 100
+        has_better_item_discount = item_discount > general_discount + PRICE_EPSILON
+        is_already_at_or_below_new_target = customer_rate <= target_rate + PRICE_EPSILON
+
+        if has_better_item_discount and is_already_at_or_below_new_target:
+            return {
+                'action': 'keep',
+                'general_discount': general_discount,
+                'general_discount_applicable': True,
+                'item_discount': item_discount,
+                'new_customer_rate': customer_rate,
+                'reason': 'item-specific discount is better than the general discount and remains at or below the new discounted reference price'
+            }
+        return {
+            'action': 'recalculate',
+            'general_discount': general_discount,
+            'general_discount_applicable': True,
+            'item_discount': item_discount,
+            'new_customer_rate': target_rate,
+            'reason': 'customer price should follow the new reference price and general discount'
+        }
+
+    if abs(old_reference_rate) < PRICE_EPSILON:
+        return {
+            'action': 'recalculate',
+            'general_discount': None,
+            'general_discount_applicable': False,
+            'item_discount': None,
+            'new_customer_rate': round(new_reference_rate, 4),
+            'reason': 'item group does not use the general discount and old reference rate is 0'
+        }
+
+    item_discount = ((old_reference_rate - customer_rate) / old_reference_rate) * 100
+    target_rate = round(((100 - item_discount) / 100) * new_reference_rate, 4)
+    if abs(customer_rate - target_rate) < PRICE_EPSILON:
+        return {
+            'action': 'keep',
+            'general_discount': None,
+            'general_discount_applicable': False,
+            'item_discount': item_discount,
+            'new_customer_rate': customer_rate,
+            'reason': 'item group does not use the general discount and the current rate already matches the carried-forward item-specific discount'
+        }
+    return {
+        'action': 'recalculate',
+        'general_discount': None,
+        'general_discount_applicable': False,
+        'item_discount': item_discount,
+        'new_customer_rate': target_rate,
+        'reason': 'item group does not use the general discount; customer price follows the carried-forward item-specific discount'
+    }
+
+
+def change_reference_and_customer_prices_from_csv(csv_file, dry_run=True, verbose=False):
+    """
+    Change reference prices and dependent customer prices from a CSV file.
+
+    Key difference to change_rates_from_csv:
+    change_reference_and_customer_prices_from_csv = keep better customer
+    prices, update only the rest
+
+    1. Item Code
+    2. Min_qty
+    3. current reference rate
+    4. new reference rate
+    5. currency
+
+    bench execute microsynth.microsynth.pricing.change_reference_and_customer_prices_from_csv --kwargs "{'csv_file': '/mnt/erp_share/price_changes.csv', 'dry_run': True, 'verbose': True}"
+    """
+    summary = {
+        'reference_prices_processed': 0,
+        'reference_prices_changed': 0,
+        'customer_prices_changed': 0,
+        'customer_prices_kept': 0,
+        'customer_prices_skipped': 0,
+    }
+
+    with open(csv_file, 'r', newline='') as file:
+        reader = csv.reader(file, delimiter=';')
+        for line_number, row in enumerate(reader, start=1):
+            if not row or all(not cell.strip() for cell in row):
+                continue
+            if len(row) != 5:
+                frappe.throw(f"Line {line_number} in '{csv_file}' must contain exactly 5 columns, got {len(row)}: {row}")
+            if line_number == 1 and row[0].strip().lower() in {'item code', 'item_code'}:
+                continue
+
+            item_code = row[0].strip()
+            try:
+                min_qty = int(row[1])
+                current_reference_rate = flt(row[2])
+                new_reference_rate = flt(row[3])
+                currency = row[4].strip().upper()
+            except Exception as error:
+                frappe.throw(f"Unable to parse line {line_number} in '{csv_file}': {error}. Row: {row}")
+
+            reference_price_list_name = _reference_price_list_name(currency)
+            if not _is_reference_price_list(reference_price_list_name):
+                frappe.throw(f"'{reference_price_list_name}' is not a valid reference Price List.")
+
+            item = frappe.get_doc("Item", item_code)
+            if item.disabled:
+                if verbose:
+                    print(f"Item {item_code} is disabled. Going to continue.")
+                summary['customer_prices_skipped'] += 1
+                continue
+            uses_general_discount = _item_group_uses_general_discount(item.item_group)
+
+            current_erp_reference_rate = get_rate_or_none(item_code, reference_price_list_name, min_qty)
+            if current_erp_reference_rate is None:
+                frappe.throw(
+                    f"No current reference rate found for Item {item_code} with min_qty {min_qty} on Price List '{reference_price_list_name}'."
+                )
+            if abs(flt(current_erp_reference_rate) - current_reference_rate) > PRICE_EPSILON:
+                frappe.throw(
+                    f"Current reference rate mismatch for Item {item_code}, min_qty {min_qty}, Price List '{reference_price_list_name}': "
+                    f"ERP has {current_erp_reference_rate}, CSV has {current_reference_rate}."
+                )
+            if abs(current_reference_rate - new_reference_rate) < PRICE_EPSILON:
+                if verbose:
+                    print(
+                        f"Item {item_code} on Price List '{reference_price_list_name}' already has the requested rate {new_reference_rate}."
+                    )
+                summary['customer_prices_skipped'] += 1
+                continue
+
+            referenced_price_lists = _get_referenced_price_lists(reference_price_list_name)
+            summary['reference_prices_processed'] += 1
+
+            if verbose:
+                print(
+                    f"Processing Item {item_code} on reference Price List {reference_price_list_name} "
+                    f"with min_qty {min_qty}: {current_reference_rate} -> {new_reference_rate} "
+                    f"for {len(referenced_price_lists)} dependent Price Lists."
+                )
+            for price_list in referenced_price_lists:
+                customer_rate = get_rate_or_none(item_code, price_list['name'], min_qty)
+                if customer_rate is None:
+                    if verbose:
+                        print(
+                            f"No matching Item Price for Item {item_code} with min_qty {min_qty} on Price List {price_list['name']}. Going to continue."
+                        )
+                    continue
+                decision = _decide_customer_rate(
+                    old_reference_rate=current_reference_rate,
+                    new_reference_rate=new_reference_rate,
+                    customer_rate=customer_rate,
+                    general_discount=price_list.get('general_discount'),
+                    uses_general_discount=uses_general_discount,
+                )
+                if decision['action'] == 'keep':
+                    summary['customer_prices_kept'] += 1
+                    if verbose:
+                        general_discount_str = "n/a" if not decision['general_discount_applicable'] else f"{decision['general_discount']:.2f} %"
+                        print(
+                            f"Keeping Item {item_code} on Price List {price_list['name']} at {customer_rate} {currency} "
+                            f"(item discount {decision['item_discount']:.2f} %, general discount {general_discount_str})."
+                        )
+                    continue
+                if abs(customer_rate - decision['new_customer_rate']) < PRICE_EPSILON:
+                    summary['customer_prices_kept'] += 1
+                    if verbose:
+                        print(
+                            f"Item {item_code} on Price List {price_list['name']} already matches the target rate {decision['new_customer_rate']} {currency}."
+                        )
+                    continue
+                if not dry_run:
+                    set_rate(item_code, price_list['name'], min_qty, decision['new_customer_rate'])
+
+                summary['customer_prices_changed'] += 1
+                if verbose:
+                    item_discount_str = "n/a" if decision['item_discount'] is None else f"{decision['item_discount']:.2f} %"
+                    general_discount_str = "n/a" if not decision['general_discount_applicable'] else f"{decision['general_discount']:.2f} %"
+                    print(
+                        f"{'Would change' if dry_run else 'Changed'} Item {item_code} on Price List {price_list['name']} "
+                        f"from {customer_rate} to {decision['new_customer_rate']} {currency} "
+                        f"(item discount {item_discount_str}, general discount {general_discount_str}, reason: {decision['reason']})."
+                    )
+            if not dry_run:
+                set_rate(item_code, reference_price_list_name, min_qty, new_reference_rate)
+            summary['reference_prices_changed'] += 1
+            if verbose:
+                print(
+                    f"{'Would change' if dry_run else 'Changed'} reference Item Price for Item {item_code} on Price List {reference_price_list_name} "
+                    f"from {current_reference_rate} to {new_reference_rate} {currency}."
+                )
+    print(
+        f"{'Would change' if dry_run else 'Changed'} {summary['customer_prices_changed']} customer price(s) and "
+        f"{summary['reference_prices_changed']} reference price(s), "
+        f"kept {summary['customer_prices_kept']}, skipped {summary['customer_prices_skipped']}, "
+        f"processed {summary['reference_prices_processed']} changed reference Item Price(s)."
+    )
+    return summary
+
+
 def change_reference_rate(reference_price_list_name, item_code, min_qty, reference_rate, new_reference_rate, user):
     """
     Change the rate (price) of the given combination of Item Code and minimum quantity
@@ -36,11 +295,11 @@ def change_reference_rate(reference_price_list_name, item_code, min_qty, referen
         frappe.log_error(msg, "pricing.change_reference_rate")
         return negative_discount_warnings
 
-    if abs(reference_rate - new_reference_rate) < 0.0001:
+    if abs(reference_rate - new_reference_rate) < PRICE_EPSILON:
         #print(f"{reference_rate=} == {new_reference_rate=} -> nothing to do. Going to return.")
         return negative_discount_warnings
 
-    if abs(current_reference_rate - reference_rate) > 0.0001:
+    if abs(current_reference_rate - reference_rate) > PRICE_EPSILON:
         msg = f"{current_reference_rate=} in the ERP is unequals given {reference_rate=} ({reference_price_list_name=}, {item_code=}, {min_qty=}). Going to return."
         print(msg)
         frappe.log_error(msg, "pricing.change_reference_rate")
@@ -71,7 +330,7 @@ def change_reference_rate(reference_price_list_name, item_code, min_qty, referen
             # Do not add the combination of item_code and min_qty to the customer Price List.
             continue
 
-        if abs(reference_rate) < 0.0001:  # reference_rate is too close to 0 to calculate the discount (division by 0 issue) -> apply General Discount
+        if abs(reference_rate) < PRICE_EPSILON:  # reference_rate is too close to 0 to calculate the discount (division by 0 issue) -> apply General Discount
             #msg = f"Unable to change customer Price List rate for item {item_code} with {min_qty=} on Price List '{price_list['name']}' since {reference_rate=} is too close to 0 to divide by it for computing the current discount"
             #msg = f"WARNING: {reference_rate=} -> Customer Price List rate is set to 0"
             #frappe.log_error(msg, 'pricing.change_reference_rate')
@@ -171,7 +430,7 @@ def change_single_customer_rates_from_csv(csv_file):
                 continue
             total_lines += 1
 
-            if 'Sales Prices' in price_list_name:
+            if price_list_name.startswith(REFERENCE_PRICE_LIST_PREFIX):
                 print(f"Got reference price list '{line[0]}'. To change a reference rate, please use the function 'change_rates_from_csv'.")
                 error = True
                 continue
@@ -202,11 +461,11 @@ def change_single_customer_rates_from_csv(csv_file):
                 error = True
                 continue
 
-            if abs(current_rate - new_rate) < 0.0001:
+            if abs(current_rate - new_rate) < PRICE_EPSILON:
                 print(f"WARNING: {current_rate=} == {new_rate=} -> nothing to do, please remove line from CSV.")
                 error = True
 
-            if abs(current_erp_rate - current_rate) > 0.0001:
+            if abs(current_erp_rate - current_rate) > PRICE_EPSILON:
                 print(f"{current_erp_rate=} in the ERP is unequals given {current_rate=} ({price_list_name=}, {item_code=}, {min_qty=}).")
                 error = True
 
@@ -247,6 +506,16 @@ def change_rates_from_csv(csv_file, user):
     """
     Change the reference rate and all dependent customer rates for all entries in the given CSV file
     using the function change_reference_rate.
+
+    Key difference to change_reference_and_customer_prices_from_csv:
+    This function recalculates every affected dependent customer price. It does
+    not check whether a customer already has an individually better price that
+    should be kept.
+
+    In other words:
+    change_rates_from_csv = force-update dependent customer prices
+    change_reference_and_customer_prices_from_csv = keep better customer prices, update only the rest
+
     IMPORTANT: It is expected that the CSV file has a header and exactly the following columns in this order:
     Reference Price List Name, Item Code, Item Name, Minimum Qty, Current Rate, New Rate
     Outputs a CSV file with warnings about negative discounts to the given csv_file path appended by _warnings.csv
@@ -266,7 +535,7 @@ def change_rates_from_csv(csv_file, user):
                 print(f"Expected line length 6 but was {len(line)} for the following line:\n{line}\n"
                       f"No Prices are changed. Please correct CSV file and restart. Going to return.")
                 return
-            if line[0] not in ('Sales Prices CHF', 'Sales Prices EUR', 'Sales Prices PLN', 'Sales Prices SEK', 'Sales Prices USD'):
+            if line[0] not in tuple(_reference_price_list_name(currency) for currency in REFERENCE_PRICE_LIST_CURRENCIES):
                 print(f"Got unknown reference price list '{line[0]}'. No Prices are changed. "
                       f"Please correct CSV file or add '{line[0]}' here in the code and restart. Going to return.")
                 return
@@ -860,7 +1129,7 @@ def copy_prices_from_projects_to_reference(item_codes, dry_run=True, verbose=Fal
             continue
         for currency in ['CHF', 'EUR', 'USD']:
             projects_price_list_name = 'Projects ' + currency
-            reference_price_list_name = 'Sales Prices ' + currency
+            reference_price_list_name = _reference_price_list_name(currency)
             item_prices = frappe.db.get_all("Item Price",
                                             filters=[['price_list', '=', projects_price_list_name], ['item_code', '=', item_code]],
                                             fields=['name', 'price_list_rate', 'min_qty', 'currency'])
@@ -1276,7 +1545,7 @@ def compare_ref_to_project():
     """
     my_fields = ['name', 'price_list', 'item_code', 'item_name', 'min_qty']
     for currency in ['CHF', 'EUR', 'USD']:
-        reference_prices = frappe.db.get_all("Item Price", filters={'price_list': f"Sales Prices {currency}"}, fields=my_fields)
+        reference_prices = frappe.db.get_all("Item Price", filters={'price_list': _reference_price_list_name(currency)}, fields=my_fields)
         project_prices = frappe.db.get_all("Item Price", filters={'price_list': f"Projects {currency}"}, fields=my_fields)
         for ref_price in reference_prices:
             # ignore Item Prices of disabled Items
@@ -1290,7 +1559,7 @@ def compare_ref_to_project():
             if found:
                 continue
             else:
-                print(f"Item {ref_price['item_code']}: {ref_price['item_name']} with minimum Qty {ref_price['min_qty']} is on Sales Prices {currency} but not on Projects {currency}.")
+                print(f"Item {ref_price['item_code']}: {ref_price['item_name']} with minimum Qty {ref_price['min_qty']} is on {_reference_price_list_name(currency)} but not on Projects {currency}.")
 
 
 @frappe.whitelist()
@@ -1360,7 +1629,7 @@ def find_price_lists_differing_from_reference(items):
                 print(f"Got no old reference rates for Item {item} and currency {currency}, going to skip.")
                 continue
             old_reference_rate = old_reference_rates[item][currency]
-            reference_price_list = f"Sales Prices {currency}"
+            reference_price_list = _reference_price_list_name(currency)
             reference_rate = get_rate_or_none(item, reference_price_list, 1)
             if not reference_rate:
                 print(f"Got no reference rate for Item {item} with min_qty 1 on reference Price List '{reference_price_list}', going to skip.")
@@ -1432,7 +1701,7 @@ def change_customer_prices(items, dry_run=True, verbose=True, price_lists_to_cha
                 print(f"Got no old reference rates for Item {item} and currency {currency}, going to skip.")
                 continue
             old_reference_rate = old_reference_rates[item][currency]
-            reference_price_list = f"Sales Prices {currency}"
+            reference_price_list = _reference_price_list_name(currency)
             reference_rate = get_rate_or_none(item, reference_price_list, 1)
             if reference_rate is None:
                 print(f"Got no reference rate for Item {item} with min_qty 1 on reference Price List '{reference_price_list}', going to skip.")
@@ -1450,7 +1719,7 @@ def change_customer_prices(items, dry_run=True, verbose=True, price_lists_to_cha
                 JOIN `tabItem` ON `tabItem`.`item_code` = `tabItem Price`.`item_code`
                 JOIN `tabPrice List` ON `tabPrice List`.`name` = `tabItem Price`.`price_list`
                 WHERE `tabItem Price`.`price_list_rate` != %s
-                    AND ABS(`tabItem Price`.`price_list_rate` - %s) < 0.0001
+                    AND ABS(`tabItem Price`.`price_list_rate` - %s) < %s
                     AND `tabItem Price`.`item_code` = %s
                     AND `tabItem Price`.`currency` = %s
                     AND `tabItem`.`disabled` = 0
@@ -1459,7 +1728,7 @@ def change_customer_prices(items, dry_run=True, verbose=True, price_lists_to_cha
             """
             data = frappe.db.sql(
                 sql_query,
-                (reference_rate, old_reference_rate, item, currency, reference_price_list),
+                (reference_rate, old_reference_rate, item, currency, reference_price_list, PRICE_EPSILON),
                 as_dict=True
             )
             for d in data:
@@ -1522,7 +1791,7 @@ def correct_reference_price_list_of_item_prices(dry_run=True, verbose=True):
     processed = 0
 
     for row in mismatches:
-        if verbose:  # or 'Sales Prices ' in row.price_list:
+        if verbose:  # or REFERENCE_PRICE_LIST_PREFIX in row.price_list:
             print(
                 f"[Item Price: {row.name}] "
                 f"price_list={row.price_list} | "
@@ -1605,7 +1874,7 @@ def create_new_reference_prices(csv_file, mapping, dry_run=True, verbose=True):
                     except Exception as e:
                         print(f"[Row {row_num}] Error reading rate for {currency}: {e}. Skipping.")
                         continue
-                    price_list = f"Sales Prices {currency}"
+                    price_list = _reference_price_list_name(currency)
                     if verbose:
                         print(f"[Row {row_num}] Would create Item Price: item_code={item_code}, min_qty={min_qty}, price_list={price_list}, rate={rate}")
                     if not dry_run:
