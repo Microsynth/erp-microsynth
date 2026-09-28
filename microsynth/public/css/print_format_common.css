@@ -18,7 +18,7 @@
     src: url('/files/NimbusSans-BoldItalic.woff');
 }
 
-h2 {
+.print-format h2 {
     color: #e65023 !important;
     border-bottom: 2px solid #e65023;
     /* text-transform: uppercase; */
@@ -28,11 +28,11 @@ h2 {
     font-family: nimbus-bold-italic !important;
 }
 
-h3 {
+.print-format h3 {
     font-size: 12px;
 }
 
-h4 {
+.print-format h4 {
     font-size: 12px;
     font-style: italic;
     font-weight: normal;
@@ -40,12 +40,12 @@ h4 {
     margin-bottom: 2px;
 }
 
-hr {
+.print-format hr {
     width: 100%;
     border-top: 1px solid silver;
 }
 
-.bold {
+.print-format .bold {
     font-weight: bold;
 }
 
@@ -76,34 +76,34 @@ hr {
     font-family: nimbus-bold-italic;
 }
 
-.justify {
+.print-format .justify {
     text-align: justify;
     text-justify: inter-word;  /* supported mainly by older IE, safe to include */
 }
 
-#header {
+.print-format #header {
     height: 65px !important;
     width: 100% !important;
 }
 
-#subject {
+.print-format #subject {
     font-size: 16px !important;
     margin-top: 10px !important;
     margin-bottom: 10px !important
 }
 
-#meta {
+.print-format #meta {
     width: 100%;
     border-top: 1px solid silver;
     border-bottom: 1px solid silver;
 }
 
-#meta td {
+.print-format #meta td {
     padding: 0px !important;
     padding-top: 2px !important;
     padding-bottom: 1px !important;
 }
 
-#qr-invoice td {
+.print-format #qr-invoice td {
     padding: 0px !important;
 }
