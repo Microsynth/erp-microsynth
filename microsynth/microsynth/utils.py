@@ -1033,7 +1033,7 @@ def add_webshop_service_to_customers(customer_ids, service):
     """
     Wrapper to add the given Webshop Service to all given Customers.
 
-    bench execute microsynth.microsynth.utils.add_webshop_service_to_customers --kwargs "{'customers': ['832188', '8003'], 'service':'InvoiceByDefaultCompany'}"
+    bench execute microsynth.microsynth.utils.add_webshop_service_to_customers --kwargs "{'customer_ids': ['832188', '8003'], 'service':'InvoiceByDefaultCompany'}"
     """
     for customer_id in customer_ids:
         add_webshop_service(customer_id, service)
