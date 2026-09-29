@@ -1,12 +1,3 @@
-// extend/create dashboard
-cur_frm.dashboard.add_transactions([
-    {
-        'label': __("Follow Up"),
-        'items': ["Contact Note"]
-    }
-]);
-
-
 frappe.ui.form.on('Quotation Item', {
     qty(frm, cdt, cdn) {
         fetch_price_list_rate(frm, cdt, cdn);
