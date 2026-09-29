@@ -6,9 +6,9 @@ frappe.query_reports["Instrument Compliance Due"] = {
     "filters": [
         {
             "fieldname": "requirement_type",
-            "label": "Requirement Type",
+            "label": "Mode",
             "fieldtype": "Select",
-            "options": "\nRequalification in next 6 weeks\nVerification due\nCalibration due\nOverdue"
+            "options": "\nRequalification in next 6 weeks\nQMF (Class A, Active or Blocked)\nVerification due\nCalibration due\nOverdue"
         }
     ],
 	"onload": (report) => {

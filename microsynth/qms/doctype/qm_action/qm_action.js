@@ -1,6 +1,19 @@
 // Copyright (c) 2024, Microsynth, libracore and contributors
 // For license information, please see license.txt
 
+const qm_action_block_ctrl_b_handler = function(e) {
+    if ((e.ctrlKey || e.metaKey) && e.key && e.key.toLowerCase() === 'b') {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+    }
+};
+
+if (!window.__qm_action_ctrl_b_bound) {
+    document.addEventListener('keydown', qm_action_block_ctrl_b_handler, true);
+    window.__qm_action_ctrl_b_bound = true;
+}
+
 frappe.ui.form.on('QM Action', {
     refresh: function(frm) {
 
@@ -10,6 +23,10 @@ frappe.ui.form.on('QM Action', {
             cur_frm.page.clear_primary_action();
             cur_frm.page.clear_secondary_action();
         }
+
+        // remove Menu > Duplicate
+        var target ="span[data-label='" + __("Duplicate") + "']";
+        $(target).parent().parent().remove();
 
         // Only creator and QAU can change these fields in Draft status: Title, NC Type, Process, Date, Company, Web Order ID
         if (!(["Draft"].includes(frm.doc.status) && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU')))) {

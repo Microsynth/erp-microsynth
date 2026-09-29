@@ -16,6 +16,15 @@ frappe.ui.form.on('Item', {
                 show_add_location_dialog(frm);
             });
 
+            if (!frm.doc.__islocal) {
+                frm.add_custom_button(__("Purchase History"), function () {
+                    frappe.set_route("query-report", "Material Request Overview", {
+                        mode: "All Material Requests",
+                        item_code: frm.doc.name
+                    });
+                }, __("View"));
+            }
+
             if (frappe.user.has_role('Purchase Manager') || frappe.user.has_role('Purchase User')) {
                 frm.add_custom_button(__("Add/Edit Price"), function () {
                     add_edit_purchasing_price(frm);

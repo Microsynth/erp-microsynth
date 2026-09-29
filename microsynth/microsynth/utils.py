@@ -1330,7 +1330,6 @@ def configure_customer(customer):
     configure_sales_manager(customer)
     set_debtor_accounts(customer)
     # set_invoice_to(customer)
-    add_webshop_service(customer, 'FullPlasmidSeq')
 
 
 @frappe.whitelist()
@@ -1344,6 +1343,8 @@ def configure_new_customer(customer):
     add_webshop_services_for_italy(customer)
     set_webshop_services(customer)
     set_po_required(customer)
+    add_webshop_service(customer, 'FullPlasmidSeq')
+    add_webshop_service(customer, 'FullPlasmidSeqFromEcoli')
 
 
 def get_alternative_account(account, currency):

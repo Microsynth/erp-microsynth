@@ -14,6 +14,7 @@ from frappe.utils import formatdate
 from frappe.model.document import Document
 from microsynth.qms.doctype.qm_instrument.qm_instrument import get_due_qualifications, is_gmp
 from microsynth.qms.signing import sign
+from microsynth.microsynth.utils import user_has_role
 
 
 SITE_COMPANY_MAP = {
@@ -222,7 +223,7 @@ def approve_and_close_log_book(dn, approval_password=None, expected_modified=Non
         gmp = frappe.db.get_value("QM Computerised System", doc.document_name, "regulatory_classification") == "GMP"
 
     if gmp:
-        if not frappe.user.has_role("QAU"):
+        if not user_has_role(frappe.session.user, "QAU"):
             frappe.throw(_("Only QAU can approve and close GMP log book entries."))
         if not approval_password:
             frappe.throw(_("Approval password is required."))

@@ -85,6 +85,29 @@ def _extract_qmcs_version_number(name, base_name):
     return None
 
 
+def _split_qm_document_values(raw_value):
+    if raw_value is None:
+        return []
+
+    if not isinstance(raw_value, str):
+        raw_value = str(raw_value)
+
+    raw_value = raw_value.strip()
+    if not raw_value or raw_value.upper() == "NA":
+        return []
+
+    values = []
+    seen = set()
+    for chunk in re.split(r"[,]", raw_value):
+        value = chunk.strip()
+        if not value or value.upper() == "NA":
+            continue
+        if value not in seen:
+            seen.add(value)
+            values.append(value)
+    return values
+
+
 @frappe.whitelist()
 def get_qm_process_owner(qm_process, company):
     owners = frappe.db.get_all(
@@ -230,9 +253,9 @@ def import_qm_computerised_systems(file_path, expected_line_length=15, verbose=F
     Expected columns (first column "ID" is ignored):
     ID, Name, Type, GAMP5 Class, Regulatory Classification,
     Primary Version Control Method, QM Process, Status, Description,
-    Version, ATR frequency, Source, Company, Responsible Person, QM Document
+    Version, ATR frequency, Source, Company, Responsible Person, QM Documents
 
-    bench execute microsynth.qms.doctype.qm_computerised_system.qm_computerised_system.import_qm_computerised_systems --kwargs "{'file_path': '/mnt/erp_share/Migration/QM_Computerised_Systems/260911_QM_CS_Template_v01.csv', 'expected_line_length': 15, 'verbose': True, 'dry_run': True}"
+    bench execute microsynth.qms.doctype.qm_computerised_system.qm_computerised_system.import_qm_computerised_systems --kwargs "{'file_path': '/home/libracore/Desktop/260911_TestImport_QM_CS_v01.csv', 'expected_line_length': 15, 'verbose': True, 'dry_run': True}"
     """
     def clean(value):
         if value is None:
@@ -294,6 +317,23 @@ def import_qm_computerised_systems(file_path, expected_line_length=15, verbose=F
 
         return None, f"QM Document '{value}' could not be resolved."
 
+    def resolve_qm_documents(raw_value):
+        document_values = _split_qm_document_values(raw_value)
+        if not document_values:
+            return [], None
+
+        resolved_documents = []
+        unresolved = []
+        for document_value in document_values:
+            resolved_document, error = resolve_qm_document(document_value)
+            if error:
+                unresolved.append(f"{document_value} ({error})")
+                continue
+            resolved_documents.append(resolved_document)
+
+        if unresolved:
+            return [], "; ".join(unresolved)
+        return resolved_documents, None
 
     qmcs_meta = frappe.get_meta("QM Computerised System")
     allowed_types = get_allowed_select_values(qmcs_meta, "cs_type")
@@ -451,9 +491,9 @@ def import_qm_computerised_systems(file_path, expected_line_length=15, verbose=F
                     continue
                 responsible_user = responsible_user_lc
 
-            qm_document, qm_document_error = resolve_qm_document(qm_document_raw)
-            if qm_document_error:
-                msg = f"Line {line_counter}: {qm_document_error}"
+            qm_documents, qm_documents_error = resolve_qm_documents(qm_document_raw)
+            if qm_documents_error:
+                msg = f"Line {line_counter}: {qm_documents_error}"
                 print(f"ERROR: {msg}")
                 errors.append(msg)
                 skipped_count += 1
@@ -517,8 +557,9 @@ def import_qm_computerised_systems(file_path, expected_line_length=15, verbose=F
             try:
                 qmcs = frappe.get_doc(payload)
                 qmcs.insert()
-                if qm_document:
-                    qmcs.append("qm_documents", {"qm_document": qm_document})
+                if qm_documents:
+                    for qm_document in qm_documents:
+                        qmcs.append("qm_documents", {"qm_document": qm_document})
                     qmcs.save()
                 created_names.append(qmcs.name)
                 imported_count += 1

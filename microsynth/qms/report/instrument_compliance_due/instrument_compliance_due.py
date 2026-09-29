@@ -35,6 +35,9 @@ def get_conditions(filters):
     if requirement_type == "Requalification in next 6 weeks":
         return f"""AND `requirement_type` = 'Requalification' AND `due_date` <= DATE_ADD(CURDATE(), INTERVAL {REQUALIFICATION_LOOKAHEAD_WEEKS} WEEK)"""
 
+    if requirement_type == "QMF (Class A, Active or Blocked)":
+        return """AND `class_letter` = 'A' AND `status` NOT IN ('Decommissioned', 'Disposed', 'Unapproved')"""
+
     if requirement_type == "Verification due":
         return """AND `requirement_type` = 'Verification'"""
 
