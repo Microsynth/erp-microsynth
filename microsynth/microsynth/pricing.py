@@ -141,7 +141,7 @@ def change_reference_and_customer_prices_from_csv(csv_file, dry_run=True, verbos
     4. new reference rate
     5. currency
 
-    bench execute microsynth.microsynth.pricing.change_reference_and_customer_prices_from_csv --kwargs "{'csv_file': '/mnt/erp_share/price_changes.csv', 'dry_run': True, 'verbose': True}"
+    bench execute microsynth.microsynth.pricing.change_reference_and_customer_prices_from_csv --kwargs "{'csv_file': '/mnt/erp_share/Migration/price_adjustments/2026-09-29_price_adjustments.csv', 'dry_run': True, 'verbose': True}"
     """
     summary = {
         'reference_prices_processed': 0,
@@ -153,6 +153,8 @@ def change_reference_and_customer_prices_from_csv(csv_file, dry_run=True, verbos
 
     with open(csv_file, 'r', newline='') as file:
         reader = csv.reader(file, delimiter=';')
+        # Skip header row if present
+        next(reader, None)  # Skip header row if present
         for line_number, row in enumerate(reader, start=1):
             if not row or all(not cell.strip() for cell in row):
                 continue
