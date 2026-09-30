@@ -5,6 +5,12 @@
 frappe.query_reports["Training Confirmations"] = {
     "filters": [
         {
+            "fieldname": "company",
+            "label": __("Company"),
+            "fieldtype": "Link",
+            "options": "Company"
+        },
+        {
             "fieldname": "user",
             "label": __("User"),
             "fieldtype": "Link",
@@ -36,9 +42,16 @@ frappe.query_reports["Training Confirmations"] = {
             "description": __("Comma separated QM Document prefixes")
         },
         {
-            "fieldname": "limit_to_valid",
-            "label": __("Limit to valid Documents"),
-            "fieldtype": "Check"
+            "fieldname": "document_type",
+            "label": __("Document Type"),
+            "fieldtype": "Select",
+            "options": "\nSOP\nLIST\nFORM\nFLOW\nCL\nQMH\nAPPX"
+        },
+        {
+            "fieldname": "document_status",
+            "label": __("QM Document Status"),
+            "fieldtype": "Select",
+            "options": "\nDraft\nCreated\nIn Review\nReviewed\nReleased\nValid\nInvalid"
         }
     ],
     "onload": (report) => {

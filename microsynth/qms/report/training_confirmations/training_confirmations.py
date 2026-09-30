@@ -30,8 +30,34 @@ def get_data(filters):
         if filters.get('user'):
             filter_conditions += "AND `tabQM Training Record`.`trainee` = %(user)s"
             query_values['user'] = filters.get('user')
+        if filters.get('company'):
+            filter_conditions += """
+                AND (
+                    `tabQM Document`.`company` IS NULL
+                    OR `tabQM Document`.`company` = %(company)s
+                )
+                AND EXISTS (
+                    SELECT 1
+                    FROM `tabUser Settings`
+                    INNER JOIN `tabQM User Process Assignment`
+                        ON `tabQM User Process Assignment`.`parent` = `tabUser Settings`.`name`
+                    WHERE `tabUser Settings`.`user` = `tabQM Training Record`.`trainee`
+                        AND `tabQM User Process Assignment`.`company` = %(company)s
+                        AND `tabQM User Process Assignment`.`qm_process` = `tabQM Document`.`qm_process`
+                )
+            """
+            query_values['company'] = filters.get('company')
         if filters.get('qm_process'):
-            filter_conditions += "AND `tabQM Document`.`qm_process` = %(qm_process)s"
+            filter_conditions += """
+                AND EXISTS (
+                    SELECT 1
+                    FROM `tabUser Settings`
+                    INNER JOIN `tabQM User Process Assignment`
+                        ON `tabQM User Process Assignment`.`parent` = `tabUser Settings`.`name`
+                    WHERE `tabUser Settings`.`user` = `tabQM Training Record`.`trainee`
+                        AND `tabQM User Process Assignment`.`qm_process` = %(qm_process)s
+                )
+            """
             query_values['qm_process'] = filters.get('qm_process')
         if filters.get('qm_document'):
             filter_conditions += "AND `tabQM Training Record`.`document_name` = %(qm_document)s"
@@ -47,8 +73,12 @@ def get_data(filters):
                     list_conditions.append(f"`tabQM Training Record`.`document_name` LIKE %({key})s")
                     query_values[key] = f"{prefix}%"
                 filter_conditions += "AND ({conditions})".format(conditions=" OR ".join(list_conditions))
-        if filters.get('limit_to_valid'):
-            filter_conditions += "AND `tabQM Document`.`status` = 'Valid'"
+        if filters.get('document_type'):
+            filter_conditions += "AND `tabQM Document`.`document_type` = %(document_type)s"
+            query_values['document_type'] = filters.get('document_type')
+        if filters.get('document_status'):
+            filter_conditions += "AND `tabQM Document`.`status` = %(document_status)s"
+            query_values['document_status'] = filters.get('document_status')
         if filters.get('training_status'):
             training_status_map = {
                 'Unsigned': 0,
