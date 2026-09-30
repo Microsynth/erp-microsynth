@@ -301,6 +301,14 @@ def create_logbook_entry(qm_computerised_system, entry_type, description, date):
 
 
 @frappe.whitelist()
+def set_status(doc, status):
+    qmcs = frappe.get_doc("QM Computerised System", doc)
+    qmcs.status = status
+    qmcs.save()
+    frappe.db.commit()
+
+
+@frappe.whitelist()
 def create_new_version(doc, user=None):
     qmcs = frappe.get_doc("QM Computerised System", doc)
     base_name = _get_qmcs_base_name(qmcs.name)
