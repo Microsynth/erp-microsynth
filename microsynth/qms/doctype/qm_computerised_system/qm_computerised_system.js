@@ -408,7 +408,8 @@ function apply_field_permissions(frm, isProcessOwner) {
                 'regulatory_classification',
                 'cs_type',
                 'primary_version_control_method',
-                'version'
+                'version',
+                'atr_frequency'
             ]);
             return;
         }
