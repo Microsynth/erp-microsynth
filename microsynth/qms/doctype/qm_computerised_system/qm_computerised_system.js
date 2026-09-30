@@ -383,6 +383,12 @@ function apply_field_permissions(frm, isProcessOwner) {
     // Start from unlocked, then apply matrix-based locks.
     unlock_fields(frm, fields_in_scope);
 
+    // Unapproved: only QAU, process owner, or responsible user may edit these fields.
+    if (status === 'Unapproved' && !is_qau && !is_owner_or_responsible_user) {
+        lock_fields(frm, fields_in_scope);
+        return;
+    }
+
     // Decommissioned: all listed fields are locked for all roles.
     if (status === 'Decommissioned') {
         lock_fields(frm, fields_in_scope);
