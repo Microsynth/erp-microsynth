@@ -383,6 +383,11 @@ function apply_field_permissions(frm, isProcessOwner) {
     // Start from unlocked, then apply matrix-based locks.
     unlock_fields(frm, fields_in_scope);
 
+    // New records must stay editable until process/responsibility context exists.
+    if (frm.doc.__islocal) {
+        return;
+    }
+
     // Unapproved: only QAU, process owner, or responsible user may edit these fields.
     if (status === 'Unapproved' && !is_qau && !is_owner_or_responsible_user) {
         lock_fields(frm, fields_in_scope);
