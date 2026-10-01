@@ -2068,7 +2068,7 @@ Your administration team<br><br>{footer}"
                     frappe.log_error(f"Sales Invoice {sales_invoice_id}: Intercompany Delivery Note {dn_id} has no PO.", "invoicing.transmit_sales_invoice")
                     continue
                 if not po_no.startswith("SO-"):
-                    frappe.log_error(f"Sales Invoice {sales_invoice_id}: PO of intercompany Delivery Note {dn_id} seems to not be a Sales Order ID.", "invoicing.transmit_sales_invoice")
+                    frappe.log_error(f"Sales Invoice {sales_invoice_id}: PO '{po_no}' of intercompany Delivery Note {dn_id} seems to not be a Sales Order ID.", "invoicing.transmit_sales_invoice")
                     continue
                 if not frappe.db.exists("Sales Order", po_no):
                     frappe.log_error(f"Sales Invoice {sales_invoice_id}: Intercompany Delivery Note {dn_id} has PO '{po_no}', but there is no Sales Order '{po_no}'.", "invoicing.transmit_sales_invoice")
