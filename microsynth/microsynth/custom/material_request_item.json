@@ -219,7 +219,7 @@
    "field_name": "schedule_date",
    "idx": 0,
    "is_system_generated": 0,
-   "modified": "2026-09-22 09:03:59.728735",
+   "modified": "2026-10-01 08:36:09.903895",
    "modified_by": "Administrator",
    "module": null,
    "name": "Material Request Item-schedule_date-in_list_view",
