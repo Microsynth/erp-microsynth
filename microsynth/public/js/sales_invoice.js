@@ -1,18 +1,4 @@
 /* Custom script extension for Sales Invoice */
-
-// extend/create dashboard
-cur_frm.dashboard.add_transactions([
-    {
-        'label': __("Reference"),
-        'items': ["Payment Reminder"]
-    } // ,
-    // {
-    //     'label': __("Reference"),
-    //     'items': ["Accounting Note"]
-    // }
-]);
-
-
 frappe.ui.form.on('Sales Invoice', {
     refresh(frm) {
         locals.prevdoc_checked = false;

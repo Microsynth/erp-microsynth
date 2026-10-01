@@ -290,7 +290,7 @@ override_doctype_dashboards = {
 	"Quotation": "microsynth.microsynth.dashboard.quotation_dashboard.get_data",
 	"Sales Order": "microsynth.microsynth.dashboard.sales_order_dashboard.get_data",
     "Delivery Note": "microsynth.microsynth.dashboard.delivery_note_dashboard.get_data",
-    #"Sales Invoice": "microsynth.microsynth.dashboard.sales_invoice_dashboard.get_data"
+    "Sales Invoice": "microsynth.microsynth.dashboard.sales_invoice_dashboard.get_data"
 }
 
 # hook for migrate cleanup tasks
