@@ -20,7 +20,7 @@ def get_data(data):
             "Purchase Order": ["items", "purchase_order"],
         },
         "transactions": [
-            {"label": _("Fulfillment"), "items": ["Sales Invoice", "Delivery Note"]},
+            {"label": _("Fulfillment"), "items": ["Sales Invoice", "Delivery Note", "Tracking Code"]},
             #{"label": _("Purchasing"), "items": ["Material Request", "Purchase Order"]},
             {"label": _("Reference"), "items": ["Quotation"]},
             {"label": _("Payment"), "items": ["Payment Entry", "Journal Entry"]},

@@ -1,15 +1,4 @@
 /* Custom script extension for Sales Order */
-
-// extend/create dashboard
-cur_frm.dashboard.add_transactions([
-    {
-        'label': __("Fulfillment"),
-        'items': ["Tracking Code"]
-    }
-]);
-
-
-/* Custom script extension for Sales Order */
 frappe.ui.form.on('Sales Order', {
     refresh(frm) {
         // allow Accounts Manager to add Web Order ID if not yet set
