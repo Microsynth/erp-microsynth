@@ -292,6 +292,7 @@ override_doctype_dashboards = {
     "Delivery Note": "microsynth.microsynth.dashboard.delivery_note_dashboard.get_data",
     "Sales Invoice": "microsynth.microsynth.dashboard.sales_invoice_dashboard.get_data",
     "Material Request": "microsynth.microsynth.dashboard.material_request_dashboard.get_data",
+    "Supplier Quotation": "microsynth.microsynth.dashboard.supplier_quotation_dashboard.get_data",
     # "Purchase Order": "microsynth.microsynth.dashboard.purchase_order_dashboard.get_data",
     # "Purchase Receipt": "microsynth.microsynth.dashboard.purchase_receipt_dashboard.get_data",
     # "Purchase Invoice": "microsynth.microsynth.dashboard.purchase_invoice_dashboard.get_data"
