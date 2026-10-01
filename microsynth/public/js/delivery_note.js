@@ -1,12 +1,4 @@
 /* Custom script extension for Delivery Note */
-
-cur_frm.dashboard.add_transactions([
-    {
-        'label': 'Reference',
-        'items': ['Customs Declaration']
-    }
-]);
-
 frappe.ui.form.on('Delivery Note', {
     refresh(frm) {
         locals.prevdoc_checked = false;
