@@ -1,17 +1,3 @@
-try {
-    cur_frm.dashboard.add_transactions([
-        {
-            'label': 'Pre Sales',
-            'items': ['Standing Quotation']
-        },
-        {
-            'label': 'Quality Management',
-            'items': ['QM Document']
-        }
-    ]);
-} catch { /* do nothing for older versions */ }
-
-
 function has_credits(frm) {
     var return_value;
     frappe.call({
