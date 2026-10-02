@@ -580,7 +580,7 @@ def print_purchasing_labels(label_table, is_legacy=False, use_brady=True):
                 continue
             for _ in range(labels_to_print):
                 # add an individual timestamp to each label including milliseconds
-                row['timestamp'] = datetime.now().strftime("%y%m%d%H%M%S%f")[:-3]
+                row['timestamp'] = datetime.now().strftime("%y%m%d%H%M%S%f")
                 if use_brady:
                     prepare_brady_rows(row, username, is_legacy, receipt_date)
                 # Render the label
