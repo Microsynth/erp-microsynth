@@ -1,0 +1,63 @@
+{
+ "creation": "2026-10-02 16:01:20.002669",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "competence",
+  "status",
+  "responsibility_role",
+  "level",
+  "remarks"
+ ],
+ "fields": [
+  {
+   "fieldname": "competence",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Competence",
+   "options": "Competence",
+   "reqd": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "Planned\nAchived",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "responsibility_role",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Role",
+   "options": "Main\nSubstitute",
+   "reqd": 1
+  },
+  {
+   "fieldname": "level",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Level",
+   "options": "Basic\nQualified\nExpert"
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Small Text",
+   "label": "Remarks"
+  }
+ ],
+ "istable": 1,
+ "modified": "2026-10-02 16:09:25.489072",
+ "modified_by": "jens.petermann@microsynth.ch",
+ "module": "QMS",
+ "name": "Competence Assignment",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

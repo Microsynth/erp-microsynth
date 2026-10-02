@@ -1,0 +1,217 @@
+{
+ "autoname": "naming_series:",
+ "creation": "2026-10-02 15:21:53.602949",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "employee",
+  "employee_name",
+  "column_break_3",
+  "status",
+  "amended_from",
+  "naming_series",
+  "section_break_6",
+  "competencies",
+  "signatures_section",
+  "employee_signed_on",
+  "process_owner_signed_on",
+  "column_break_12",
+  "employee_user",
+  "process_owner",
+  "column_break_15",
+  "employee_signature",
+  "process_owner_signature"
+ ],
+ "fields": [
+  {
+   "fieldname": "employee",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Employee",
+   "options": "Employee",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "employee.employee_name",
+   "fieldname": "employee_name",
+   "fieldtype": "Data",
+   "label": "Employee Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Draft\nTo Sign\nValid\nArchived",
+   "read_only": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Staff Profile",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Naming Series",
+   "options": "SP-.YY.####"
+  },
+  {
+   "fieldname": "section_break_6",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "competencies",
+   "fieldtype": "Table",
+   "label": "Competencies",
+   "options": "Competence Assignment"
+  },
+  {
+   "fieldname": "signatures_section",
+   "fieldtype": "Section Break",
+   "label": "Signatures"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "employee_signed_on",
+   "fieldtype": "Date",
+   "label": "Employee signed on",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "process_owner_signed_on",
+   "fieldtype": "Date",
+   "label": "Process Owner signed on",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_12",
+   "fieldtype": "Column Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "employee_user",
+   "fieldtype": "Link",
+   "label": "Employee",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "process_owner",
+   "fieldtype": "Link",
+   "label": "Process Owner",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_15",
+   "fieldtype": "Column Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "employee_signature",
+   "fieldtype": "Data",
+   "label": "Employee signature",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "process_owner_signature",
+   "fieldtype": "Data",
+   "label": "Process Owner signature",
+   "read_only": 1
+  }
+ ],
+ "is_submittable": 1,
+ "modified": "2026-10-02 16:22:48.732682",
+ "modified_by": "jens.petermann@microsynth.ch",
+ "module": "QMS",
+ "name": "Staff Profile",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "QAU",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR User",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR User Subsidiary",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}
