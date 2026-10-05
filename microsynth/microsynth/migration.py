@@ -2093,8 +2093,10 @@ def activate_fullplasmidseqfromecoli_all_customers():
     length = len(customers)
 
     for i, c in enumerate(customers):
-        print("{1}% - process customer '{0}'".format(c.name, int(100 * i / length)))
+        print(f"{int(100 * i / length)}% - process customer '{c.name}'")
         add_webshop_service(c.name, "FullPlasmidSeqFromEcoli")
+        if i % 100 == 0:
+            frappe.db.commit()
     frappe.db.commit()
 
 
