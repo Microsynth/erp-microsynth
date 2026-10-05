@@ -649,7 +649,7 @@ function open_confirmation_dialog(selected, report) {
             { fieldtype: 'Column Break' },
 
             { fieldtype: 'Data', label: __('Microsynth Item Code'), fieldname: 'item_code', read_only: 1, default: selected.name },
-            { fieldtype: 'Date', label: __('Required by'), fieldname: 'schedule_date', reqd: true, default: default_schedule_date },
+            { fieldtype: 'Date', label: __('Required by'), fieldname: 'schedule_date', reqd: true, default: selected.lead_time_days ? default_schedule_date : null },
             ...(conversion_field ? [conversion_field] : []),
             { fieldtype: 'HTML', fieldname: 'order_preview' },
 
@@ -792,7 +792,7 @@ function open_item_request_dialog(report, item_name, supplier_name, supplier_par
             {fieldtype:'Column Break'},
 
             // Right column
-            {fieldtype:'Date', label: __('Required by'), fieldname:'schedule_date', default: frappe.datetime.add_days(frappe.datetime.nowdate(), 30)},
+            {fieldtype:'Date', label: __('Required by'), fieldname:'schedule_date', reqd: 1},
             {fieldtype:'Data', label: __('Supplier Name'), fieldname:'supplier_name', default: supplier_name || ''},
             {fieldtype:'Data', label: __('Supplier Item Code (can be N/A)'), fieldname:'supplier_part_no', default: supplier_part_no || '', reqd: 1},
             {fieldtype:'Link', label: __('Currency'), fieldname:'currency', options: 'Currency'},
