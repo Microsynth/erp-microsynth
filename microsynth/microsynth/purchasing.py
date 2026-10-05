@@ -2561,11 +2561,21 @@ def check_po_item_prices(purchase_order_name):
         if item.item_code == "P020000":  # skip Inbound Freight Item
             continue
 
-        # Fetch all existing prices for this Item & Price List
+        item_uom = (item.uom or "").strip() or frappe.db.get_value("Item", item.item_code, "purchase_uom") or frappe.db.get_value("Item", item.item_code, "stock_uom")
+
+        # Fetch all existing prices for this Item, UOM and Price List
+        price_filters = [
+            ["price_list", "=", price_list],
+            ["item_code", "=", item.item_code],
+            ["min_qty", "<=", item.qty],
+        ]
+        if item_uom:
+            price_filters.append(["uom", "=", item_uom])
+
         item_prices = frappe.get_all(
             "Item Price",
-            filters=[["price_list", "=", price_list], ["item_code", "=", item.item_code], ["min_qty", "<=", item.qty]],
-            fields=["name", "min_qty", "price_list_rate"],
+            filters=price_filters,
+            fields=["name", "min_qty", "uom", "price_list_rate"],
             order_by="min_qty desc",
         )
 
@@ -2574,6 +2584,7 @@ def check_po_item_prices(purchase_order_name):
             add_list.append({
                 "item_code": item.item_code,
                 "item_name": item.item_name,
+                "uom": item_uom,
                 "min_qty": 1,
                 "current_rate": None,
                 "rate": flt(item.rate, precision),
@@ -2590,6 +2601,7 @@ def check_po_item_prices(purchase_order_name):
             update_list.append({
                 "item_code": item.item_code,
                 "item_name": item.item_name,
+                "uom": current_price.get("uom") or item_uom,
                 "min_qty": current_price.min_qty,
                 "current_rate": current_rate,
                 "rate": new_rate,
@@ -2620,24 +2632,30 @@ def apply_item_price_changes(price_list, adds, updates):
         doc.item_code = entry["item_code"]
         doc.price_list = price_list
         doc.min_qty = flt(entry["min_qty"])
+        doc.uom = entry.get("uom") or frappe.db.get_value("Item", entry["item_code"], "purchase_uom") or frappe.db.get_value("Item", entry["item_code"], "stock_uom")
         doc.price_list_rate = flt(entry["rate"])
         doc.selling = 0
         doc.buying = 1
         doc.save(ignore_permissions=True)
 
     for entry in updates:
+        filters = {
+            "price_list": price_list,
+            "item_code": entry["item_code"],
+            "min_qty": entry["min_qty"]
+        }
+        if entry.get("uom"):
+            filters["uom"] = entry["uom"]
         ip = frappe.get_all(
             "Item Price",
-            filters={
-                "price_list": price_list,
-                "item_code": entry["item_code"],
-                "min_qty": entry["min_qty"]
-            },
+            filters=filters,
             limit=1,
         )
         if ip:
             doc = frappe.get_doc("Item Price", ip[0].name)
             doc.price_list_rate = flt(entry["rate"])
+            if entry.get("uom"):
+                doc.uom = entry["uom"]
             doc.save(ignore_permissions=True)
 
     frappe.db.commit()
