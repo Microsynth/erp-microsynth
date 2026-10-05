@@ -5,6 +5,7 @@
  "engine": "InnoDB",
  "field_order": [
   "competence",
+  "competence_title",
   "status",
   "responsibility_role",
   "level",
@@ -12,6 +13,7 @@
  ],
  "fields": [
   {
+   "columns": 1,
    "fieldname": "competence",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -48,10 +50,19 @@
    "fieldname": "remarks",
    "fieldtype": "Small Text",
    "label": "Remarks"
+  },
+  {
+   "columns": 2,
+   "fetch_from": "competence.title",
+   "fieldname": "competence_title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Competence Title",
+   "read_only": 1
   }
  ],
  "istable": 1,
- "modified": "2026-10-02 16:09:25.489072",
+ "modified": "2026-10-05 12:15:08.325356",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "Competence Assignment",
