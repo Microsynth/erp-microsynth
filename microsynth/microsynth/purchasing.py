@@ -562,6 +562,9 @@ def book_as_deposit(purchase_invoice_id):
 
 @frappe.whitelist()
 def create_approval_request(assign_to, dt, dn):
+    if not assign_to:
+        frappe.throw(f"Please set an Approver before sending the {dt} {dn} for approval.")
+
     if not is_already_assigned(dt, dn):
         if assign_to == frappe.session.user and not user_has_role(frappe.session.user, "Accounts Manager"):
             frappe.throw(f"You are not allowed to assign the {dt} {dn} to yourself. Please choose another Approver.")

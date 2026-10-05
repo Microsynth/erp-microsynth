@@ -328,10 +328,21 @@ frappe.invoice_entry = {
     },
     assign_document: function(purchase_invoice_name) {
         this.save_document(purchase_invoice_name);
+        const approver_field = document.querySelector("input[data-fieldname='approver_" + purchase_invoice_name + "']");
+        const approver = approver_field ? approver_field.value : "";
+
+        if (!approver) {
+            frappe.msgprint({
+                title: __('Missing Approver'),
+                message: __('Please set an Approver before sending the Purchase Invoice for approval.'),
+                indicator: 'red'
+            });
+            return;
+        }
         frappe.call({
             'method': 'microsynth.microsynth.purchasing.create_approval_request',
             'args': {
-                'assign_to': document.querySelectorAll("input[data-fieldname='approver_" + purchase_invoice_name + "']")[0].value,
+                'assign_to': approver,
                 'dt': 'Purchase Invoice',
                 'dn': purchase_invoice_name
             },
