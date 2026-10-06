@@ -8,6 +8,7 @@ import frappe
 from frappe import _
 from frappe.model.document import Document
 
+from microsynth.qms.doctype.qm_document.qm_document import get_valid_version
 from microsynth.qms.versioning import get_newer_active_versions, get_next_suffix, get_versioned_documents
 
 
@@ -18,6 +19,72 @@ def invalidate_previous_versions(docname):
 		if suffix >= current_suffix or version_name == docname or docstatus != 1:
 			continue
 		frappe.db.set_value("Competence", version_name, "status", "Invalid", update_modified=False)
+
+
+def validate_linked_qm_documents(doc):
+	replacements = []
+	invalid_rows = []
+
+	for row in doc.qm_documents or []:
+		qm_document_name = row.qm_document
+		if not qm_document_name:
+			continue
+
+		qm_document_status = frappe.db.get_value("QM Document", qm_document_name, "status")
+		if qm_document_status == "Valid":
+			continue
+
+		base_name = qm_document_name.split("-")[0]
+		valid_doc = get_valid_version(base_name)
+		if valid_doc:
+			row.qm_document = valid_doc.get("name")
+			row.title = valid_doc.get("title")
+			replacements.append({
+				"row": row.idx,
+				"original": qm_document_name,
+				"replacement": valid_doc.get("name"),
+			})
+			continue
+
+		invalid_rows.append({
+			"row": row.idx,
+			"qm_document": qm_document_name,
+			"status": qm_document_status or _("not found"),
+		})
+
+	if invalid_rows:
+		details = "<br>".join(
+			_("Row {0}: QM Document {1} is not valid (current status: {2}) and no valid version could be found.").format(
+				frappe.bold(row.get("row")),
+				frappe.bold(row.get("qm_document")),
+				frappe.bold(row.get("status")),
+			)
+			for row in invalid_rows
+		)
+		frappe.throw(
+			_(
+				"This Competence cannot be saved because at least one linked QM Document is not valid and no valid replacement version could be proposed.<br><br>{0}<br><br>"
+				"Please replace the affected QM Documents with a valid version and try again."
+			).format(details),
+			title=_("Invalid QM Document Version"),
+		)
+
+	if replacements:
+		details = "<br>".join(
+			_("Row {0}: replaced QM Document {1} with valid version {2}.").format(
+				frappe.bold(row.get("row")),
+				frappe.bold(row.get("original")),
+				frappe.bold(row.get("replacement")),
+			)
+			for row in replacements
+		)
+		frappe.msgprint(
+			_(
+				"One or more linked QM Documents were not valid. The corresponding valid version was proposed automatically before saving:<br><br>{0}"
+			).format(details),
+			title=_("Linked QM Documents Updated"),
+			indicator="orange",
+		)
 
 
 @frappe.whitelist()
@@ -80,6 +147,8 @@ def create_new_version(docname):
 
 
 class Competence(Document):
+	def validate(self):
+		validate_linked_qm_documents(self)
 
 	def on_submit(self):
 		self.status = "Valid"
