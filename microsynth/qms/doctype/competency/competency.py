@@ -87,6 +87,54 @@ def validate_linked_qm_documents(doc):
 		)
 
 
+def validate_prerequisite_types(doc):
+	prerequisite_rows = list(doc.prerequisite_types or [])
+
+	seen_prerequisites = set()
+	duplicate_prerequisites = []
+	for row in prerequisite_rows:
+		prerequisite_type = getattr(row, "competency_prerequisite", None)
+		if not prerequisite_type:
+			continue
+
+		if prerequisite_type in seen_prerequisites:
+			duplicate_prerequisites.append(prerequisite_type)
+			continue
+
+		seen_prerequisites.add(prerequisite_type)
+
+	if duplicate_prerequisites:
+		duplicates = sorted(set(duplicate_prerequisites))
+		frappe.throw(
+			_(
+				"Each Prerequisite Type may only be linked once. Duplicate entries were found for: {0}."
+			).format(", ".join(frappe.bold(prerequisite) for prerequisite in duplicates)),
+			title=_("Duplicate Prerequisite Type"),
+		)
+
+	linked_qm_documents = [row.qm_document for row in (doc.qm_documents or []) if getattr(row, "qm_document", None)]
+	if linked_qm_documents and "QM Document" not in seen_prerequisites:
+		doc.append("prerequisite_types", {"competency_prerequisite": "QM Document"})
+		seen_prerequisites.add("QM Document")
+
+	if not doc.prerequisite_types:
+		frappe.throw(
+			_("This Competency cannot be saved without at least one Prerequisite Type."),
+			title=_("Missing Prerequisite Type"),
+		)
+
+	if "QM Document" in seen_prerequisites and not linked_qm_documents:
+		frappe.throw(
+			_(
+				"The Prerequisite Type <b>QM Document</b> is set, but no QM Document is linked. Please link at least one QM Document or remove the Prerequisite Type <b>QM Document</b>."
+			),
+			title=_("Orphaned QM Document Prerequisite"),
+		)
+
+	# TODO: when Competency gains a Training link field, require the Prerequisite Type "Training" whenever
+	# at least one Training is linked.
+
+
 @frappe.whitelist()
 def create_new_version(docname):
 	if not docname:
@@ -148,6 +196,7 @@ def create_new_version(docname):
 
 class Competency(Document):
 	def validate(self):
+		validate_prerequisite_types(self)
 		validate_linked_qm_documents(self)
 
 	def on_submit(self):

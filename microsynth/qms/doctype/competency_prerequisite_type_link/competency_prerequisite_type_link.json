@@ -1,0 +1,29 @@
+{
+ "creation": "2026-10-06 14:25:20.120054",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "competency_prerequisite"
+ ],
+ "fields": [
+  {
+   "fieldname": "competency_prerequisite",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Competency Prerequisite",
+   "options": "Competency Prerequisite Type",
+   "reqd": 1
+  }
+ ],
+ "istable": 1,
+ "modified": "2026-10-06 14:56:09.539211",
+ "modified_by": "jens.petermann@microsynth.ch",
+ "module": "QMS",
+ "name": "Competency Prerequisite Type Link",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}
