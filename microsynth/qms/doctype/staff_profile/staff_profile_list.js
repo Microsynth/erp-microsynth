@@ -7,7 +7,8 @@ frappe.listview_settings['Staff Profile'] = {
             "Draft": "red",
             "To Sign": "yellow",
             "Valid": "green",
-            "Archived": "darkgrey"
+            "Archived": "darkgrey",
+            "Cancelled": "red"
         };
         return [__(doc.status), status_color[doc.status] || "blue", "status,=," + doc.status];
     }

@@ -44,7 +44,8 @@
    "fieldname": "status",
    "fieldtype": "Select",
    "label": "Status",
-   "options": "Draft\nTo Sign\nValid\nArchived",
+   "no_copy": 1,
+   "options": "Draft\nTo Sign\nValid\nArchived\nCancelled",
    "read_only": 1
   },
   {
@@ -136,7 +137,7 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2026-10-05 12:10:56.120796",
+ "modified": "2026-10-06 09:41:38.400703",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "Staff Profile",

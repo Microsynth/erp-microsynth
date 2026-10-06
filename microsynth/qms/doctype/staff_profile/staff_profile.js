@@ -3,39 +3,60 @@
 
 frappe.ui.form.on('Staff Profile', {
 	refresh: function(frm) {
+		if (frm.doc.docstatus === 1 && frm.doc.status !== "To Sign") {
+			frm.page.clear_primary_action();
+		}
 
-		if (frm.doc.docstatus === 0 && frm.doc.status === "Draft") {
-			frm.add_custom_button(__('Submit'), function() {
-				frappe.call({
-					'method': 'microsynth.qms.doctype.staff_profile.staff_profile.has_valid_staff_profile',
-					'args': {
-						'employee': frm.doc.employee,
-						'current_name': frm.doc.name
-					},
-					'callback': function(response) {
-						const has_valid = response.message && response.message.has_valid;
-						if (has_valid) {
-							frappe.confirm(
-								__('A valid Staff Profile already exists for this employee. If you continue, the previous valid profile will be archived when this one becomes valid. Continue?'),
-								function() {
-									frm.submit();
-								},
-								function() {
-									frappe.msgprint(__('Submission cancelled.'));
-								}
-							);
-							return;
-						}
-						frm.submit();
-					}
-				});
-			});
+		if (frm.doc.docstatus === 1 && frm.doc.status === "Valid") {
+			frm.add_custom_button(__('New Version'), function() {
+				create_new_version(frm);
+			}, __('Create'));
 		}
 
 		if (frm.doc.docstatus === 1 && frm.doc.status === "To Sign") {
 			show_signing_banner(frm);
 			add_sign_button_if_allowed(frm);
 		}
+	},
+
+	before_submit: function(frm) {
+		if (frm.doc.confirm_valid_staff_profile_replacement) {
+			delete frm.doc.confirm_valid_staff_profile_replacement;
+			return;
+		}
+
+		frappe.validated = false;
+
+		return new Promise((resolve, reject) => {
+			frappe.call({
+				'method': 'microsynth.qms.doctype.staff_profile.staff_profile.has_valid_staff_profile',
+				'args': {
+					'employee': frm.doc.employee,
+					'current_name': frm.doc.name
+				},
+				'callback': function(response) {
+					const has_valid = response.message && response.message.has_valid;
+					if (!has_valid) {
+						frappe.validated = true;
+						resolve();
+						return;
+					}
+
+					frappe.confirm(
+						__('A valid Staff Profile already exists for this employee. If you continue, the previous valid profile will be archived when this one becomes valid. Continue?'),
+						function() {
+							frm.doc.confirm_valid_staff_profile_replacement = 1;
+							frappe.validated = true;
+							resolve();
+						},
+						function() {
+							frappe.msgprint(__('Submission cancelled.'));
+							reject();
+						}
+					);
+				}
+			});
+		});
 	}
 });
 
@@ -117,4 +138,19 @@ function sign_staff_profile(frm, role) {
 		__('Please enter your approval password'),
 		__('Sign')
 	);
+}
+
+
+function create_new_version(frm) {
+	frappe.call({
+		'method': 'microsynth.qms.doctype.staff_profile.staff_profile.create_new_version',
+		'args': {
+			'docname': frm.doc.name
+		},
+		'callback': function(response) {
+			if (response.message && response.message.name) {
+				frappe.set_route('Form', 'Staff Profile', response.message.name);
+			}
+		}
+	});
 }
