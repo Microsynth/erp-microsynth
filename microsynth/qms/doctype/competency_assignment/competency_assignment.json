@@ -4,8 +4,8 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "competence",
-  "competence_title",
+    "competency",
+    "competency_title",
   "status",
   "responsibility_role",
   "level",
@@ -14,11 +14,11 @@
  "fields": [
   {
    "columns": 2,
-   "fieldname": "competence",
+     "fieldname": "competency",
    "fieldtype": "Link",
    "in_list_view": 1,
-   "label": "Competence",
-   "options": "Competence",
+     "label": "Competency",
+     "options": "Competency",
    "reqd": 1
   },
   {
@@ -56,11 +56,11 @@
   },
   {
    "columns": 5,
-   "fetch_from": "competence.title",
-   "fieldname": "competence_title",
+    "fetch_from": "competency.title",
+    "fieldname": "competency_title",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Competence Title",
+    "label": "Competency Title",
    "read_only": 1
   }
  ],
@@ -68,7 +68,7 @@
  "modified": "2026-10-06 10:57:44.026473",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
- "name": "Competence Assignment",
+ "name": "Competency Assignment",
  "owner": "Administrator",
  "permissions": [],
  "sort_field": "modified",

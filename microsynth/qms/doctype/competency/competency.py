@@ -13,12 +13,12 @@ from microsynth.qms.versioning import get_newer_active_versions, get_next_suffix
 
 
 def invalidate_previous_versions(docname):
-	base_name, current_suffix, available_versions = get_versioned_documents("Competence", docname)
+	base_name, current_suffix, available_versions = get_versioned_documents("Competency", docname)
 
 	for suffix, version_name, status, docstatus in available_versions:
 		if suffix >= current_suffix or version_name == docname or docstatus != 1:
 			continue
-		frappe.db.set_value("Competence", version_name, "status", "Invalid", update_modified=False)
+		frappe.db.set_value("Competency", version_name, "status", "Invalid", update_modified=False)
 
 
 def validate_linked_qm_documents(doc):
@@ -63,7 +63,7 @@ def validate_linked_qm_documents(doc):
 		)
 		frappe.throw(
 			_(
-				"This Competence cannot be saved because at least one linked QM Document is not valid and no valid replacement version could be proposed.<br><br>{0}<br><br>"
+				"This Competency cannot be saved because at least one linked QM Document is not valid and no valid replacement version could be proposed.<br><br>{0}<br><br>"
 				"Please replace the affected QM Documents with a valid version and try again."
 			).format(details),
 			title=_("Invalid QM Document Version"),
@@ -90,22 +90,22 @@ def validate_linked_qm_documents(doc):
 @frappe.whitelist()
 def create_new_version(docname):
 	if not docname:
-		frappe.throw(_("Missing Competence name."))
+		frappe.throw(_("Missing Competency name."))
 
-	current_doc = frappe.get_doc("Competence", docname)
+	current_doc = frappe.get_doc("Competency", docname)
 	if current_doc.docstatus != 1 or current_doc.status != "Valid":
 		frappe.throw(
-			_("A new Competence version can only be created from a submitted competence in status Valid.")
+			_("A new Competency version can only be created from a submitted competency in status Valid.")
 		)
 
-	base_name, current_suffix, available_versions = get_versioned_documents("Competence", docname)
+	base_name, current_suffix, available_versions = get_versioned_documents("Competency", docname)
 	newer_versions = get_newer_active_versions(available_versions, current_suffix)
 
 	if newer_versions:
 		frappe.throw(
 			_(
-				"Cannot create a new version for Competence {0}. A newer non-cancelled version already exists: {1}. "
-				"Only the latest Competence version may be used as the source for the next draft. "
+				"Cannot create a new version for Competency {0}. A newer non-cancelled version already exists: {1}. "
+				"Only the latest Competency version may be used as the source for the next draft. "
 				"Cancelled newer versions are ignored, but active newer versions still block creating another draft. "
 				"Please continue from the newest active version instead."
 			).format(frappe.bold(docname), ", ".join(frappe.bold(name) for name in newer_versions)),
@@ -115,16 +115,16 @@ def create_new_version(docname):
 	next_suffix = get_next_suffix(available_versions, current_suffix)
 	if next_suffix > 99:
 		frappe.throw(
-			_("Cannot create a new version for Competence {0} because the version suffix would exceed 99.").format(
+			_("Cannot create a new version for Competency {0} because the version suffix would exceed 99.").format(
 				frappe.bold(docname)
 			),
 			title=_("Version Limit Reached"),
 		)
 
 	new_name = "{0}-{1}".format(base_name, next_suffix)
-	if frappe.db.exists("Competence", new_name):
+	if frappe.db.exists("Competency", new_name):
 		frappe.throw(
-			_("Cannot create a new version because the target Competence name {0} already exists.").format(
+			_("Cannot create a new version because the target Competency name {0} already exists.").format(
 				frappe.bold(new_name)
 			),
 			title=_("Duplicate Version Name"),
@@ -146,7 +146,7 @@ def create_new_version(docname):
 	return {"name": new_doc.name}
 
 
-class Competence(Document):
+class Competency(Document):
 	def validate(self):
 		validate_linked_qm_documents(self)
 

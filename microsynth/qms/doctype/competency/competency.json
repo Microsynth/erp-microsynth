@@ -57,7 +57,7 @@
    "fieldtype": "Link",
    "label": "Amended From",
    "no_copy": 1,
-   "options": "Competence",
+    "options": "Competency",
    "print_hide": 1,
    "read_only": 1
   },
@@ -92,7 +92,7 @@
  "modified": "2026-10-06 11:13:09.169570",
  "modified_by": "Administrator",
  "module": "QMS",
- "name": "Competence",
+ "name": "Competency",
  "owner": "Administrator",
  "permissions": [
   {

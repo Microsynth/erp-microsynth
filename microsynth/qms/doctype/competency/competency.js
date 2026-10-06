@@ -1,7 +1,7 @@
 // Copyright (c) 2026, Microsynth
 // For license information, please see license.txt
 
-frappe.ui.form.on('Competence', {
+frappe.ui.form.on('Competency', {
 	setup: function(frm) {
 		frm.fields_dict.qm_documents.grid.get_field('qm_document').get_query = function() {
 			return {
@@ -24,13 +24,13 @@ frappe.ui.form.on('Competence', {
 
 function create_new_version(frm) {
 	frappe.call({
-		'method': 'microsynth.qms.doctype.competence.competence.create_new_version',
+		'method': 'microsynth.qms.doctype.competency.competency.create_new_version',
 		'args': {
 			'docname': frm.doc.name
 		},
 		'callback': function(response) {
 			if (response.message && response.message.name) {
-				frappe.set_route('Form', 'Competence', response.message.name);
+				frappe.set_route('Form', 'Competency', response.message.name);
 			}
 		}
 	});

@@ -190,6 +190,7 @@ def sign_staff_profile(docname, user, password, role):
 
     if doc.employee_signed_on and doc.process_owner_signed_on:
         doc.status = "Valid"
+        doc.valid_since = nowdate()
         archive_previous_valid_profiles(doc.employee, docname)
 
     doc.save(ignore_permissions=True)
@@ -215,88 +216,88 @@ def archive_previous_valid_profiles(employee, current_name):
         frappe.db.set_value("Staff Profile", profile.get("name"), "status", "Archived", update_modified=False)
 
 
-def _get_invalid_competence_assignments(assignments):
-    competence_names = []
+def _get_invalid_competency_assignments(assignments):
+    competency_names = []
     for row in assignments or []:
-        competence_name = row.get("competence")
-        if competence_name and competence_name not in competence_names:
-            competence_names.append(competence_name)
+        competency_name = row.get("competency")
+        if competency_name and competency_name not in competency_names:
+            competency_names.append(competency_name)
 
-    competences_by_name = {}
-    if competence_names:
-        competence_docs = frappe.get_all(
-            "Competence",
-            filters={"name": ["in", competence_names]},
+    competencies_by_name = {}
+    if competency_names:
+        competency_docs = frappe.get_all(
+            "Competency",
+            filters={"name": ["in", competency_names]},
             fields=["name", "title", "status", "docstatus"],
         )
-        competences_by_name = {doc.get("name"): doc for doc in competence_docs}
+        competencies_by_name = {doc.get("name"): doc for doc in competency_docs}
 
     invalid_rows = []
     for row in assignments or []:
-        competence_name = row.get("competence")
-        competence_doc = competences_by_name.get(competence_name)
+        competency_name = row.get("competency")
+        competency_doc = competencies_by_name.get(competency_name)
 
-        if not competence_name:
+        if not competency_name:
             invalid_rows.append({
                 "row": row.idx,
-                "competence": _("not set"),
-                "reason": _("No Competence is selected in this row."),
+                "competency": _("not set"),
+                "reason": _("No Competency is selected in this row."),
             })
             continue
 
-        if not competence_doc:
+        if not competency_doc:
             invalid_rows.append({
                 "row": row.idx,
-                "competence": competence_name,
-                "reason": _("The linked Competence does not exist or is no longer accessible."),
+                "competency": competency_name,
+                "reason": _("The linked Competency does not exist or is no longer accessible."),
             })
             continue
 
-        competence_status = competence_doc.get("status") or _("not set")
-        competence_docstatus = cint(competence_doc.get("docstatus"))
-        if competence_docstatus != 1 or competence_doc.get("status") != "Valid":
+        competency_status = competency_doc.get("status") or _("not set")
+        competency_docstatus = cint(competency_doc.get("docstatus"))
+        if competency_docstatus != 1 or competency_doc.get("status") != "Valid":
             reason_parts = []
-            if competence_docstatus != 1:
+            if competency_docstatus != 1:
                 reason_parts.append(
-                    _("document status is {0} instead of Submitted (1)").format(frappe.bold(str(competence_docstatus)))
+                    _("document status is {0} instead of Submitted (1)").format(frappe.bold(str(competency_docstatus)))
                 )
-            if competence_doc.get("status") != "Valid":
+            if competency_doc.get("status") != "Valid":
                 reason_parts.append(
-                    _("status is {0} instead of Valid").format(frappe.bold(competence_status))
+                    _("status is {0} instead of Valid").format(frappe.bold(competency_status))
                 )
             invalid_rows.append({
                 "row": row.idx,
-                "competence": competence_name,
+                "competency": competency_name,
                 "reason": "; ".join(reason_parts),
             })
     return invalid_rows
 
 
-def _throw_if_invalid_competence_versions(assignments):
-    invalid_rows = _get_invalid_competence_assignments(assignments)
+def _throw_if_invalid_competency_versions(assignments):
+    invalid_rows = _get_invalid_competency_assignments(assignments)
     if not invalid_rows:
         return
 
     details = "<br>".join(
-        _("Row {0}: Competence {1} is invalid because {2}.").format(
+        _("Row {0}: Competency {1} is invalid because {2}.").format(
             frappe.bold(row.get("row")),
-            frappe.bold(row.get("competence")),
+            frappe.bold(row.get("competency")),
             row.get("reason"),
         )
         for row in invalid_rows
     )
     frappe.throw(
         _(
-            "This Staff Profile contains at least one invalid Competence version and therefore cannot be saved or submitted.<br><br>{0}<br><br>"
-            "Please replace every invalid Competence with a submitted Competence in status Valid before continuing."
+            "This Staff Profile contains at least one invalid Competency version and therefore cannot be saved or submitted.<br><br>{0}<br><br>"
+            "Please replace every invalid Competency with a submitted Competency in status Valid before continuing."
         ).format(details),
-        title=_("Invalid Competence Version"),
+        title=_("Invalid Competency Version"),
     )
 
 
 class StaffProfile(Document):
     def validate(self):
-        _throw_if_invalid_competence_versions(self.competencies)
+        _throw_if_invalid_competency_versions(self.competencies)
 
     def before_submit(self):
         self.status = "To Sign"

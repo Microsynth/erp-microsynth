@@ -3,7 +3,7 @@
 
 frappe.ui.form.on('Staff Profile', {
 	setup: function(frm) {
-		frm.fields_dict.competencies.grid.get_field('competence').get_query = function() {
+		frm.fields_dict.competencies.grid.get_field('competency').get_query = function() {
 			return {
 				filters: {
 					status: 'Valid',

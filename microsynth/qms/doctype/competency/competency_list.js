@@ -1,7 +1,7 @@
 // Copyright (c) 2026, Microsynth
 // For license information, please see license.txt
 
-frappe.listview_settings['Competence'] = {
+frappe.listview_settings['Competency'] = {
     get_indicator: function(doc) {
         var status_color = {
             "Draft": "red",
