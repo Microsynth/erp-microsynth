@@ -3,12 +3,14 @@
 # For license information, please see license.txt
 
 from __future__ import unicode_literals
-import re
+
 import frappe
 from frappe import _
 from frappe.model.document import Document
 from frappe.utils import cint, nowdate
+
 from microsynth.qms.signing import sign as signing_sign
+from microsynth.qms.versioning import get_newer_active_versions, get_next_suffix, get_versioned_documents
 
 
 @frappe.whitelist()
@@ -77,42 +79,8 @@ def has_valid_staff_profile(employee, current_name=None):
     valid_profile = frappe.db.exists("Staff Profile", filters)
     return {"has_valid": bool(valid_profile), "name": valid_profile}
 
-
-def _split_staff_profile_version(name):
-    match = re.match(r"^(.*?)(?:-(\d{1,2}))?$", name)
-    if not match:
-        return name, 0
-    base_name = match.group(1)
-    suffix = int(match.group(2)) if match.group(2) else 0
-    return base_name, suffix
-
-
-def _get_staff_profile_versions(base_name):
-    candidates = frappe.get_all(
-        "Staff Profile",
-        filters={"name": ["like", "{0}%".format(base_name)]},
-        fields=["name", "status", "docstatus"],
-    )
-    versions = []
-    for candidate in candidates:
-        candidate_name = candidate.get("name")
-        candidate_base, candidate_suffix = _split_staff_profile_version(candidate_name)
-        if candidate_base == base_name:
-            versions.append((
-                candidate_suffix,
-                candidate_name,
-                candidate.get("status"),
-                candidate.get("docstatus"),
-            ))
-    return sorted(versions, key=lambda item: item[0])
-
-
 @frappe.whitelist()
 def create_new_version(docname):
-
-    def _is_cancelled_staff_profile_version(status, docstatus):
-        return cint(docstatus) == 2 or status == "Cancelled"
-
     if not docname:
         frappe.throw(_("Missing Staff Profile name."))
 
@@ -122,13 +90,8 @@ def create_new_version(docname):
             _("A new Staff Profile version can only be created from a submitted profile in status Valid.")
         )
 
-    base_name, current_suffix = _split_staff_profile_version(docname)
-    available_versions = _get_staff_profile_versions(base_name)
-    newer_versions = [
-        name
-        for suffix, name, status, docstatus in available_versions
-        if suffix > current_suffix and not _is_cancelled_staff_profile_version(status, docstatus)
-    ]
+    base_name, current_suffix, available_versions = get_versioned_documents("Staff Profile", docname)
+    newer_versions = get_newer_active_versions(available_versions, current_suffix)
 
     if newer_versions:
         frappe.throw(
@@ -141,8 +104,7 @@ def create_new_version(docname):
             title=_("Newer Version Exists"),
         )
 
-    highest_suffix = max([suffix for suffix, name, status, docstatus in available_versions], default=current_suffix)
-    next_suffix = highest_suffix + 1
+    next_suffix = get_next_suffix(available_versions, current_suffix)
     if next_suffix > 99:
         frappe.throw(
             _("Cannot create a new version for Staff Profile {0} because the version suffix would exceed 99.").format(
@@ -253,10 +215,91 @@ def archive_previous_valid_profiles(employee, current_name):
         frappe.db.set_value("Staff Profile", profile.get("name"), "status", "Archived", update_modified=False)
 
 
+def _get_invalid_competence_assignments(assignments):
+    competence_names = []
+    for row in assignments or []:
+        competence_name = row.get("competence")
+        if competence_name and competence_name not in competence_names:
+            competence_names.append(competence_name)
+
+    competences_by_name = {}
+    if competence_names:
+        competence_docs = frappe.get_all(
+            "Competence",
+            filters={"name": ["in", competence_names]},
+            fields=["name", "title", "status", "docstatus"],
+        )
+        competences_by_name = {doc.get("name"): doc for doc in competence_docs}
+
+    invalid_rows = []
+    for row in assignments or []:
+        competence_name = row.get("competence")
+        competence_doc = competences_by_name.get(competence_name)
+
+        if not competence_name:
+            invalid_rows.append({
+                "row": row.idx,
+                "competence": _("not set"),
+                "reason": _("No Competence is selected in this row."),
+            })
+            continue
+
+        if not competence_doc:
+            invalid_rows.append({
+                "row": row.idx,
+                "competence": competence_name,
+                "reason": _("The linked Competence does not exist or is no longer accessible."),
+            })
+            continue
+
+        competence_status = competence_doc.get("status") or _("not set")
+        competence_docstatus = cint(competence_doc.get("docstatus"))
+        if competence_docstatus != 1 or competence_doc.get("status") != "Valid":
+            reason_parts = []
+            if competence_docstatus != 1:
+                reason_parts.append(
+                    _("document status is {0} instead of Submitted (1)").format(frappe.bold(str(competence_docstatus)))
+                )
+            if competence_doc.get("status") != "Valid":
+                reason_parts.append(
+                    _("status is {0} instead of Valid").format(frappe.bold(competence_status))
+                )
+            invalid_rows.append({
+                "row": row.idx,
+                "competence": competence_name,
+                "reason": "; ".join(reason_parts),
+            })
+    return invalid_rows
+
+
+def _throw_if_invalid_competence_versions(assignments):
+    invalid_rows = _get_invalid_competence_assignments(assignments)
+    if not invalid_rows:
+        return
+
+    details = "<br>".join(
+        _("Row {0}: Competence {1} is invalid because {2}.").format(
+            frappe.bold(row.get("row")),
+            frappe.bold(row.get("competence")),
+            row.get("reason"),
+        )
+        for row in invalid_rows
+    )
+    frappe.throw(
+        _(
+            "This Staff Profile contains at least one invalid Competence version and therefore cannot be saved or submitted.<br><br>{0}<br><br>"
+            "Please replace every invalid Competence with a submitted Competence in status Valid before continuing."
+        ).format(details),
+        title=_("Invalid Competence Version"),
+    )
+
+
 class StaffProfile(Document):
+    def validate(self):
+        _throw_if_invalid_competence_versions(self.competencies)
+
     def before_submit(self):
         self.status = "To Sign"
-
         if self.employee:
             existing = has_valid_staff_profile(self.employee, self.name).get("name")
             if existing:
@@ -271,6 +314,10 @@ class StaffProfile(Document):
 
     def on_submit(self):
         self.status = "To Sign"
+        self.save()
+        frappe.db.commit()
 
     def on_cancel(self):
         self.status = "Cancelled"
+        self.save()
+        frappe.db.commit()

@@ -2,6 +2,17 @@
 // For license information, please see license.txt
 
 frappe.ui.form.on('Staff Profile', {
+	setup: function(frm) {
+		frm.fields_dict.competencies.grid.get_field('competence').get_query = function() {
+			return {
+				filters: {
+					status: 'Valid',
+					docstatus: 1
+				}
+			};
+		};
+	},
+
 	refresh: function(frm) {
 		if (frm.doc.docstatus === 1 && frm.doc.status !== "To Sign") {
 			frm.page.clear_primary_action();

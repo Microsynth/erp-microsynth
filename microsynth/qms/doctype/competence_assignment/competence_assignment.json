@@ -13,7 +13,7 @@
  ],
  "fields": [
   {
-   "columns": 1,
+   "columns": 2,
    "fieldname": "competence",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -23,6 +23,7 @@
   },
   {
    "allow_on_submit": 1,
+   "columns": 1,
    "fieldname": "status",
    "fieldtype": "Select",
    "in_list_view": 1,
@@ -32,6 +33,7 @@
    "reqd": 1
   },
   {
+   "columns": 1,
    "fieldname": "responsibility_role",
    "fieldtype": "Select",
    "in_list_view": 1,
@@ -40,11 +42,12 @@
    "reqd": 1
   },
   {
+   "columns": 1,
    "fieldname": "level",
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Level",
-   "options": "Basic\nQualified\nExpert"
+   "options": "\nBasic\nQualified\nExpert"
   },
   {
    "fieldname": "remarks",
@@ -52,7 +55,7 @@
    "label": "Remarks"
   },
   {
-   "columns": 2,
+   "columns": 5,
    "fetch_from": "competence.title",
    "fieldname": "competence_title",
    "fieldtype": "Data",
@@ -62,7 +65,7 @@
   }
  ],
  "istable": 1,
- "modified": "2026-10-05 12:15:08.325356",
+ "modified": "2026-10-06 10:57:44.026473",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "Competence Assignment",
