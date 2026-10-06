@@ -14,6 +14,8 @@ frappe.ui.form.on('Staff Profile', {
 	},
 
 	refresh: function(frm) {
+		sync_competency_instruction_buttons(frm);
+
 		if (frm.doc.docstatus === 1 && frm.doc.status !== "To Sign") {
 			frm.page.clear_primary_action();
 		}
@@ -70,6 +72,33 @@ frappe.ui.form.on('Staff Profile', {
 		});
 	}
 });
+
+
+function sync_competency_instruction_buttons(frm) {
+	const rows = frm.doc.competencies || [];
+	const competencyNames = [...new Set(rows.map(row => row.competency).filter(Boolean))];
+	if (!competencyNames.length) {
+		rows.forEach(row => {
+			row.requires_on_the_job_instruction = 0;
+		});
+		frm.fields_dict.competencies.grid.refresh();
+		return;
+	}
+
+	frappe.call({
+		method: 'microsynth.qms.doctype.competency.competency.get_on_the_job_instruction_requirements',
+		args: {
+			competency_names: competencyNames
+		},
+		callback: function(response) {
+			const requirements = response.message || {};
+			rows.forEach(row => {
+				row.requires_on_the_job_instruction = requirements[row.competency] ? 1 : 0;
+			});
+			frm.fields_dict.competencies.grid.refresh();
+		}
+	});
+}
 
 
 function show_signing_banner(frm) {

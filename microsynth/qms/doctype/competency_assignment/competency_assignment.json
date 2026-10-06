@@ -4,21 +4,22 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-    "competency",
-    "competency_title",
+  "competency",
+  "competency_title",
   "status",
   "responsibility_role",
   "level",
+  "instruction",
   "remarks"
  ],
  "fields": [
   {
    "columns": 2,
-     "fieldname": "competency",
+   "fieldname": "competency",
    "fieldtype": "Link",
    "in_list_view": 1,
-     "label": "Competency",
-     "options": "Competency",
+   "label": "Competency",
+   "options": "Competency",
    "reqd": 1
   },
   {
@@ -55,17 +56,25 @@
    "label": "Remarks"
   },
   {
-   "columns": 5,
-    "fetch_from": "competency.title",
-    "fieldname": "competency_title",
+   "columns": 3,
+   "fetch_from": "competency.title",
+   "fieldname": "competency_title",
    "fieldtype": "Data",
    "in_list_view": 1,
-    "label": "Competency Title",
+   "label": "Competency Title",
+   "read_only": 1
+  },
+  {
+   "columns": 2,
+   "fieldname": "instruction",
+   "fieldtype": "Button",
+   "in_list_view": 1,
+   "label": "Confirm Instruction",
    "read_only": 1
   }
  ],
  "istable": 1,
- "modified": "2026-10-06 10:57:44.026473",
+ "modified": "2026-10-06 16:42:32.793988",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "Competency Assignment",
