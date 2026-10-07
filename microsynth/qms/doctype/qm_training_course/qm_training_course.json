@@ -7,18 +7,21 @@
  "field_order": [
   "naming_series",
   "scope",
-  "trainer",
+  "int_ext",
   "col_header",
   "topic",
+  "internal_trainer",
+  "external_trainer",
   "sec_date_location",
   "date",
+  "expiry_date",
   "col_date_location",
   "end_date",
-  "int_ext",
   "sec_participants",
   "participants",
   "sec_content",
-  "training_content"
+  "training_content",
+  "amended_from"
  ],
  "fields": [
   {
@@ -32,7 +35,9 @@
   {
    "fieldname": "topic",
    "fieldtype": "Data",
-   "label": "Topic"
+   "in_list_view": 1,
+   "label": "Topic",
+   "reqd": 1
   },
   {
    "fieldname": "scope",
@@ -49,7 +54,9 @@
   {
    "fieldname": "date",
    "fieldtype": "Date",
-   "label": "Date"
+   "in_list_view": 1,
+   "label": "Date",
+   "reqd": 1
   },
   {
    "fieldname": "end_date",
@@ -63,11 +70,6 @@
   {
    "fieldname": "col_header",
    "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "trainer",
-   "fieldtype": "Data",
-   "label": "Trainer"
   },
   {
    "fieldname": "sec_content",
@@ -89,17 +91,48 @@
   {
    "fieldname": "int_ext",
    "fieldtype": "Select",
+   "in_list_view": 1,
    "label": "Internal / External",
-   "options": "Internal\nExternal"
+   "options": "Internal\nExternal",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval:doc.int_ext==\"Internal\"",
+   "fieldname": "internal_trainer",
+   "fieldtype": "Link",
+   "label": "Trainer",
+   "options": "User"
+  },
+  {
+   "depends_on": "eval:doc.int_ext==\"External\"",
+   "fieldname": "external_trainer",
+   "fieldtype": "Data",
+   "label": "Trainer"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "QM Training Course",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "expiry_date",
+   "fieldtype": "Date",
+   "label": "Expiry Date"
   }
  ],
- "modified": "2025-04-11 17:11:20.273963",
+ "is_submittable": 1,
+ "modified": "2026-10-07 14:22:08.664461",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Training Course",
  "owner": "Administrator",
  "permissions": [
   {
+   "cancel": 1,
    "create": 1,
    "delete": 1,
    "email": 1,
@@ -109,6 +142,7 @@
    "report": 1,
    "role": "System Manager",
    "share": 1,
+   "submit": 1,
    "write": 1
   },
   {
@@ -117,9 +151,11 @@
    "report": 1,
    "role": "Microsynth User",
    "share": 1,
+   "submit": 1,
    "write": 1
   },
   {
+   "cancel": 1,
    "create": 1,
    "export": 1,
    "print": 1,
@@ -127,6 +163,7 @@
    "report": 1,
    "role": "QAU",
    "share": 1,
+   "submit": 1,
    "write": 1
   },
   {
@@ -135,7 +172,6 @@
    "role": "Board Member"
   }
  ],
- "quick_entry": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
  "title_field": "topic",
