@@ -42,5 +42,8 @@ frappe.query_reports["Competency Matrix"] = {
 				+ 'background-color: ' + background + '; color: #212529; padding: 2px 4px; '
 				+ 'border-radius: 3px;">' + frappe.utils.escape_html(cell.label) + '</span>';
 		}).join("");
+	},
+	"onload": function(report) {
+		hide_chart_buttons();
 	}
 };
