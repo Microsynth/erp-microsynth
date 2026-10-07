@@ -187,6 +187,14 @@ def cancel_internal_deposit_invoice(sales_invoice_id):
         result['errors'].append("Sales Invoice not submitted")
         return result
 
+    already_returned = frappe.db.exists(
+        "Sales Invoice",
+        {"docstatus": 1, "is_return": 1, "return_against": sales_invoice_id}
+    )
+    if already_returned:
+        result['errors'].append("Sales Invoice already returned; skipping duplicate cancellation")
+        return result
+
     # Determine unspent credit.
     net_amount_to_return = get_outstanding_credit(sales_invoice_doc)
     if net_amount_to_return <= 0:
@@ -247,14 +255,36 @@ def cancel_credit_account(credit_account_id):
     """
     deposit_invoices = frappe.db.sql(sql, (credit_account_id, credit_item_code), as_dict=True)
 
+    if deposit_invoices:
+        invoice_names = tuple(row.get('invoice_name') for row in deposit_invoices if row.get('invoice_name'))
+        returned_invoices = frappe.db.sql(
+            """
+            SELECT DISTINCT return_against AS invoice_name
+            FROM `tabSales Invoice`
+            WHERE docstatus = 1
+              AND is_return = 1
+              AND return_against IN ({})
+            """.format(", ".join(["%s"] * len(invoice_names))),
+            invoice_names,
+            as_dict=True,
+        ) if invoice_names else []
+        returned_names = {row.get('invoice_name') for row in returned_invoices}
+    else:
+        returned_names = set()
+
     results = {'processed_invoices': [], 'skipped_invoices': [], 'errors': []}
 
     for invoice_row in deposit_invoices:
         invoice_name = invoice_row.get('invoice_name')
+        if not invoice_name:
+            continue
+        if invoice_name in returned_names:
+            results['skipped_invoices'].append({'sales_invoice': invoice_name, 'reason': 'already returned'})
+            continue
         try:
             res = cancel_internal_deposit_invoice(invoice_name)
             if res.get('errors'):
-                results['errors'].append({invoice_name: res.get('errors')})
+                results['skipped_invoices'].append({'sales_invoice': invoice_name, 'reason': res.get('errors')[0] if res.get('errors') else 'skipped'})
             else:
                 results['processed_invoices'].append({'sales_invoice': invoice_name, 'credit_note': res.get('credit_note')})
         except Exception as e:
