@@ -38,8 +38,9 @@
   },
   {
    "fieldname": "scope",
-   "fieldtype": "Data",
-   "label": "Scope"
+   "fieldtype": "Link",
+   "label": "Scope",
+   "options": "Competency Scope"
   },
   {
    "fieldname": "description",
@@ -103,7 +104,7 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2026-10-07 14:32:40.960374",
+ "modified": "2026-10-07 14:52:11.330880",
  "modified_by": "Administrator",
  "module": "QMS",
  "name": "Competency",
