@@ -111,18 +111,23 @@ def validate_prerequisite_types(doc):
             ).format(", ".join(frappe.bold(prerequisite) for prerequisite in duplicates)),
             title=_("Duplicate Prerequisite Type"),
         )
-
     linked_qm_documents = [row.qm_document for row in (doc.qm_documents or []) if getattr(row, "qm_document", None)]
+    linked_training_courses = [
+        row.training_course for row in (doc.trainings or []) if getattr(row, "training_course", None)
+    ]
     if linked_qm_documents and "QM Document" not in seen_prerequisites:
         doc.append("prerequisite_types", {"competency_prerequisite": "QM Document"})
         seen_prerequisites.add("QM Document")
+
+    if linked_training_courses and "Training" not in seen_prerequisites:
+        doc.append("prerequisite_types", {"competency_prerequisite": "Training"})
+        seen_prerequisites.add("Training")
 
     if not doc.prerequisite_types:
         frappe.throw(
             _("This Competency cannot be saved without at least one Prerequisite Type."),
             title=_("Missing Prerequisite Type"),
         )
-
     if "QM Document" in seen_prerequisites and not linked_qm_documents:
         frappe.throw(
             _(
@@ -130,9 +135,13 @@ def validate_prerequisite_types(doc):
             ),
             title=_("Orphaned QM Document Prerequisite"),
         )
-
-    # TODO: when Competency gains a Training link field, require the Prerequisite Type "Training" whenever
-    # at least one Training is linked.
+    if "Training" in seen_prerequisites and not linked_training_courses:
+        frappe.throw(
+            _(
+                "The Prerequisite Type <b>Training</b> is set, but no QM Training Course is linked. Please link at least one QM Training Course or remove the Prerequisite Type <b>Training</b>."
+            ),
+            title=_("Orphaned Training Prerequisite"),
+        )
 
 
 @frappe.whitelist()

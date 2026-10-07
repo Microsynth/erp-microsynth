@@ -1,0 +1,40 @@
+{
+ "creation": "2026-10-07 14:31:54.868847",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "training_course",
+  "topic"
+ ],
+ "fields": [
+  {
+   "columns": 2,
+   "fieldname": "training_course",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Training Course",
+   "options": "QM Training Course",
+   "reqd": 1
+  },
+  {
+   "columns": 5,
+   "fetch_from": "training_course.topic",
+   "fieldname": "topic",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Topic",
+   "read_only": 1
+  }
+ ],
+ "istable": 1,
+ "modified": "2026-10-07 14:35:05.880798",
+ "modified_by": "Administrator",
+ "module": "QMS",
+ "name": "QM Training Course Link",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

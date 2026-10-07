@@ -14,8 +14,9 @@
   "section_break_6",
   "description",
   "references_section",
-  "qm_documents",
   "departments",
+  "qm_documents",
+  "trainings",
   "naming_series"
  ],
  "fields": [
@@ -93,11 +94,17 @@
    "fieldtype": "Table MultiSelect",
    "label": "Prerequisite Types",
    "options": "Competency Prerequisite Type Link"
+  },
+  {
+   "fieldname": "trainings",
+   "fieldtype": "Table",
+   "label": "Trainings",
+   "options": "QM Training Course Link"
   }
  ],
  "is_submittable": 1,
- "modified": "2026-10-06 15:11:10.229177",
- "modified_by": "jens.petermann@microsynth.ch",
+ "modified": "2026-10-07 14:32:40.960374",
+ "modified_by": "Administrator",
  "module": "QMS",
  "name": "Competency",
  "owner": "Administrator",
