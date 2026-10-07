@@ -10,11 +10,12 @@
   "responsibility_role",
   "level",
   "instruction",
+  "competency_instruction",
   "remarks"
  ],
  "fields": [
   {
-   "columns": 2,
+   "columns": 1,
    "fieldname": "competency",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -71,10 +72,20 @@
    "in_list_view": 1,
    "label": "Confirm Instruction",
    "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "columns": 1,
+   "fieldname": "competency_instruction",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Competency Instruction",
+   "options": "Competency Instruction",
+   "read_only": 1
   }
  ],
  "istable": 1,
- "modified": "2026-10-06 16:54:18.884377",
+ "modified": "2026-10-07 17:09:32.607196",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "Competency Assignment",

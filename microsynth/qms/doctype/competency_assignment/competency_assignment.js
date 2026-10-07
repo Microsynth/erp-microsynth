@@ -4,10 +4,6 @@
 frappe.ui.form.on('Competency Assignment', {
 	competency: function(frm, cdt, cdn) {
 		update_instruction_button_state(frm, cdt, cdn);
-	},
-
-	instruction: function(frm) {
-		frappe.msgprint(__('Instruction confirmation is not implemented yet.'));
 	}
 });
 
