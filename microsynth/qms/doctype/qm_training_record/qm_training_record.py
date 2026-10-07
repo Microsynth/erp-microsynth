@@ -12,6 +12,7 @@ from frappe.desk.form.load import get_attachments
 from frappe.core.doctype.communication.email import make
 from datetime import datetime
 from microsynth.microsynth.utils import add_workdays
+from microsynth.qms.doctype.competency_assignment.competency_assignment import update_competency_assignments_for_trainee
 
 
 class QMTrainingRecord(Document):
@@ -60,6 +61,7 @@ def set_signed_on(doc):
     # clear assignment
     clear("QM Training Record", doc)
     record.save(ignore_permissions = True)
+    update_competency_assignments_for_trainee(record.trainee, record.document_type, record.document_name)
     frappe.db.commit()
 
 
