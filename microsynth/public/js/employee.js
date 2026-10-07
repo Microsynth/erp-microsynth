@@ -3,6 +3,10 @@ try {
         {
             'label': 'Lifecycle',
             'items': ['Employee Onboarding']
+        },
+        {
+            'label': 'Training',
+            'items': ['Staff Profile']
         }
     ]);
 } catch { /* do nothing */ }
