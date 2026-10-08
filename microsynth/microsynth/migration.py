@@ -5532,6 +5532,124 @@ def add_shipping_item_to_customers(customers, shipping_item_code, rate, threshol
             print(f"Customer {customer_id} already has Shipping Item {shipping_item_code} with rate {rate} {customer_doc.default_currency}. Going to skip.")
 
 
+def update_shipping_item_rate_for_customers(item_code, currency, new_rate, customer_blacklist=None, dry_run=True):
+    """
+    Update the rate of all customer-level Shipping Items with the given Item code and currency.
+    Skip Customers in the given blacklist.
+
+    bench execute microsynth.microsynth.migration.update_shipping_item_rate_for_customers --kwargs "{'item_code': '1108', 'currency': 'EUR', 'new_rate': 7.80, 'dry_run': True}"
+    """
+    if not item_code:
+        print("ERROR: Missing required parameter item_code.")
+        return 0
+    if not currency:
+        print("ERROR: Missing required parameter currency.")
+        return 0
+
+    if isinstance(customer_blacklist, str):
+        customer_blacklist = frappe.parse_json(customer_blacklist)
+
+    if customer_blacklist is None:
+        customer_blacklist = []
+    elif not isinstance(customer_blacklist, list):
+        print(f"ERROR: customer_blacklist must be a list or JSON string, got {type(customer_blacklist).__name__}.")
+        return 0
+
+    blacklist = {str(customer_id) for customer_id in customer_blacklist if customer_id}
+
+    if not frappe.db.exists("Item", item_code):
+        print(f"ERROR: Item '{item_code}' does not exist.")
+        return 0
+
+    item_doc = frappe.get_doc("Item", item_code)
+    if item_doc.item_group != "Shipping":
+        print(f"ERROR: Item '{item_code}' has Item Group '{item_doc.item_group}' and is not a Shipping Item.")
+        return 0
+
+    new_rate = float(new_rate)
+
+    shipping_items = frappe.db.sql(
+        """
+        SELECT
+            `tabShipping Item`.`name`,
+            `tabShipping Item`.`parent` AS `customer`,
+            `tabShipping Item`.`item`,
+            `tabShipping Item`.`item_name`,
+            `tabShipping Item`.`currency`,
+            `tabShipping Item`.`rate`,
+            `tabCustomer`.`customer_name`,
+            `tabCustomer`.`default_currency`,
+            `tabCustomer`.`disabled`
+        FROM `tabShipping Item`
+        INNER JOIN `tabCustomer`
+            ON `tabCustomer`.`name` = `tabShipping Item`.`parent`
+        WHERE
+            `tabShipping Item`.`parenttype` = 'Customer'
+            AND `tabShipping Item`.`item` = %s
+            AND `tabShipping Item`.`currency` = %s
+        ORDER BY `tabShipping Item`.`parent` ASC, `tabShipping Item`.`name` ASC
+        """,
+        (item_code, currency),
+        as_dict=True,
+    )
+    print(
+        f"Found {len(shipping_items)} customer-level Shipping Item rows for Item {item_code} "
+        f"in currency {currency}. dry_run={dry_run} blacklist_size={len(blacklist)}"
+    )
+    updated = 0
+    skipped_blacklist = 0
+    skipped_disabled = 0
+    skipped_unchanged = 0
+
+    for shipping_item in shipping_items:
+        customer_id = shipping_item["customer"]
+        customer_name = shipping_item.get("customer_name") or ""
+        current_rate = float(shipping_item.get("rate") or 0)
+
+        if customer_id in blacklist:
+            print(
+                f"SKIP blacklist: Customer {customer_id} ({customer_name}) has Shipping Item {shipping_item['name']} "
+                f"with rate {current_rate} {currency}."
+            )
+            skipped_blacklist += 1
+            continue
+
+        if int(shipping_item.get("disabled") or 0) == 1:
+            print(
+                f"SKIP disabled customer: Customer {customer_id} ({customer_name}) has Shipping Item {shipping_item['name']} "
+                f"with rate {current_rate} {currency}."
+            )
+            skipped_disabled += 1
+            continue
+
+        if current_rate == new_rate:
+            print(
+                f"SKIP unchanged: Customer {customer_id} ({customer_name}) already has Shipping Item {shipping_item['name']} "
+                f"at rate {new_rate} {currency}."
+            )
+            skipped_unchanged += 1
+            continue
+
+        print(
+            f"{'Would update' if dry_run else 'Updating'} Customer {customer_id} ({customer_name}) Shipping Item {shipping_item['name']} "
+            f"[{shipping_item.get('item_name') or item_code}] from {current_rate} {currency} to {new_rate} {currency}."
+        )
+        if not dry_run:
+            shipping_item_doc = frappe.get_doc("Shipping Item", shipping_item["name"])
+            shipping_item_doc.rate = new_rate
+            shipping_item_doc.save(ignore_permissions=True)
+        updated += 1
+
+    if not dry_run and updated > 0:
+        frappe.db.commit()
+
+    print(
+        f"Done. Updated={updated}, Skipped blacklist={skipped_blacklist}, "
+        f"Skipped disabled={skipped_disabled}, Skipped unchanged={skipped_unchanged}, Dry run={dry_run}"
+    )
+    return updated
+
+
 def get_exchange_rate_for_date(ordered_exchange_rates, target_date):
     """
     Given a list of exchange rates sorted by date descending and a target date,
