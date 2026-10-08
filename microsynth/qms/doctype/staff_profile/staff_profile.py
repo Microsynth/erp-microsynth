@@ -9,6 +9,7 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import cint, nowdate
 
+from microsynth.qms.doctype.competency_assignment.competency_assignment import update_competency_assignments_for_trainee
 from microsynth.qms.signing import sign as signing_sign
 from microsynth.qms.versioning import get_newer_active_versions, get_next_suffix, get_versioned_documents
 
@@ -340,6 +341,17 @@ def _throw_if_invalid_competency_versions(assignments):
     )
 
 
+def _update_achieved_competencies_for_staff_profile(staff_profile):
+    if not getattr(staff_profile, "employee", None):
+        return
+
+    trainee = frappe.db.get_value("Employee", staff_profile.employee, "user_id")
+    if not trainee:
+        return
+
+    update_competency_assignments_for_trainee(trainee)
+
+
 class StaffProfile(Document):
     def validate(self):
         _throw_if_invalid_competency_versions(self.competencies)
@@ -361,6 +373,7 @@ class StaffProfile(Document):
     def on_submit(self):
         self.status = "To Sign"
         self.save()
+        _update_achieved_competencies_for_staff_profile(self)
         frappe.db.commit()
 
     def on_cancel(self):

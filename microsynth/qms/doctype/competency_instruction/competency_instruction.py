@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2026, Microsynth, libracore and contributors and contributors
+# Copyright (c) 2026, Microsynth
 # For license information, please see license.txt
 
 from __future__ import unicode_literals
@@ -7,11 +7,24 @@ from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
 
+from microsynth.qms.doctype.competency_assignment.competency_assignment import update_competency_assignments_for_trainee
+
+
 class CompetencyInstruction(Document):
 
 	def validate(self):
 		if not self.competency_assignment:
 			frappe.throw("Competency Assignment is required. Please only use the button <b>Confirm Instruction</b> to create a new Competency Instruction.")
+
+	def on_submit(self):
+		if not self.trainee:
+			return
+
+		trainee_user = frappe.db.get_value("Employee", self.trainee, "user_id")
+		if not trainee_user:
+			return
+
+		update_competency_assignments_for_trainee(trainee_user)
 
 
 @frappe.whitelist()
