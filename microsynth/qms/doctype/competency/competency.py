@@ -12,6 +12,26 @@ from microsynth.qms.doctype.qm_document.qm_document import get_valid_version
 from microsynth.qms.versioning import get_newer_active_versions, get_next_suffix, get_versioned_documents
 
 
+class Competency(Document):
+    def validate(self):
+        validate_prerequisite_types(self)
+        validate_linked_qm_documents(self)
+
+    def before_cancel(self):
+        validate_cancel_permission(self)
+
+    def on_submit(self):
+        self.status = "Valid"
+        invalidate_previous_versions(self.name)
+        self.save()
+        frappe.db.commit()
+
+    def on_cancel(self):
+        self.status = "Invalid"
+        self.save()
+        frappe.db.commit()
+
+
 def invalidate_previous_versions(docname):
     base_name, current_suffix, available_versions = get_versioned_documents("Competency", docname)
 
@@ -19,6 +39,66 @@ def invalidate_previous_versions(docname):
         if suffix >= current_suffix or version_name == docname or docstatus != 1:
             continue
         frappe.db.set_value("Competency", version_name, "status", "Invalid", update_modified=False)
+
+
+def validate_cancel_permission(doc):
+    privileged_process_prefixes = ("1.1", "1.2", "1.3")
+    globally_authorized_processes = frappe.get_all(
+        "QM Process Owner",
+        filters={"process_owner": frappe.session.user},
+        fields=["qm_process"],
+    )
+    if any(
+        (process.get("qm_process") or "").startswith(privileged_process_prefixes)
+        for process in globally_authorized_processes
+    ):
+        return
+
+    linked_departments = sorted(
+        {row.department for row in (doc.departments or []) if getattr(row, "department", None)}
+    )
+    if not linked_departments:
+        frappe.throw(
+            _(
+                "This Competency cannot be cancelled because it has no linked Department with a QM Process Owner who can authorize the cancellation."
+            ),
+            title=_("Cancellation Not Allowed"),
+        )
+    department_process_links = frappe.get_all(
+        "QM Process Link",
+        filters={
+            "parent": ["in", linked_departments],
+            "parenttype": "Department",
+        },
+        fields=["parent", "qm_process"],
+    )
+    linked_processes = sorted(
+        {row.get("qm_process") for row in department_process_links if row.get("qm_process")}
+    )
+    if not linked_processes:
+        frappe.throw(
+            _(
+                "This Competency cannot be cancelled because none of its linked Departments has a QM Process assigned."
+            ),
+            title=_("Cancellation Not Allowed"),
+        )
+    owned_processes = frappe.get_all(
+        "QM Process Owner",
+        filters={
+            "qm_process": ["in", linked_processes],
+            "process_owner": frappe.session.user,
+        },
+        fields=["qm_process"],
+    )
+    if owned_processes:
+        return
+
+    frappe.throw(
+        _(
+            "Only a QM Process Owner of a QM Process linked on a Department of this Competency may cancel it."
+        ),
+        title=_("Cancellation Not Allowed"),
+    )
 
 
 def validate_linked_qm_documents(doc):
@@ -240,20 +320,3 @@ def create_new_version(docname):
 
     frappe.db.commit()
     return {"name": new_doc.name}
-
-
-class Competency(Document):
-    def validate(self):
-        validate_prerequisite_types(self)
-        validate_linked_qm_documents(self)
-
-    def on_submit(self):
-        self.status = "Valid"
-        invalidate_previous_versions(self.name)
-        self.save()
-        frappe.db.commit()
-
-    def on_cancel(self):
-        self.status = "Invalid"
-        self.save()
-        frappe.db.commit()
