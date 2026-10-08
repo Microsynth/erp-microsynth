@@ -14,6 +14,51 @@ from microsynth.qms.versioning import get_newer_active_versions, get_next_suffix
 
 
 @frappe.whitelist()
+def get_department_competencies(docname, employee=None):
+    """Return readable, valid competencies for a saved draft's employee departments."""
+    profile = frappe.get_doc("Staff Profile", docname)
+    profile.check_permission("write")
+    if profile.docstatus != 0 or profile.status not in (None, "", "Draft"):
+        frappe.throw(_("Department competencies can only be added to a saved Staff Profile draft."))
+
+    # Use the current form value if the employee has been changed without saving.
+    employee = employee or profile.employee
+    if not employee:
+        return []
+
+    employee_doc = frappe.get_doc("Employee", employee)
+    employee_doc.check_permission("read")
+    departments = {row.department for row in employee_doc.get("additional_departments") or [] if row.department}
+    if employee_doc.department:
+        departments.add(employee_doc.department)
+    if not departments:
+        return []
+
+    department_links = frappe.get_all(
+        "Department Link",
+        filters={
+            "parenttype": "Competency",
+            "parentfield": "departments",
+            "department": ["in", sorted(departments)],
+        },
+        fields=["parent"],
+    )
+    competency_names = sorted({row.parent for row in department_links})
+    if not competency_names:
+        return []
+
+    # get_list applies Competency permissions; get_all would bypass them.
+    # The client excludes its current assignments, including unsaved changes.
+    return frappe.get_list(
+        "Competency",
+        filters={"name": ["in", competency_names], "status": "Valid", "docstatus": 1},
+        fields=["name", "title"],
+        order_by="title asc, name asc",
+        limit_page_length=0,
+    )
+
+
+@frappe.whitelist()
 def get_process_owner_for_employee(employee):
     """Return the process owner for an employee based on user process assignments."""
     if not employee:

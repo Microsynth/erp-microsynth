@@ -17,16 +17,19 @@ frappe.ui.form.on('Staff Profile', {
         bind_competency_instruction_grid_click(frm);
         sync_competency_instruction_buttons(frm);
 
+        if (!frm.is_new() && frm.doc.docstatus === 0 && (!frm.doc.status || frm.doc.status === 'Draft') && frm.perm[0].write) {
+            frm.add_custom_button(__('Add Department competencies'), function() {
+                add_department_competencies(frm);
+            });
+        }
         if (frm.doc.docstatus === 1 && frm.doc.status !== "To Sign") {
             frm.page.clear_primary_action();
         }
-
         if (frm.doc.docstatus === 1 && frm.doc.status === "Valid") {
             frm.add_custom_button(__('New Version'), function() {
                 create_new_version(frm);
             }, __('Create'));
         }
-
         if (frm.doc.docstatus === 1 && frm.doc.status === "To Sign") {
             show_signing_banner(frm);
             add_sign_button_if_allowed(frm);
@@ -38,7 +41,6 @@ frappe.ui.form.on('Staff Profile', {
             delete frm.doc.confirm_valid_staff_profile_replacement;
             return;
         }
-
         frappe.validated = false;
 
         return new Promise((resolve, reject) => {
@@ -55,7 +57,6 @@ frappe.ui.form.on('Staff Profile', {
                         resolve();
                         return;
                     }
-
                     frappe.confirm(
                         __('A valid Staff Profile already exists for this employee. If you continue, the previous valid profile will be archived when this one becomes valid. Continue?'),
                         function() {
@@ -75,17 +76,93 @@ frappe.ui.form.on('Staff Profile', {
 });
 
 
+function add_department_competencies(frm) {
+    if (!frm.doc.employee) {
+        frappe.msgprint(__('Please select an Employee first.'));
+        return;
+    }
+    const employee = frm.doc.employee;
+    frappe.call({
+        'method': 'microsynth.qms.doctype.staff_profile.staff_profile.get_department_competencies',
+        'args': { 'docname': frm.doc.name, 'employee': employee },
+        'callback': function(response) {
+            if (frm.doc.employee !== employee) {
+                return;
+            }
+            const assigned = new Set((frm.doc.competencies || []).map(row => row.competency));
+            const competencies = (response.message || []).filter(row => !assigned.has(row.name));
+            if (!competencies.length) {
+                frappe.msgprint(__('No additional valid competencies are available for this employee\'s departments.'));
+                return;
+            }
+            const dialog = new frappe.ui.Dialog({
+                title: __('Add Department competencies'),
+                size: 'large',
+                fields: [{ fieldname: 'competency_selection', fieldtype: 'HTML' }],
+                primary_action_label: __('Add'),
+                primary_action: function() {
+                    if (frm.doc.employee !== employee || frm.doc.docstatus !== 0 || (frm.doc.status && frm.doc.status !== 'Draft')) {
+                        frappe.msgprint(__('The Staff Profile has changed. Please reopen the competency selection.'));
+                        dialog.hide();
+                        return;
+                    }
+                    const existing = new Set((frm.doc.competencies || []).map(row => row.competency));
+                    let added = false;
+                    $list.find('input:checked').each(function() {
+                        const competency = competencies[Number($(this).val())];
+                        if (existing.has(competency.name)) {
+                            return;
+                        }
+                        frm.add_child('competencies', {
+                            competency: competency.name,
+                            competency_title: competency.title,
+                            status: 'Planned',
+                            responsibility_role: 'Main'
+                        });
+                        existing.add(competency.name);
+                        added = true;
+                    });
+                    if (added) {
+                        frm.dirty();
+                        frm.refresh_field('competencies');
+                        sync_competency_instruction_buttons(frm);
+                    }
+                    dialog.hide();
+                }
+            });
+            const $wrapper = dialog.fields_dict.competency_selection.$wrapper;
+            const $actions = $('<div class="clearfix" style="margin-bottom: 12px;"></div>').appendTo($wrapper);
+            const $list = $('<div style="max-height: 55vh; overflow-y: auto;"></div>').appendTo($wrapper);
+            $('<button type="button" class="btn btn-default btn-sm"></button>')
+                .text(__('Select all')).appendTo($actions)
+                .on('click', () => $list.find('input').prop('checked', true));
+            $('<button type="button" class="btn btn-default btn-sm" style="margin-left: 8px;"></button>')
+                .text(__('Deselect all')).appendTo($actions)
+                .on('click', () => $list.find('input').prop('checked', false));
+
+            competencies.forEach((competency, index) => {
+                const $label = $('<label style="display: flex; align-items: baseline; gap: 8px; padding: 8px; border-bottom: 1px solid #eee; font-weight: normal; cursor: pointer;"></label>')
+                    .appendTo($list);
+                $('<input type="checkbox">').val(index).appendTo($label);
+                const $text = $('<span></span>').appendTo($label);
+                $('<strong></strong>').text(competency.title || competency.name).appendTo($text);
+                $('<small class="text-muted" style="display: block;"></small>').text(competency.name).appendTo($text);
+            });
+            dialog.show();
+        }
+    });
+}
+
+
 function bind_competency_instruction_grid_click(frm) {
     const grid = frm.fields_dict && frm.fields_dict.competencies && frm.fields_dict.competencies.grid;
     if (!grid) {
         return;
     }
-
     const $table = grid.wrapper || grid.grid_rows;
     if (!$table) {
         return;
     }
-
     grid.wrapper.off('click', '[data-fieldname="instruction"]');
     grid.wrapper.on('click', '[data-fieldname="instruction"]', function(event) {
         const $row = $(this).closest('.grid-row');
@@ -108,13 +185,12 @@ function open_competency_instruction_dialog(frm, cdt, cdn) {
         console.warn('Competency Assignment row not found', { cdt, cdn, frm: frm && frm.doc && frm.doc.name });
         return;
     }
-
     frappe.call({
-        method: 'microsynth.qms.doctype.competency_instruction.competency_instruction.has_submitted_instruction_for_assignment',
-        args: {
-            competency_assignment: row.name
+        'method': 'microsynth.qms.doctype.competency_instruction.competency_instruction.has_submitted_instruction_for_assignment',
+        'args': {
+            'competency_assignment': row.name
         },
-        callback: function(response) {
+        'callback': function(response) {
             if (response.message) {
                 frappe.msgprint({
                     title: __('Instruction already exists'),
@@ -131,12 +207,12 @@ function open_competency_instruction_dialog(frm, cdt, cdn) {
 
 function show_instruction_prompt(trainee_default, row, frm) {
     frappe.call({
-        method: 'frappe.client.get',
-        args: {
-            doctype: 'Employee',
-            name: trainee_default || ''
+        'method': 'frappe.client.get',
+        'args': {
+            'doctype': 'Employee',
+            'name': trainee_default || ''
         },
-        callback: function(response) {
+        'callback': function(response) {
             const trainee_name = (response && response.message && response.message.employee_name) || '';
             frappe.prompt([
                 {
@@ -201,12 +277,10 @@ function show_instruction_prompt(trainee_default, row, frm) {
                             });
                             return;
                         }
-
                         row.competency_instruction = name;
                         if (frm && frm.fields_dict && frm.fields_dict.competencies) {
                             frm.fields_dict.competencies.grid.refresh();
                         }
-
                         frappe.set_route('Form', 'Competency Instruction', name);
                     }
                 });
@@ -227,32 +301,29 @@ function sync_competency_instruction_buttons(frm) {
         frm.fields_dict.competencies.grid.refresh();
         return;
     }
-
     frappe.call({
-        method: 'microsynth.qms.doctype.competency.competency.get_on_the_job_instruction_requirements',
-        args: {
-            competency_names: competencyNames
+        'method': 'microsynth.qms.doctype.competency.competency.get_on_the_job_instruction_requirements',
+        'args': {
+            'competency_names': competencyNames
         },
-        callback: function(response) {
+        'callback': function(response) {
             const requirements = response.message || {};
             rows.forEach(row => {
                 row.requires_on_the_job_instruction = requirements[row.competency] ? 1 : 0;
             });
-
             rows.forEach(row => {
                 if (!row.name) {
                     return;
                 }
                 frappe.call({
-                    method: 'microsynth.qms.doctype.competency_instruction.competency_instruction.get_linked_instruction_for_assignment',
-                    args: { competency_assignment: row.name },
-                    callback: function(link_response) {
+                    'method': 'microsynth.qms.doctype.competency_instruction.competency_instruction.get_linked_instruction_for_assignment',
+                    'args': { 'competency_assignment': row.name },
+                    'callback': function(link_response) {
                         const linked = link_response && link_response.message;
                         row.competency_instruction = linked || row.competency_instruction || '';
                     }
                 });
             });
-
             frm.fields_dict.competencies.grid.refresh();
         }
     });
@@ -265,7 +336,6 @@ function show_signing_banner(frm) {
     if (!frm.doc.employee_signed_on || !frm.doc.employee_user || !frm.doc.employee_signature) {
         missing_signature.push(__('Employee'));
     }
-
     if (!frm.doc.process_owner_signed_on || !frm.doc.process_owner || !frm.doc.process_owner_signature) {
         missing_signature.push(__('Process Owner'));
     }
@@ -300,7 +370,6 @@ function add_sign_button_if_allowed(frm) {
                 });
                 return;
             }
-
             if (current_user === process_owner && !frm.doc.process_owner_signed_on) {
                 frm.page.clear_primary_action();
                 frm.page.set_primary_action(__('Sign'), function() {

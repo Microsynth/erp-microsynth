@@ -79,13 +79,13 @@
    "fieldname": "competency_instruction",
    "fieldtype": "Link",
    "in_list_view": 1,
-   "label": "Competency Instruction",
+   "label": "Instruction",
    "options": "Competency Instruction",
    "read_only": 1
   }
  ],
  "istable": 1,
- "modified": "2026-10-07 17:09:32.607196",
+ "modified": "2026-10-08 13:59:28.302242",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "Competency Assignment",
