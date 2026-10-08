@@ -1,0 +1,64 @@
+{
+ "creation": "2026-10-08 17:22:04.761701",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "competency",
+  "competency_title",
+  "responsibility_role",
+  "level",
+  "remarks"
+ ],
+ "fields": [
+  {
+   "columns": 2,
+   "fieldname": "competency",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Competency",
+   "options": "Competency",
+   "reqd": 1
+  },
+  {
+   "columns": 5,
+   "fetch_from": "competency.title",
+   "fieldname": "competency_title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Competency Title",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "responsibility_role",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Role",
+   "options": "Main\nSubstitute"
+  },
+  {
+   "columns": 1,
+   "fieldname": "level",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Level",
+   "options": "\nBasic\nQualified\nExpert"
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Small Text",
+   "label": "Remarks"
+  }
+ ],
+ "istable": 1,
+ "modified": "2026-10-08 17:22:04.761701",
+ "modified_by": "Administrator",
+ "module": "QMS",
+ "name": "Competency Link",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}
