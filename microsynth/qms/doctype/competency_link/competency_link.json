@@ -12,7 +12,7 @@
  ],
  "fields": [
   {
-   "columns": 2,
+   "columns": 1,
    "fieldname": "competency",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -52,8 +52,8 @@
   }
  ],
  "istable": 1,
- "modified": "2026-10-08 17:22:04.761701",
- "modified_by": "Administrator",
+ "modified": "2026-10-08 17:36:36.156468",
+ "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "Competency Link",
  "owner": "Administrator",

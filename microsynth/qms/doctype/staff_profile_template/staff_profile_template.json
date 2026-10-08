@@ -6,6 +6,7 @@
  "engine": "InnoDB",
  "field_order": [
   "template_name",
+  "column_break_2",
   "naming_series",
   "disabled",
   "section_break_4",
@@ -52,10 +53,14 @@
    "fieldtype": "Table",
    "label": "Competencies",
    "options": "Competency Link"
+  },
+  {
+   "fieldname": "column_break_2",
+   "fieldtype": "Column Break"
   }
  ],
- "modified": "2026-10-08 17:22:20.285261",
- "modified_by": "Administrator",
+ "modified": "2026-10-08 17:36:03.178668",
+ "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "Staff Profile Template",
  "owner": "Administrator",
