@@ -24,6 +24,7 @@
    "fieldname": "title",
    "fieldtype": "Data",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Title",
    "reqd": 1
   },
@@ -31,6 +32,8 @@
    "allow_on_submit": 1,
    "fieldname": "status",
    "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Status",
    "no_copy": 1,
    "options": "Draft\nValid\nInvalid",
@@ -39,6 +42,8 @@
   {
    "fieldname": "scope",
    "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Scope",
    "options": "Competency Scope"
   },
@@ -104,7 +109,7 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2026-10-09 14:05:26.537894",
+ "modified": "2026-10-09 17:28:45.898872",
  "modified_by": "Administrator",
  "module": "QMS",
  "name": "Competency",

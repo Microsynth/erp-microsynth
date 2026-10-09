@@ -27,6 +27,8 @@
   {
    "fieldname": "scope",
    "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Scope",
    "options": "QM Training Scope"
   },
@@ -34,6 +36,7 @@
    "fieldname": "int_ext",
    "fieldtype": "Select",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Internal / External",
    "options": "Internal\nExternal",
    "reqd": 1
@@ -46,6 +49,7 @@
    "fieldname": "topic",
    "fieldtype": "Data",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Topic",
    "reqd": 1
   },
@@ -69,10 +73,11 @@
   {
    "fieldname": "training_content",
    "fieldtype": "Text Editor",
+   "in_standard_filter": 1,
    "label": "Training Content"
   }
  ],
- "modified": "2026-10-09 13:19:26.558648",
+ "modified": "2026-10-09 17:31:52.868768",
  "modified_by": "Administrator",
  "module": "QMS",
  "name": "QM Training Template",

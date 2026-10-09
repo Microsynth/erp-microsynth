@@ -12,13 +12,14 @@
    "fieldname": "prerequisite_type",
    "fieldtype": "Data",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Prerequisite Type",
    "reqd": 1,
    "unique": 1
   }
  ],
- "modified": "2026-10-06 14:30:30.206859",
- "modified_by": "jens.petermann@microsynth.ch",
+ "modified": "2026-10-09 17:33:32.620798",
+ "modified_by": "Administrator",
  "module": "QMS",
  "name": "Competency Prerequisite Type",
  "owner": "Administrator",

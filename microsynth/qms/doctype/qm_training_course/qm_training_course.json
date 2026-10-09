@@ -39,6 +39,7 @@
    "fieldname": "topic",
    "fieldtype": "Data",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Topic",
    "read_only": 1,
    "reqd": 1
@@ -46,6 +47,7 @@
   {
    "fieldname": "scope",
    "fieldtype": "Link",
+   "in_standard_filter": 1,
    "label": "Scope",
    "options": "QM Training Scope",
    "read_only": 1
@@ -98,6 +100,7 @@
    "fieldname": "int_ext",
    "fieldtype": "Select",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Internal / External",
    "options": "Internal\nExternal",
    "reqd": 1
@@ -137,6 +140,7 @@
   {
    "fieldname": "training_template",
    "fieldtype": "Link",
+   "in_standard_filter": 1,
    "label": "Training Template",
    "options": "QM Training Template",
    "read_only": 1
@@ -149,8 +153,8 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2026-10-09 13:48:59.497126",
- "modified_by": "jens.petermann@microsynth.ch",
+ "modified": "2026-10-09 17:31:10.554244",
+ "modified_by": "Administrator",
  "module": "QMS",
  "name": "QM Training Course",
  "owner": "Administrator",
