@@ -9,7 +9,19 @@ from frappe.model.document import Document
 
 from microsynth.qms.doctype.competency_assignment.competency_assignment import update_competency_assignments_for_trainee
 
+
 class QMTrainingCourse(Document):
+	def before_submit(self):
+		missing = _get_missing_participant_outcomes(self.participants)
+		if missing:
+			frappe.throw(
+				_("Please set an Outcome for all participants before submitting. Missing Outcome: {0}").format(", ".join(missing)),
+				title=_("Missing participant outcomes"),
+			)
+		trainer_error = _is_missing_trainer(self)
+		if trainer_error:
+			frappe.throw(_(trainer_error), title=_("Missing trainer"))
+
 	def on_submit(self):
 		if not self.training_template:
 			return
@@ -21,6 +33,34 @@ class QMTrainingCourse(Document):
 		}
 		for user in sorted(passed_users):
 			update_competency_assignments_for_trainee(user, self.doctype, self.name)
+
+
+def _is_missing_trainer(course):
+	if not getattr(course, "int_ext", None):
+		return "Trainer type is required."
+	if course.int_ext == "Internal":
+		if not getattr(course, "internal_trainer", None):
+			return "Please select an Internal Trainer before submitting."
+		return None
+	if course.int_ext == "External":
+		if not getattr(course, "external_trainer", None):
+			return "Please enter an External Trainer before submitting."
+		return None
+	return "Please select a valid Trainer type before submitting."
+
+
+def _get_missing_participant_outcomes(participants):
+	missing = []
+	for participant in participants or []:
+		if getattr(participant, "outcome", None) not in (None, ""):
+			continue
+		user = getattr(participant, "user", None)
+		if user:
+			missing.append(user)
+			continue
+		idx = getattr(participant, "idx", None)
+		missing.append(f"Row {idx}" if idx else "Unnamed participant")
+	return missing
 
 
 @frappe.whitelist()

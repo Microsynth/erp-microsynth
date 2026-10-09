@@ -8,6 +8,18 @@ frappe.ui.form.on('QM Training Course', {
 				propose_participants(frm);
 			});
 		}
+	},
+
+	before_submit: function(frm) {
+		const missing = (frm.doc.participants || []).filter(row => !row.outcome).map(row => row.user || __('Row {0}', [row.idx || 1]));
+		if (!missing.length) {
+			return;
+		}
+		frappe.msgprint(
+			__('Please set an Outcome for all participants before submitting. Missing Outcome: {0}', [missing.join(', ')]),
+			__('Missing participant outcomes')
+		);
+		frappe.validated = false;
 	}
 });
 
