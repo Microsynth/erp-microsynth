@@ -8,19 +8,22 @@
   "naming_series",
   "scope",
   "int_ext",
+  "training_template",
   "col_header",
   "topic",
   "internal_trainer",
   "external_trainer",
+  "sec_content",
+  "training_content",
   "sec_date_location",
   "date",
   "expiry_date",
   "col_date_location",
   "end_date",
+  "location",
   "sec_participants",
   "participants",
-  "sec_content",
-  "training_content",
+  "remarks",
   "amended_from"
  ],
  "fields": [
@@ -37,13 +40,15 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Topic",
+   "read_only": 1,
    "reqd": 1
   },
   {
    "fieldname": "scope",
    "fieldtype": "Link",
    "label": "Scope",
-   "options": "QM Training Scope"
+   "options": "QM Training Scope",
+   "read_only": 1
   },
   {
    "fieldname": "participants",
@@ -78,7 +83,8 @@
   {
    "fieldname": "training_content",
    "fieldtype": "Text Editor",
-   "label": "Training Content"
+   "label": "Training Content",
+   "read_only": 1
   },
   {
    "fieldname": "sec_date_location",
@@ -122,10 +128,28 @@
    "fieldname": "expiry_date",
    "fieldtype": "Date",
    "label": "Expiry Date"
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Text Editor",
+   "label": "Remarks"
+  },
+  {
+   "fieldname": "training_template",
+   "fieldtype": "Link",
+   "label": "Training Template",
+   "options": "QM Training Template",
+   "read_only": 1
+  },
+  {
+   "fieldname": "location",
+   "fieldtype": "Link",
+   "label": "Location",
+   "options": "Location"
   }
  ],
  "is_submittable": 1,
- "modified": "2026-10-07 14:22:08.664461",
+ "modified": "2026-10-09 13:48:59.497126",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Training Course",
