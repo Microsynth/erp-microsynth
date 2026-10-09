@@ -78,6 +78,9 @@ def get_competencies(filters):
 			)
 		""")
 		values["department"] = filters.get("department")
+	if filters.get("competency_scope"):
+		conditions.append("competency.scope = %(competency_scope)s")
+		values["competency_scope"] = filters.get("competency_scope")
 
 	return frappe.db.sql("""
 		SELECT competency.name, competency.title

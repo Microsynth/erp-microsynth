@@ -19,6 +19,12 @@ frappe.query_reports["Competency Matrix"] = {
 				const company = frappe.query_report.get_filter_value("company");
 				return { filters: company ? { company: company } : {} };
 			}
+		},
+		{
+			"fieldname": "competency_scope",
+			"label": __("Competency Scope"),
+			"fieldtype": "Link",
+			"options": "Competency Scope"
 		}
 	],
 	"formatter": function (value, row, column, data, default_formatter) {
