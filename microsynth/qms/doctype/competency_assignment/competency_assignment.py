@@ -69,14 +69,23 @@ def _has_signed_qm_training_record(trainee, qm_document_name):
     return bool(records)
 
 
-def _has_passed_training_course(trainee, training_course_name):
-    if not trainee or not training_course_name:
+def _has_passed_training_template(trainee, training_template_name):
+    if not trainee or not training_template_name:
+        return False
+    courses = frappe.get_all(
+        "QM Training Course",
+        filters={"training_template": training_template_name, "docstatus": 1},
+        fields=["name"],
+    )
+    course_names = [course.get("name") for course in courses]
+    if not course_names:
         return False
     participants = frappe.get_all(
         "QM Training Course Participant",
         filters=[
-            ["parent", "=", training_course_name],
+            ["parent", "in", course_names],
             ["parenttype", "=", "QM Training Course"],
+            ["parentfield", "=", "participants"],
             ["user", "=", trainee],
             ["outcome", "=", "Passed"],
         ],
@@ -107,10 +116,10 @@ def _competency_requirements_met(competency_name, trainee):
             return False
 
     if "Training" in prerequisite_types:
-        linked_courses = [row.training_course for row in (competency.trainings or []) if getattr(row, "training_course", None)]
-        if not linked_courses:
+        linked_templates = [row.training_template for row in (competency.trainings or []) if getattr(row, "training_template", None)]
+        if not linked_templates:
             return False
-        if any(not _has_passed_training_course(trainee, training_course) for training_course in linked_courses):
+        if any(not _has_passed_training_template(trainee, template) for template in linked_templates):
             return False
 
     return True
@@ -119,6 +128,12 @@ def _competency_requirements_met(competency_name, trainee):
 def update_competency_assignments_for_trainee(trainee, document_type=None, document_name=None):
     if not trainee:
         return
+
+    training_template = None
+    if document_type == "QM Training Course" and document_name:
+        training_template = frappe.db.get_value("QM Training Course", document_name, "training_template")
+        if not training_template:
+            return
 
     employee_name = frappe.db.get_value("Employee", {"user_id": trainee}, "name")
     if not employee_name:
@@ -156,8 +171,8 @@ def update_competency_assignments_for_trainee(trainee, document_type=None, docum
             if not any(_matches_versioned_document_name(document_name, linked_document) for linked_document in linked_documents):
                 continue
         elif document_type == "QM Training Course" and document_name:
-            linked_courses = [row.training_course for row in (competency.trainings or []) if getattr(row, "training_course", None)]
-            if document_name not in linked_courses:
+            linked_templates = [row.training_template for row in (competency.trainings or []) if getattr(row, "training_template", None)]
+            if training_template not in linked_templates:
                 continue
 
         if _competency_requirements_met(assignment.get("competency"), trainee):

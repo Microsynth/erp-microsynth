@@ -131,7 +131,6 @@ def validate_linked_qm_documents(doc):
             "qm_document": qm_document_name,
             "status": qm_document_status or _("not found"),
         })
-
     if invalid_rows:
         details = "<br>".join(
             _("Row {0}: QM Document {1} is not valid (current status: {2}) and no valid version could be found.").format(
@@ -148,7 +147,6 @@ def validate_linked_qm_documents(doc):
             ).format(details),
             title=_("Invalid QM Document Version"),
         )
-
     if replacements:
         details = "<br>".join(
             _("Row {0}: replaced QM Document {1} with valid version {2}.").format(
@@ -192,14 +190,14 @@ def validate_prerequisite_types(doc):
             title=_("Duplicate Prerequisite Type"),
         )
     linked_qm_documents = [row.qm_document for row in (doc.qm_documents or []) if getattr(row, "qm_document", None)]
-    linked_training_courses = [
-        row.training_course for row in (doc.trainings or []) if getattr(row, "training_course", None)
+    linked_training_templates = [
+        row.training_template for row in (doc.trainings or []) if getattr(row, "training_template", None)
     ]
     if linked_qm_documents and "QM Document" not in seen_prerequisites:
         doc.append("prerequisite_types", {"competency_prerequisite": "QM Document"})
         seen_prerequisites.add("QM Document")
 
-    if linked_training_courses and "Training" not in seen_prerequisites:
+    if linked_training_templates and "Training" not in seen_prerequisites:
         doc.append("prerequisite_types", {"competency_prerequisite": "Training"})
         seen_prerequisites.add("Training")
 
@@ -215,10 +213,10 @@ def validate_prerequisite_types(doc):
             ),
             title=_("Orphaned QM Document Prerequisite"),
         )
-    if "Training" in seen_prerequisites and not linked_training_courses:
+    if "Training" in seen_prerequisites and not linked_training_templates:
         frappe.throw(
             _(
-                "The Prerequisite Type <b>Training</b> is set, but no QM Training Course is linked. Please link at least one QM Training Course or remove the Prerequisite Type <b>Training</b>."
+                "The Prerequisite Type <b>Training</b> is set, but no QM Training Template is linked. Please link at least one QM Training Template or remove the Prerequisite Type <b>Training</b>."
             ),
             title=_("Orphaned Training Prerequisite"),
         )

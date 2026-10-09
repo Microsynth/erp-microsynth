@@ -100,11 +100,11 @@
    "fieldname": "trainings",
    "fieldtype": "Table",
    "label": "Trainings",
-   "options": "QM Training Course Link"
+   "options": "QM Training Template Link"
   }
  ],
  "is_submittable": 1,
- "modified": "2026-10-07 14:52:11.330880",
+ "modified": "2026-10-09 14:05:26.537894",
  "modified_by": "Administrator",
  "module": "QMS",
  "name": "Competency",
