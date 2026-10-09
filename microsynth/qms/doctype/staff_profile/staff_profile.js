@@ -303,6 +303,32 @@ function open_competency_instruction_dialog(frm, cdt, cdn) {
 }
 
 
+function refresh_competency_assignment_row(frm, assignment_name, fallback_instruction_name) {
+    if (!frm || !assignment_name) {
+        return;
+    }
+    frappe.call({
+        'method': 'microsynth.qms.doctype.competency_instruction.competency_instruction.get_assignment_refresh_data',
+        'args': {
+            'competency_assignment': assignment_name
+        },
+        'callback': function(response) {
+            const updated_row = response && response.message;
+            const local_row = locals['Competency Assignment'] && locals['Competency Assignment'][assignment_name];
+            if (!local_row) {
+                return;
+            }
+            local_row.status = updated_row && updated_row.status ? updated_row.status : local_row.status;
+            local_row.competency_instruction = (
+                updated_row && updated_row.competency_instruction
+            ) || fallback_instruction_name || local_row.competency_instruction || '';
+
+            frm.refresh_field('competencies');
+        }
+    });
+}
+
+
 function show_instruction_prompt(trainee_default, row, frm) {
     frappe.call({
         'method': 'frappe.client.get',
@@ -375,11 +401,7 @@ function show_instruction_prompt(trainee_default, row, frm) {
                             });
                             return;
                         }
-                        row.competency_instruction = name;
-                        if (frm && frm.fields_dict && frm.fields_dict.competencies) {
-                            frm.fields_dict.competencies.grid.refresh();
-                        }
-                        frappe.set_route('Form', 'Competency Instruction', name);
+                        refresh_competency_assignment_row(frm, row.name, name);
                     }
                 });
             }, __('Confirm Instruction'), __('Submit'));

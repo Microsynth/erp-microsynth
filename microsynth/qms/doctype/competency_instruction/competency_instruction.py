@@ -26,6 +26,50 @@ class CompetencyInstruction(Document):
 
 		update_competency_assignments_for_trainee(trainee_user)
 
+	def on_cancel(self):
+		_clear_draft_assignment_links_for_instruction(self.name)
+
+
+def _update_assignment_instruction_link(assignment_name, instruction_name):
+	if not assignment_name:
+		return
+
+	assignment = frappe.get_doc("Competency Assignment", assignment_name)
+	assignment.competency_instruction = instruction_name or ""
+	assignment.db_update()
+
+
+def _clear_draft_assignment_links_for_instruction(instruction_name):
+	if not instruction_name:
+		return
+
+	draft_staff_profiles = frappe.get_all(
+		"Staff Profile",
+		filters={
+			"docstatus": 0,
+			"status": ["in", ["", "Draft"]],
+		},
+		fields=["name"],
+	)
+	if not draft_staff_profiles:
+		return
+
+	draft_profile_names = [row.get("name") for row in draft_staff_profiles if row.get("name")]
+	if not draft_profile_names:
+		return
+
+	linked_assignments = frappe.get_all(
+		"Competency Assignment",
+		filters={
+			"parenttype": "Staff Profile",
+			"parent": ["in", draft_profile_names],
+			"competency_instruction": instruction_name,
+		},
+		fields=["name"],
+	)
+	for assignment in linked_assignments:
+		_update_assignment_instruction_link(assignment.get("name"), "")
+
 
 @frappe.whitelist()
 def has_submitted_instruction_for_assignment(competency_assignment):
@@ -60,6 +104,22 @@ def get_staff_profile_parent_for_assignment(competency_assignment):
 
 
 @frappe.whitelist()
+def get_assignment_refresh_data(competency_assignment):
+	if not competency_assignment:
+		return {}
+	assignment = frappe.get_doc("Competency Assignment", competency_assignment)
+	if not assignment:
+		return {}
+	if assignment.parenttype and assignment.parent:
+		parent = frappe.get_doc(assignment.parenttype, assignment.parent)
+		parent.check_permission("read")
+	return {
+		"status": assignment.status,
+		"competency_instruction": assignment.competency_instruction,
+	}
+
+
+@frappe.whitelist()
 def create_and_submit_instruction(instructor, date, trainee, competency_assignment, remarks=None):
 	if not instructor or not date or not trainee or not competency_assignment:
 		frappe.throw("Instructor, date, trainee and competency assignment are required.")
@@ -78,5 +138,5 @@ def create_and_submit_instruction(instructor, date, trainee, competency_assignme
 	doc.insert(ignore_permissions=True)
 	doc.submit()
 
-	frappe.db.set_value("Competency Assignment", competency_assignment, "competency_instruction", doc.name)
+	_update_assignment_instruction_link(competency_assignment, doc.name)
 	return doc.name
