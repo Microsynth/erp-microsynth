@@ -6,12 +6,41 @@ from __future__ import unicode_literals
 
 import frappe
 from frappe.model.document import Document
+from frappe.utils import now_datetime
 
 from microsynth.qms.versioning import split_versioned_name
 
 
 class CompetencyAssignment(Document):
-    pass
+    def validate(self):
+        _set_competency_achieved_on(self)
+
+
+def _set_competency_achieved_on(assignment):
+    if getattr(assignment, "status", None) != "Achieved":
+        return
+
+    previous_status = None
+    if getattr(assignment, "name", None) and not getattr(assignment, "__islocal", False):
+        previous_status = frappe.db.get_value("Competency Assignment", assignment.name, "status")
+
+    if previous_status == "Achieved" or getattr(assignment, "competency_achieved_on", None):
+        return
+
+    assignment.competency_achieved_on = now_datetime()
+
+
+def _mark_assignment_achieved(assignment_name):
+    if not assignment_name:
+        return
+
+    assignment = frappe.get_doc("Competency Assignment", assignment_name)
+    if assignment.status == "Achieved":
+        return
+
+    assignment.status = "Achieved"
+    _set_competency_achieved_on(assignment)
+    assignment.db_update()
 
 
 def _matches_versioned_document_name(qm_document_name, candidate_name):
@@ -132,4 +161,4 @@ def update_competency_assignments_for_trainee(trainee, document_type=None, docum
                 continue
 
         if _competency_requirements_met(assignment.get("competency"), trainee):
-            frappe.db.set_value("Competency Assignment", assignment.get("name"), "status", "Achieved", update_modified=False)
+            _mark_assignment_achieved(assignment.get("name"))

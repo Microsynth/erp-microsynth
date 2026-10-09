@@ -11,6 +11,7 @@
   "level",
   "instruction",
   "competency_instruction",
+  "competency_achieved_on",
   "remarks"
  ],
  "fields": [
@@ -82,10 +83,17 @@
    "label": "Instruction",
    "options": "Competency Instruction",
    "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "competency_achieved_on",
+   "fieldtype": "Datetime",
+   "label": "Competency Achieved On",
+   "read_only": 1
   }
  ],
  "istable": 1,
- "modified": "2026-10-08 13:59:28.302242",
+ "modified": "2026-10-09 12:21:58.103879",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "Competency Assignment",

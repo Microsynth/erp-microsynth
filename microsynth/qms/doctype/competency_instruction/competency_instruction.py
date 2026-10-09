@@ -36,6 +36,8 @@ def _update_assignment_instruction_link(assignment_name, instruction_name):
 
 	assignment = frappe.get_doc("Competency Assignment", assignment_name)
 	assignment.competency_instruction = instruction_name or ""
+	if not instruction_name:
+		assignment.status = "Planned"
 	assignment.db_update()
 
 
