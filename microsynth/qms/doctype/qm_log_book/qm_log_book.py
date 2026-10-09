@@ -49,10 +49,8 @@ class QMLogBook(Document):
             self.save()
             frappe.db.commit()
 
-    def on_cancel(self):
+    def before_cancel(self):
         self.status = "Cancelled"
-        self.save()
-        frappe.db.commit()
 
 
 def get_next_due_date(log_book_entry_id):
