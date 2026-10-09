@@ -30,10 +30,46 @@ function set_valid_competency_query(frm) {
 }
 
 function validate_template_and_open_dialog(frm) {
+	frappe.prompt(
+		[
+			{
+				fieldname: 'employee',
+				fieldtype: 'Link',
+				label: __('Employee'),
+				options: 'Employee',
+				reqd: 1
+			}
+		],
+		function(values) {
+			if (!values.employee) {
+				frappe.throw(__('Employee is mandatory.'));
+			}
+
+			validate_staff_profile_template(frm.doc.name, function(validatedTemplateName) {
+				frappe.call({
+					'method': 'microsynth.qms.doctype.staff_profile_template.staff_profile_template.create_staff_profile_from_template',
+					'args': {
+						'template_name': validatedTemplateName,
+						'employee': values.employee
+					},
+					'callback': function(create_response) {
+						if (create_response.message) {
+							frappe.set_route('Form', 'Staff Profile', create_response.message);
+						}
+					}
+				});
+			});
+		},
+		__('Create Staff Profile'),
+		__('Create')
+	);
+}
+
+function validate_staff_profile_template(template_name, callback) {
 	frappe.call({
 		'method': 'microsynth.qms.doctype.staff_profile_template.staff_profile_template.validate_template_for_staff_profile',
 		'args': {
-			'template_name': frm.doc.name
+			'template_name': template_name
 		},
 		'callback': function(response) {
 			const result = response.message || {};
@@ -46,37 +82,7 @@ function validate_template_and_open_dialog(frm) {
 				return;
 			}
 
-			frappe.prompt(
-				[
-					{
-						fieldname: 'employee',
-						fieldtype: 'Link',
-						label: __('Employee'),
-						options: 'Employee',
-						reqd: 1
-					}
-				],
-				function(values) {
-					if (!values.employee) {
-						frappe.throw(__('Employee is mandatory.'));
-					}
-
-					frappe.call({
-						'method': 'microsynth.qms.doctype.staff_profile_template.staff_profile_template.create_staff_profile_from_template',
-						'args': {
-							'template_name': frm.doc.name,
-							'employee': values.employee
-						},
-						'callback': function(create_response) {
-							if (create_response.message) {
-								frappe.set_route('Form', 'Staff Profile', create_response.message);
-							}
-						}
-					});
-				},
-				__('Create Staff Profile'),
-				__('Create')
-			);
+			callback(template_name);
 		}
 	});
 }

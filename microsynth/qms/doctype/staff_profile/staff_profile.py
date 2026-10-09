@@ -10,17 +10,69 @@ from frappe.model.document import Document
 from frappe.utils import cint, nowdate
 
 from microsynth.qms.doctype.competency_assignment.competency_assignment import update_competency_assignments_for_trainee
+from microsynth.qms.doctype.staff_profile_template.staff_profile_template import (
+    _get_validated_staff_profile_template,
+    get_staff_profile_template_competency_values,
+)
 from microsynth.qms.signing import sign as signing_sign
 from microsynth.qms.versioning import get_newer_active_versions, get_next_suffix, get_versioned_documents
+
+
+def _is_draft_staff_profile(profile):
+    return profile.docstatus == 0 and profile.status in (None, "", "Draft")
+
+
+def _get_staff_profile_template_details_for_employee(employee):
+    if not employee:
+        return {}
+
+    employee_doc = frappe.get_doc("Employee", employee)
+    employee_doc.check_permission("read")
+
+    job_applicant_name = employee_doc.get("job_applicant")
+    if not job_applicant_name:
+        return {}
+    try:
+        job_applicant = frappe.get_doc("Job Applicant", job_applicant_name)
+        job_applicant.check_permission("read")
+
+        job_opening_name = job_applicant.get("job_title")
+        if not job_opening_name:
+            return {}
+
+        job_opening = frappe.get_doc("Job Opening", job_opening_name)
+        job_opening.check_permission("read")
+
+        template_name = job_opening.get("staff_profile_template")
+        if not template_name:
+            return {}
+
+        template = frappe.get_doc("Staff Profile Template", template_name)
+        template.check_permission("read")
+    except (frappe.DoesNotExistError, frappe.PermissionError):
+        return {}
+
+    if getattr(template, "disabled", False):
+        return {}
+
+    return {
+        "template_name": template.name,
+        "template_title": template.get("template_title") or template.name,
+    }
+
+
+def _get_writable_draft_staff_profile(docname):
+    profile = frappe.get_doc("Staff Profile", docname)
+    profile.check_permission("write")
+    if not _is_draft_staff_profile(profile):
+        frappe.throw(_("Template competencies can only be added to a saved Staff Profile draft."))
+    return profile
 
 
 @frappe.whitelist()
 def get_department_competencies(docname, employee=None):
     """Return readable, valid competencies for a saved draft's employee departments."""
-    profile = frappe.get_doc("Staff Profile", docname)
-    profile.check_permission("write")
-    if profile.docstatus != 0 or profile.status not in (None, "", "Draft"):
-        frappe.throw(_("Department competencies can only be added to a saved Staff Profile draft."))
+    profile = _get_writable_draft_staff_profile(docname)
 
     # Use the current form value if the employee has been changed without saving.
     employee = employee or profile.employee
@@ -57,6 +109,41 @@ def get_department_competencies(docname, employee=None):
         order_by="title asc, name asc",
         limit_page_length=0,
     )
+
+
+@frappe.whitelist()
+def get_linked_staff_profile_template(docname, employee=None):
+    profile = _get_writable_draft_staff_profile(docname)
+
+    employee = employee or profile.employee
+    if not employee:
+        return {}
+
+    return _get_staff_profile_template_details_for_employee(employee)
+
+
+@frappe.whitelist()
+def get_linked_template_competencies(docname, employee=None, template_name=None):
+    profile = _get_writable_draft_staff_profile(docname)
+
+    employee = employee or profile.employee
+    if not employee:
+        frappe.throw(_("Please select an Employee first."))
+
+    template_details = _get_staff_profile_template_details_for_employee(employee)
+    linked_template_name = template_details.get("template_name")
+    if not linked_template_name:
+        frappe.throw(_("No Staff Profile Template is linked to this employee via Job Applicant and Job Opening."))
+
+    if template_name and template_name != linked_template_name:
+        frappe.throw(_("The linked Staff Profile Template has changed. Please reopen the Staff Profile."))
+
+    template = _get_validated_staff_profile_template(linked_template_name)
+    return {
+        "template_name": template.name,
+        "template_title": template.get("template_title") or template.name,
+        "competencies": get_staff_profile_template_competency_values(template),
+    }
 
 
 @frappe.whitelist()

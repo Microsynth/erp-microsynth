@@ -21,6 +21,7 @@ frappe.ui.form.on('Staff Profile', {
             frm.add_custom_button(__('Add Department competencies'), function() {
                 add_department_competencies(frm);
             });
+            add_template_competencies_button(frm);
         }
         if (frm.doc.docstatus === 1 && frm.doc.status !== "To Sign") {
             frm.page.clear_primary_action();
@@ -154,6 +155,103 @@ function add_department_competencies(frm) {
 }
 
 
+function add_template_competencies_button(frm) {
+    if (!frm.doc.employee) {
+        return;
+    }
+    const employee = frm.doc.employee;
+    frappe.call({
+        'method': 'microsynth.qms.doctype.staff_profile.staff_profile.get_linked_staff_profile_template',
+        'args': {
+            'docname': frm.doc.name,
+            'employee': employee
+        },
+        'callback': function(response) {
+            if (frm.doc.employee !== employee || frm.is_new() || frm.doc.docstatus !== 0 || (frm.doc.status && frm.doc.status !== 'Draft')) {
+                return;
+            }
+            const template = response.message || {};
+            if (!template.template_name) {
+                return;
+            }
+            frm.add_custom_button(__('Add Template competencies'), function() {
+                add_template_competencies(frm, template.template_name);
+            });
+        }
+    });
+}
+
+
+function add_template_competencies(frm, template_name) {
+    if (!frm.doc.employee) {
+        frappe.msgprint(__('Please select an Employee first.'));
+        return;
+    }
+    const employee = frm.doc.employee;
+    validate_staff_profile_template(template_name, function(validatedTemplateName) {
+        frappe.call({
+            'method': 'microsynth.qms.doctype.staff_profile.staff_profile.get_linked_template_competencies',
+            'args': {
+                'docname': frm.doc.name,
+                'employee': employee,
+                'template_name': validatedTemplateName
+            },
+            'callback': function(response) {
+                if (frm.doc.employee !== employee || frm.doc.docstatus !== 0 || (frm.doc.status && frm.doc.status !== 'Draft')) {
+                    frappe.msgprint(__('The Staff Profile has changed. Please reopen the template competency action.'));
+                    return;
+                }
+                const data = response.message || {};
+                const competencies = data.competencies || [];
+                const existing = new Set((frm.doc.competencies || []).map(row => row.competency));
+                let added = 0;
+
+                competencies.forEach(function(competency) {
+                    if (!competency.competency || existing.has(competency.competency)) {
+                        return;
+                    }
+
+                    frm.add_child('competencies', competency);
+                    existing.add(competency.competency);
+                    added += 1;
+                });
+                if (!added) {
+                    frappe.msgprint(
+                        __('No additional valid competencies are available from Staff Profile Template {0}.', [data.template_title || data.template_name || template_name])
+                    );
+                    return;
+                }
+                frm.dirty();
+                frm.refresh_field('competencies');
+                sync_competency_instruction_buttons(frm);
+            }
+        });
+    });
+}
+
+
+function validate_staff_profile_template(template_name, callback) {
+    frappe.call({
+        'method': 'microsynth.qms.doctype.staff_profile_template.staff_profile_template.validate_template_for_staff_profile',
+        'args': {
+            'template_name': template_name
+        },
+        'callback': function(response) {
+            const result = response.message || {};
+            if (!result.valid) {
+                frappe.msgprint({
+                    title: __('Invalid Competencies'),
+                    message: result.message || __('This template has invalid competencies.'),
+                    indicator: 'red'
+                });
+                return;
+            }
+            callback(template_name);
+        }
+    });
+}
+
+
 function bind_competency_instruction_grid_click(frm) {
     const grid = frm.fields_dict && frm.fields_dict.competencies && frm.fields_dict.competencies.grid;
     if (!grid) {
@@ -259,15 +357,15 @@ function show_instruction_prompt(trainee_default, row, frm) {
                 }
             ], function(values) {
                 frappe.call({
-                    method: 'microsynth.qms.doctype.competency_instruction.competency_instruction.create_and_submit_instruction',
-                    args: {
-                        instructor: values.instructor,
-                        date: values.date,
-                        trainee: values.trainee,
-                        competency_assignment: row.name,
-                        remarks: values.remarks || ''
+                    'method': 'microsynth.qms.doctype.competency_instruction.competency_instruction.create_and_submit_instruction',
+                    'args': {
+                        'instructor': values.instructor,
+                        'date': values.date,
+                        'trainee': values.trainee,
+                        'competency_assignment': row.name,
+                        'remarks': values.remarks || ''
                     },
-                    callback: function(response) {
+                    'callback': function(response) {
                         const name = response && response.message;
                         if (!name) {
                             frappe.msgprint({
