@@ -149,14 +149,57 @@ def get_data():
             ]
         },
         {
-            "label": _("Training Courses"),
+            "label": _("Training"),
             "icon": "octicon octicon-file-submodule",
             "items": [
+                    {
+                        "type": "doctype",
+                        "name": "QM Training Template",
+                        "label": _("Training Template"),
+                        "description": _("Training Template")
+                    },
                     {
                        "type": "doctype",
                        "name": "QM Training Course",
                        "label": _("Training Course"),
                        "description": _("Training Course")
+                    }
+            ]
+        },
+        {
+            "label": _("Competencies & Staff Profiles"),
+            "icon": "octicon octicon-file-submodule",
+            "items": [
+                    {
+                       "type": "doctype",
+                       "name": "Competency",
+                       "label": _("Competency"),
+                       "description": _("Competency")
+                    },
+                    {
+                        "type": "doctype",
+                        "name": "Competency Scope",
+                        "label": _("Competency Scope"),
+                        "description": _("Competency Scope")
+                    },
+                    {
+                        "type": "doctype",
+                        "name": "Staff Profile Template",
+                        "label": _("Staff Profile Template"),
+                        "description": _("Staff Profile Template")
+                    },
+                    {
+                       "type": "doctype",
+                       "name": "Staff Profile",
+                       "label": _("Staff Profile"),
+                       "description": _("Staff Profile")
+                    },
+                    {
+                        "type": "report",
+                        "name": "Competency Matrix",
+                        "label": _("Competency Matrix"),
+                        "description": _("Competency Matrix"),
+                        "is_query_report": True
                     }
             ]
         },
