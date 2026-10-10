@@ -21,6 +21,173 @@ class QMComputerisedSystem(Document):
         # Default naming for freshly created QMCS records.
         self.name = make_autoname(self.naming_series or "QMCS-.#####")
 
+    def validate(self):
+        if self._has_administrative_override():
+            return
+
+        if self.status == "Unapproved" and not self._can_edit_unapproved():
+            frappe.throw(
+                "Only the process owner, the responsible person, or QAU can edit Unapproved QM Computerised Systems."
+            )
+        old_doc = self.get_doc_before_save()
+        if not old_doc:
+            return
+
+        if self.status != old_doc.status:
+            self._validate_status_transition(old_doc)
+
+        self._validate_field_permissions(old_doc)
+
+
+    def _has_administrative_override(self):
+        user = frappe.session.user
+        roles = set(frappe.get_roles(user))
+        return user == "Administrator" or "System Manager" in roles
+
+
+    def _can_edit_unapproved(self):
+        user = frappe.session.user
+        roles = set(frappe.get_roles(user))
+
+        if self._has_administrative_override():
+            return True
+
+        if "QAU" in roles:
+            return True
+
+        if self.responsible_user and self.responsible_user == user:
+            return True
+
+        if self.qm_process and self.company:
+            owners = frappe.db.get_all(
+                "QM Process Owner",
+                filters={"qm_process": self.qm_process, "company": self.company},
+                fields=["process_owner"]
+            )
+            return user in {owner.get("process_owner") for owner in owners if owner.get("process_owner")}
+
+        return False
+
+
+    def _is_qau(self):
+        return "QAU" in set(frappe.get_roles(frappe.session.user))
+
+
+    def _is_owner_or_responsible_user(self):
+        user = frappe.session.user
+        if self.responsible_user and self.responsible_user == user:
+            return True
+
+        if self.qm_process and self.company:
+            owners = frappe.db.get_all(
+                "QM Process Owner",
+                filters={"qm_process": self.qm_process, "company": self.company},
+                fields=["process_owner"]
+            )
+            return user in {owner.get("process_owner") for owner in owners if owner.get("process_owner")}
+
+        return False
+
+
+    def _get_locked_fields_for_validated_owner(self):
+        return {
+            "cs_name",
+            "description",
+            "qm_process",
+            "company",
+            "gamp5_class",
+            "regulatory_classification",
+            "cs_type",
+            "primary_version_control_method",
+            "version",
+            "atr_frequency",
+        }
+
+
+    def _get_fields_in_scope(self):
+        return {
+            "cs_name",
+            "description",
+            "qm_process",
+            "company",
+            "gamp5_class",
+            "regulatory_classification",
+            "cs_type",
+            "primary_version_control_method",
+            "version",
+            "responsible_user",
+            "atr_frequency",
+            "cs_source",
+        }
+
+
+    def _get_allowed_status_transitions(self):
+        transitions = set()
+        is_qau = self._is_qau()
+        is_owner_or_responsible_user = self._is_owner_or_responsible_user()
+        is_gmp = self.regulatory_classification == "GMP"
+
+        if is_qau:
+            transitions.update({
+                ("Unapproved", "Validated"),
+                ("Validated", "Decommissioned"),
+                ("Decommissioned", "Validated"),
+                ("Validated", "Unapproved"),
+            })
+        if is_owner_or_responsible_user and not is_gmp:
+            transitions.update({
+                ("Unapproved", "Validated"),
+                ("Validated", "Decommissioned"),
+                ("Validated", "Unapproved"),
+            })
+        return transitions
+
+
+    def _validate_status_transition(self, old_doc):
+        allowed_transitions = self._get_allowed_status_transitions()
+        transition = (old_doc.status, self.status)
+
+        if transition not in allowed_transitions:
+            frappe.throw(
+                "This status transition is not allowed for the current user and classification."
+            )
+
+
+    def _validate_field_permissions(self, old_doc):
+        changed_fields = {
+            field_name
+            for field_name in self._get_fields_in_scope()
+            if getattr(self, field_name) != getattr(old_doc, field_name)
+        }
+        if not changed_fields:
+            return
+
+        if self.status == "Unapproved":
+            if not self._can_edit_unapproved():
+                frappe.throw(
+                    "Only the process owner, the responsible person, or QAU can edit Unapproved QM Computerised Systems."
+                )
+            return
+
+        if self.status == "Validated":
+            if self._is_qau():
+                if "version" in changed_fields:
+                    frappe.throw("Version cannot be edited in Validated status.")
+                return
+
+            if self._is_owner_or_responsible_user():
+                locked_fields = self._get_locked_fields_for_validated_owner()
+                blocked_fields = changed_fields.intersection(locked_fields)
+                if blocked_fields:
+                    frappe.throw("Some fields cannot be edited in Validated status for this user.")
+                return
+
+            frappe.throw("This record cannot be edited in Validated status by the current user.")
+
+        if self.status == "Decommissioned":
+            frappe.throw("This record cannot be edited in Decommissioned status.")
+
+
     def get_advanced_dashboard(self):
         html = frappe.render_template(
             "microsynth/qms/doctype/qm_computerised_system/advanced_dashboard.html",
@@ -131,6 +298,14 @@ def create_logbook_entry(qm_computerised_system, entry_type, description, date):
     logbook_entry.insert()
     logbook_entry.submit()
     return get_url_to_form(logbook_entry.doctype, logbook_entry.name)
+
+
+@frappe.whitelist()
+def set_status(doc, status):
+    qmcs = frappe.get_doc("QM Computerised System", doc)
+    qmcs.status = status
+    qmcs.save()
+    frappe.db.commit()
 
 
 @frappe.whitelist()
@@ -255,7 +430,7 @@ def import_qm_computerised_systems(file_path, expected_line_length=15, verbose=F
     Primary Version Control Method, QM Process, Status, Description,
     Version, ATR frequency, Source, Company, Responsible Person, QM Documents
 
-    bench execute microsynth.qms.doctype.qm_computerised_system.qm_computerised_system.import_qm_computerised_systems --kwargs "{'file_path': '/home/libracore/Desktop/260911_TestImport_QM_CS_v01.csv', 'expected_line_length': 15, 'verbose': True, 'dry_run': True}"
+    sudo bench --site erp.microsynth.local execute microsynth.qms.doctype.qm_computerised_system.qm_computerised_system.import_qm_computerised_systems --kwargs "{'file_path': '/mnt/erp_share/Migration/QM_Computerised_Systems/260924_QM_CS_Validation_v01.csv', 'expected_line_length': 15, 'verbose': True, 'dry_run': True}"
     """
     def clean(value):
         if value is None:

@@ -200,7 +200,7 @@ function open_material_request_dialog(selected, frm) {
             { fieldtype: 'Data', label: __('Supplier'), fieldname: 'supplier', read_only: 1, default: selected.supplier },
             { fieldtype: 'Int', label: __('Quantity'), fieldname: 'qty', reqd: 1, default: frm.doc.qty, min: 1 },
             { fieldtype: 'Link', label: __('Currency'), fieldname: 'currency', options: 'Currency', default: frm.doc.currency || '' },
-            { fieldtype: 'Date', label: __('Required By'), fieldname: 'schedule_date', default: frm.doc.schedule_date, reqd: 1 },
+            { fieldtype: 'Date', label: __('Required By'), fieldname: 'schedule_date', reqd: 1 },
             { fieldtype: 'Column Break' },
             { fieldtype: 'Data', label: __('Supplier Item Code'), fieldname: 'supplier_part_no', read_only: 1, default: selected.supplier_part_no },
             { fieldtype: 'Data', label: __('Supplier Name'), fieldname: 'supplier_name', read_only: 1, default: selected.supplier_name },

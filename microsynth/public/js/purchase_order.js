@@ -172,7 +172,8 @@ frappe.ui.form.on('Purchase Order', {
                     if (data.adds && data.adds.length) {
                         message += "<strong>Prices to Add:</strong><ul>";
                         data.adds.forEach(item => {
-                            message += `<li>${item.item_code} (${item.item_name}) with minimum qty ${item.min_qty}: ${item.rate} ${frm.doc.currency}</li>`;
+                            const uom = item.uom ? ` (${item.uom})` : '';
+                            message += `<li>${item.item_code} (${item.item_name})${uom} with minimum qty ${item.min_qty}: ${item.rate} ${frm.doc.currency}</li>`;
                         });
                         message += "</ul>";
                     }
@@ -180,7 +181,8 @@ frappe.ui.form.on('Purchase Order', {
                     if (data.updates && data.updates.length) {
                         message += "<strong>Prices to Update:</strong><ul>";
                         data.updates.forEach(item => {
-                            message += `<li>${item.item_code} (${item.item_name}) with minimum qty ${item.min_qty}: ${item.current_rate} ${frm.doc.currency} → ${item.rate} ${frm.doc.currency} (${item.rate_diff_pct} %)</li>`;
+                            const uom = item.uom ? ` (${item.uom})` : '';
+                            message += `<li>${item.item_code} (${item.item_name})${uom} with minimum qty ${item.min_qty}: ${item.current_rate} ${frm.doc.currency} → ${item.rate} ${frm.doc.currency} (${item.rate_diff_pct} %)</li>`;
                         });
                         message += "</ul>";
                     }

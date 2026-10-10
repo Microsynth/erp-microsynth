@@ -460,23 +460,27 @@ def employee_before_save(self, method):
         return
 
     if "HR User Subsidiary" in user_roles:
-        # Create User Permission for all Employees of the same company
+        if not self.company:
+            return
+        # Restrict only Employee access by company so that other doctypes remain unaffected.
         existing_permission = frappe.db.exists(
             "User Permission",
             {
                 "user": self.user_id,
-                "allow": "Employee",
+                "allow": "Company",
                 "for_value": self.company,
-                "apply_to_all_doctypes": 1
+                "applicable_for": "Employee",
+                "apply_to_all_doctypes": 0
             }
         )
         if not existing_permission:
             permission = frappe.get_doc({
                 "doctype": "User Permission",
                 "user": self.user_id,
-                "allow": "Employee",
+                "allow": "Company",
                 "for_value": self.company,
-                "apply_to_all_doctypes": 1
+                "applicable_for": "Employee",
+                "apply_to_all_doctypes": 0
             })
             permission.insert(ignore_permissions=True)
     else:

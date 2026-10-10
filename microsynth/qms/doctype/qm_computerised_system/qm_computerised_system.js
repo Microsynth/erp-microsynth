@@ -244,8 +244,27 @@ function add_custom_buttons(frm, isProcessOwner) {
         const color = (to === 'Validated') ? 'btn-success' : 'btn-danger';
 
         frm.add_custom_button(__(label), function() {
-            frm.set_value('status', to);
-            frm.save()
+            if (frm.is_dirty()) {
+                frappe.msgprint(
+                    __('There are unsaved changes. Please Save before clicking {0}.', [__(label)])
+                );
+                return;
+            }
+            frappe.call({
+                'method': 'microsynth.qms.doctype.qm_computerised_system.qm_computerised_system.set_status',
+                'freeze': true,
+                'freeze_message': __('Updating status...'),
+                'args': {
+                    'doc': frm.doc.name,
+                    'status': to
+                },
+                'callback': function(r) {
+                    if (r.exc) {
+                        return;
+                    }
+                    frm.reload_doc();
+                }
+            });
         }).addClass(color);
     });
     // Add custom buttons for version update and Create Log Book entry only if the status is 'Validated'
@@ -383,6 +402,17 @@ function apply_field_permissions(frm, isProcessOwner) {
     // Start from unlocked, then apply matrix-based locks.
     unlock_fields(frm, fields_in_scope);
 
+    // New records must stay editable until process/responsibility context exists.
+    if (frm.doc.__islocal) {
+        return;
+    }
+
+    // Unapproved: only QAU, process owner, or responsible user may edit these fields.
+    if (status === 'Unapproved' && !is_qau && !is_owner_or_responsible_user) {
+        lock_fields(frm, fields_in_scope);
+        return;
+    }
+
     // Decommissioned: all listed fields are locked for all roles.
     if (status === 'Decommissioned') {
         lock_fields(frm, fields_in_scope);
@@ -408,7 +438,8 @@ function apply_field_permissions(frm, isProcessOwner) {
                 'regulatory_classification',
                 'cs_type',
                 'primary_version_control_method',
-                'version'
+                'version',
+                'atr_frequency'
             ]);
             return;
         }

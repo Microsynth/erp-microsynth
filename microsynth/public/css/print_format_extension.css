@@ -1,0 +1,40 @@
+.print-format .tacenter {
+    text-align: center;
+}
+
+.print-format .taright {
+    text-align: right;
+}
+
+.print-format .period {
+    text-align: left;
+}
+
+.print-format .amount {
+    text-align: right;
+}
+
+.print-format .btop {
+    border-top: 1px solid silver;
+}
+
+.print-format .bbot {
+    border-bottom: 1px solid silver;
+}
+
+.print-format .fleft {
+    float: left;
+}
+
+.print-format .fright {
+    float: right;
+}
+
+.print-format td {
+    padding-left: 0px !important;
+}
+
+.print-format #head {
+    width: 100%;
+    font-size: 16px;
+}

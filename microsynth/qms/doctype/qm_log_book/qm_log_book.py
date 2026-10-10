@@ -49,10 +49,8 @@ class QMLogBook(Document):
             self.save()
             frappe.db.commit()
 
-    def on_cancel(self):
+    def before_cancel(self):
         self.status = "Cancelled"
-        self.save()
-        frappe.db.commit()
 
 
 def get_next_due_date(log_book_entry_id):
@@ -264,7 +262,7 @@ def safe_join_path(base, *paths):
 
 def import_log_book_entries_from_file(path, BASE_PATH=None, verbose=False, print_label=False):
     """
-    bench execute microsynth.qms.doctype.qm_log_book.qm_log_book.import_log_book_entries_from_file --kwargs "{'path': '/mnt/erp_share/Migration/QM_Instruments/260612_Kühlgeräte_Log_Books_v05.txt', 'verbose': True, 'print_label': False}"
+    sudo bench --site erp-test.microsynth.local execute microsynth.qms.doctype.qm_log_book.qm_log_book.import_log_book_entries_from_file --kwargs "{'path': '/mnt/erp_share/Migration/QM_Computerised_Systems/260929_LogBookEntries_QM_CS.txt', 'verbose': True, 'print_label': False}"
     """
 
     def _attach_file(doc, path):
@@ -281,6 +279,19 @@ def import_log_book_entries_from_file(path, BASE_PATH=None, verbose=False, print
     def _parse_date(val):
         return datetime.strptime(val.strip(), "%d.%m.%Y").date()
 
+    def _resolve_linked_doctype(record_id):
+        instrument_exists = frappe.db.exists("QM Instrument", record_id)
+        computerised_system_exists = frappe.db.exists("QM Computerised System", record_id)
+
+        if instrument_exists and computerised_system_exists:
+            raise Exception(f"Record '{record_id}' exists as both QM Instrument and QM Computerised System")
+        if instrument_exists:
+            return "QM Instrument"
+        if computerised_system_exists:
+            return "QM Computerised System"
+
+        raise Exception(f"No QM Instrument or QM Computerised System found for '{record_id}'")
+
     with open(path, "r", encoding="utf-8") as f:
         lines = [l.strip() for l in f if l.strip()]
 
@@ -293,12 +304,11 @@ def import_log_book_entries_from_file(path, BASE_PATH=None, verbose=False, print
         if len(parts) != 7:
             raise Exception(f"Invalid row: {line}")
 
-        instrument_id, date_str, entry_type, description, target_status_logbook_entry, target_status_instrument, pdf_name = parts
+        record_id, date_str, entry_type, description, target_status_logbook_entry, target_status_linked_doc, pdf_name = parts
         if verbose:
-            print(f"Processing {instrument_id} - {date_str} - {entry_type} - {description} - {target_status_logbook_entry} - {target_status_instrument} - {pdf_name} from {line=}")
+            print(f"Processing {record_id} - {date_str} - {entry_type} - {description} - {target_status_logbook_entry} - {target_status_linked_doc} - {pdf_name} from {line=}")
 
-        if not frappe.db.exists("QM Instrument", instrument_id):
-            raise Exception(f"Instrument '{instrument_id}' not found")
+        linked_doctype = _resolve_linked_doctype(record_id)
 
         if target_status_logbook_entry not in ["Closed", "To Review", "Draft"]:
             raise Exception(f"Invalid Target Status for Log Book Entry: '{target_status_logbook_entry}'")
@@ -312,8 +322,8 @@ def import_log_book_entries_from_file(path, BASE_PATH=None, verbose=False, print
             "entry_type": entry_type,
             "date": date,
             "description": description,
-            "document_type": "QM Instrument",
-            "document_name": instrument_id
+            "document_type": linked_doctype,
+            "document_name": record_id
         }).insert()
         if target_status_logbook_entry in ["Closed", "To Review"]:
             log_book_doc.submit()
@@ -328,14 +338,14 @@ def import_log_book_entries_from_file(path, BASE_PATH=None, verbose=False, print
                 raise Exception(f"Missing PDF: {pdf_name}")
             _attach_file(log_book_doc, pdf_path)
 
-        # Update QM Instrument status
-        if target_status_instrument and target_status_instrument.lower() != "na":
-            instrument_doc = frappe.get_doc("QM Instrument", instrument_id)
-            instrument_doc.status = target_status_instrument
-            instrument_doc.save()
+        # Update linked document status
+        if target_status_linked_doc and target_status_linked_doc.lower() != "na":
+            linked_doc = frappe.get_doc(linked_doctype, record_id)
+            linked_doc.status = target_status_linked_doc
+            linked_doc.save()
 
         # Print label
-        if print_label:
+        if print_label and linked_doctype == "QM Instrument":
             print_instrument_certification_label(log_book_doc.name)
 
     return lines

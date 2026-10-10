@@ -141,7 +141,7 @@ def change_reference_and_customer_prices_from_csv(csv_file, dry_run=True, verbos
     4. new reference rate
     5. currency
 
-    bench execute microsynth.microsynth.pricing.change_reference_and_customer_prices_from_csv --kwargs "{'csv_file': '/mnt/erp_share/price_changes.csv', 'dry_run': True, 'verbose': True}"
+    bench execute microsynth.microsynth.pricing.change_reference_and_customer_prices_from_csv --kwargs "{'csv_file': '/mnt/erp_share/Migration/price_adjustments/2026-09-29_price_adjustments.csv', 'dry_run': True, 'verbose': True}"
     """
     summary = {
         'reference_prices_processed': 0,
@@ -153,6 +153,8 @@ def change_reference_and_customer_prices_from_csv(csv_file, dry_run=True, verbos
 
     with open(csv_file, 'r', newline='') as file:
         reader = csv.reader(file, delimiter=';')
+        # Skip header row if present
+        next(reader, None)  # Skip header row if present
         for line_number, row in enumerate(reader, start=1):
             if not row or all(not cell.strip() for cell in row):
                 continue
@@ -905,12 +907,12 @@ def delete_item_prices_of_disabled_items(disabled_items, verbose=False, dry_run=
                 item_price_doc = frappe.get_doc("Item Price", item_price['name'])
                 item_price_doc.delete()
             if verbose:
-                print(f"Deleted Item Price {item_price['name']} of Item {item_code}.")
+                print(f"Deleted Item Price {item_price['name']} of disabled Item {item_code}.")
             counter += 1
         frappe.db.commit()
-        print(f"{'Would have deleted' if dry_run else 'Deleted'} {counter} Item Prices for Item {item_code}: {item.item_name}.")
+        print(f"{'Would have deleted' if dry_run else 'Deleted'} {counter} Item Prices for disabled Item {item_code}: {item.item_name}.")
         total_counter += counter
-    print(f"{'Would have deleted' if dry_run else 'Deleted'} {total_counter} Item Prices in total.")
+    print(f"{'Would have deleted' if dry_run else 'Deleted'} {total_counter} Item Prices of disabled Items in total.")
 
 
 def delete_item_prices_of_disabled_price_lists(verbose_level=2, dry_run=True):
@@ -933,7 +935,7 @@ def delete_item_prices_of_disabled_price_lists(verbose_level=2, dry_run=True):
             print(f"Going to skip Price List '{pl['name']}' ({i}/{len(disabled_price_lists)}).")
             continue
         if verbose_level > 0:
-            print(f"{datetime.now()}: Processing Price List '{pl['name']}' ({i}/{len(disabled_price_lists)}) ...")
+            print(f"{datetime.now()}: Processing disabled Price List '{pl['name']}' ({i}/{len(disabled_price_lists)}) ...")
         counter = 0
         item_prices = frappe.get_all("Item Price", filters={'price_list': pl['name']}, fields=['name'])
         for item_price in item_prices:
@@ -941,13 +943,13 @@ def delete_item_prices_of_disabled_price_lists(verbose_level=2, dry_run=True):
                 item_price_doc = frappe.get_doc("Item Price", item_price['name'])
                 item_price_doc.delete()
             if verbose_level > 2:
-                print(f"Deleted Item Price {item_price['name']} from Price List '{pl['name']}'.")
+                print(f"Deleted Item Price {item_price['name']} from disabled Price List '{pl['name']}'.")
             counter += 1
         frappe.db.commit()
         if verbose_level > 1:
-            print(f"{'Would have deleted' if dry_run else 'Deleted'} {counter} Item Prices from Price List '{pl['name']}'.")
+            print(f"{'Would have deleted' if dry_run else 'Deleted'} {counter} Item Prices from disabled Price List '{pl['name']}'.")
         total_counter += counter
-    print(f"\n{datetime.now()}: {'Would have deleted' if dry_run else 'Deleted'} {total_counter} Item Prices in total.")
+    print(f"\n{datetime.now()}: {'Would have deleted' if dry_run else 'Deleted'} {total_counter} Item Prices of disabled Price Lists in total.")
 
 
 def delete_empty_disabled_price_lists(dry_run=True):
