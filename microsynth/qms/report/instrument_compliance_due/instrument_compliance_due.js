@@ -9,6 +9,30 @@ frappe.query_reports["Instrument Compliance Due"] = {
             "label": "Mode",
             "fieldtype": "Select",
             "options": "\nRequalification in next 6 weeks\nQMF (Class A, Active or Blocked)\nVerification due\nCalibration due\nOverdue"
+        },
+        {
+            "fieldname": "status",
+            "label": "Instrument Status",
+            "fieldtype": "Select",
+            "options": "\nUnapproved\nActive\nBlocked\nDecommissioned\nDisposed"
+        },
+        {
+            "fieldname": "instrument_class",
+            "label": "Instrument Class",
+            "fieldtype": "Select",
+            "options": "\nA – Complex or computerised instrument\nB – Standard device with straightforward measurement\nC – Instrument without measuring function\nF – Freezer or Fridge\nP – Pipette\nR – Measuring reference\nT – Thermometer\nW – Balance or Scale"
+        },
+        {
+            "fieldname": "qm_process",
+            "label": "Process",
+            "fieldtype": "Link",
+            "options": "QM Process"
+        },
+        {
+            "fieldname": "site",
+            "label": "Site",
+            "fieldtype": "Select",
+            "options": "\nBalgach\nGöttingen\nLyon\nWien"
         }
     ],
 	"onload": (report) => {

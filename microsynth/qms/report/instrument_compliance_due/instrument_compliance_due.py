@@ -30,28 +30,42 @@ def get_columns():
 
 
 def get_conditions(filters):
+    clauses = []
     requirement_type = filters.get("requirement_type")
 
+    if filters.get("status"):
+        clauses.append(f"`status` = {frappe.db.escape(filters['status'])}")
+
+    if filters.get("instrument_class"):
+        clauses.append(f"`instrument_class` = {frappe.db.escape(filters['instrument_class'])}")
+
+    if filters.get("qm_process"):
+        clauses.append(f"`qm_process` = {frappe.db.escape(filters['qm_process'])}")
+
+    if filters.get("site"):
+        clauses.append(f"`site` = {frappe.db.escape(filters['site'])}")
+
     if requirement_type == "Requalification in next 6 weeks":
-        return f"""AND `requirement_type` = 'Requalification' AND `due_date` <= DATE_ADD(CURDATE(), INTERVAL {REQUALIFICATION_LOOKAHEAD_WEEKS} WEEK)"""
+        clauses.append(f"`requirement_type` = 'Requalification'")
+        clauses.append(f"`due_date` <= DATE_ADD(CURDATE(), INTERVAL {REQUALIFICATION_LOOKAHEAD_WEEKS} WEEK)")
 
-    if requirement_type == "QMF (Class A, Active or Blocked)":
-        return """AND `class_letter` = 'A' AND `status` NOT IN ('Decommissioned', 'Disposed', 'Unapproved')"""
+    elif requirement_type == "QMF (Class A, Active or Blocked)":
+        clauses.append("`class_letter` = 'A'")
+        clauses.append("`status` NOT IN ('Decommissioned', 'Disposed', 'Unapproved')")
 
-    if requirement_type == "Verification due":
-        return """AND `requirement_type` = 'Verification'"""
+    elif requirement_type == "Verification due":
+        clauses.append("`requirement_type` = 'Verification'")
 
-    if requirement_type == "Calibration due":
-        return """AND `requirement_type` = 'Calibration'"""
+    elif requirement_type == "Calibration due":
+        clauses.append("`requirement_type` = 'Calibration'")
 
-    if requirement_type == "Overdue":
-        return "AND `due_date` < CURDATE()"
-    # default
-    return f""" AND (
-        (`requirement_type` = 'Requalification'
-            AND `due_date` <= DATE_ADD(CURDATE(), INTERVAL {REQUALIFICATION_LOOKAHEAD_WEEKS} WEEK))
-        OR `requirement_type` IN ('Verification','Calibration')
-    )"""
+    elif requirement_type == "Overdue":
+        clauses.append("`due_date` < CURDATE()")
+
+    else:
+        clauses.append(f"((`requirement_type` = 'Requalification' AND `due_date` <= DATE_ADD(CURDATE(), INTERVAL {REQUALIFICATION_LOOKAHEAD_WEEKS} WEEK)) OR `requirement_type` IN ('Verification','Calibration'))")
+
+    return f" AND {' AND '.join(clauses)}" if clauses else ""
 
 
 def get_data(filters):
