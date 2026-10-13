@@ -51,5 +51,18 @@ frappe.query_reports["Competency Matrix"] = {
 	},
 	"onload": function(report) {
 		hide_chart_buttons();
+
+		const legend = [
+			'<div style="margin: 10px 0 0; padding: 8px 12px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; color: #212529; background: transparent; border: none;">',
+			'<strong>' + __('Legend') + ':</strong>',
+			'<span><strong>M</strong> = ' + __('Main responsibility') + '</span>',
+			'<span><strong>S</strong> = ' + __('Substitute responsibility') + '</span>',
+			'<span><span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:#d4edda;border:1px solid #c3e6cb;vertical-align:middle;margin-right:6px;"></span>' + __('Achieved') + '</span>',
+			'<span><span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:#fff3cd;border:1px solid #ffeeba;vertical-align:middle;margin-right:6px;"></span>' + __('Planned') + '</span>',
+			'<span><span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:#f8d7da;border:1px solid #f5c6cb;vertical-align:middle;margin-right:6px;"></span>' + __('Not assigned') + '</span>',
+			'</div>'
+		].join("");
+
+		report.page.wrapper.find(".page-content").prepend(legend);
 	}
 };
