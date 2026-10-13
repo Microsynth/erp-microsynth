@@ -297,7 +297,46 @@ function open_competency_instruction_dialog(frm, cdt, cdn) {
                 });
                 return;
             }
+            confirm_instruction_creation_if_optional(frm, row);
+        }
+    });
+}
+
+
+function confirm_instruction_creation_if_optional(frm, row) {
+    get_on_the_job_instruction_requirement(row, function(requiresInstruction) {
+        if (requiresInstruction) {
             show_instruction_prompt(frm.doc.employee || '', row, frm);
+            return;
+        }
+        frappe.confirm(
+            __('The linked Competency does not require an On-the-Job Instruction. Do you want to create a Competency Instruction anyway?'),
+            function() {
+                show_instruction_prompt(frm.doc.employee || '', row, frm);
+            }
+        );
+    });
+}
+
+
+function get_on_the_job_instruction_requirement(row, callback) {
+    if (!row || !row.competency) {
+        callback(false);
+        return;
+    }
+    if (row.requires_on_the_job_instruction === 0 || row.requires_on_the_job_instruction === 1) {
+        callback(Boolean(row.requires_on_the_job_instruction));
+        return;
+    }
+    frappe.call({
+        'method': 'microsynth.qms.doctype.competency.competency.get_on_the_job_instruction_requirements',
+        'args': {
+            'competency_names': [row.competency]
+        },
+        'callback': function(response) {
+            const requirements = response.message || {};
+            row.requires_on_the_job_instruction = requirements[row.competency] ? 1 : 0;
+            callback(Boolean(row.requires_on_the_job_instruction));
         }
     });
 }
