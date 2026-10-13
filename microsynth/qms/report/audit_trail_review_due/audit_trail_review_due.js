@@ -8,7 +8,7 @@ frappe.query_reports["Audit Trail Review Due"] = {
 			"fieldname": "view",
 			"label": "View",
 			"fieldtype": "Select",
-			"options": "Overdue\nATR due in next 6 weeks\nAll ATR-managed systems",
+			"options": "ATR Overdue\nATR due in next 6 weeks\nAll ATR-managed systems",
 			"default": "ATR due in next 6 weeks"
 		}
 	],

@@ -110,6 +110,11 @@ def can_approve_qm_logbook_entry(document_type, regulatory_classification, user_
 
 
 @frappe.whitelist()
+def is_qmcs_gmp(qmcs_name):
+    return frappe.db.get_value("QM Computerised System", qmcs_name, "regulatory_classification") == "GMP"
+
+
+@frappe.whitelist()
 def is_user_process_owner(log_book_id, user):
     log_book = frappe.get_doc("QM Log Book", log_book_id)
     linked_doc = frappe.get_doc(log_book.document_type, log_book.document_name)

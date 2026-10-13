@@ -201,68 +201,57 @@ function approve_and_close_log_book(frm, approval_password) {
 }
 
 
+function get_gmp_status_for_logbook(frm, callback) {
+    if (frm.doc.document_type === 'QM Computerised System') {
+        frappe.call({
+            'method': "microsynth.qms.doctype.qm_log_book.qm_log_book.is_qmcs_gmp",
+            'args': {
+                'qmcs_name': frm.doc.document_name
+            },
+            'callback': function(r) {
+                callback(r.message === true);
+            }
+        });
+        return;
+    }
+
+    frappe.call({
+        'method': "microsynth.qms.doctype.qm_instrument.qm_instrument.is_gmp",
+        'args': {
+            'qm_instrument': frm.doc.document_name
+        },
+        'callback': function(r) {
+            callback(r.message === true);
+        }
+    });
+}
+
+function prompt_for_approval_password_if_needed(frm, isGmp) {
+    if (!isGmp) {
+        approve_and_close_log_book(frm);
+        return;
+    }
+    if (!frappe.user_roles.includes('QAU')) {
+        frappe.msgprint(__('Only QAU can approve and close GMP log book entries.'), 'Warning');
+        return;
+    }
+    frappe.prompt({
+        fieldtype: 'Password',
+        label: 'Approval Password',
+        fieldname: 'approval_password'
+    }, function(values) {
+        approve_and_close_log_book(frm, values.approval_password);
+    }, __('Approval Required'), __('Approve'));
+}
+
 function show_approve_button(frm) {
     frm.add_custom_button(__('Approve and Close'), function() {
         if (frm.is_dirty()) {
             frappe.msgprint(__('Please save your changes before closing this Log Book Entry.'));
             return;
         }
-
-        const isComputerisedSystem = frm.doc.document_type === 'QM Computerised System';
-        if (isComputerisedSystem) {
-            frappe.call({
-                'method': "frappe.client.get_value",
-                'args': {
-                    'doctype': 'QM Computerised System',
-                    'name': frm.doc.document_name,
-                    'fieldname': ['regulatory_classification']
-                },
-                'callback': function(r) {
-                    const regulatoryClassification = r.message && r.message.regulatory_classification;
-                    if (regulatoryClassification === 'GMP') {
-                        if (!frappe.user_roles.includes('QAU')) {
-                            frappe.msgprint(__('Only QAU can approve and close GMP log book entries.'), 'Warning');
-                            return;
-                        }
-                        frappe.prompt({
-                            fieldtype: 'Password',
-                            label: 'Approval Password',
-                            fieldname: 'approval_password'
-                        }, function(values) {
-                            approve_and_close_log_book(frm, values.approval_password);
-                        }, __('Approval Required'), __('Approve'));
-                    } else {
-                        approve_and_close_log_book(frm);
-                    }
-                }
-            });
-            return;
-        }
-
-        frappe.call({
-            'method': "microsynth.qms.doctype.qm_instrument.qm_instrument.is_gmp",
-            'args': {
-                'qm_instrument': frm.doc.document_name
-            },
-            'callback': function(r) {
-                if (r.message === true) {
-                    if (!frappe.user_roles.includes('QAU')) {
-                        frappe.msgprint(__('Only QAU can approve and close GMP log book entries.'), 'Warning');
-                        return;
-                    }
-                    // GMP: ask for approval password
-                    frappe.prompt({
-                        fieldtype: 'Password',
-                        label: 'Approval Password',
-                        fieldname: 'approval_password'
-                    }, function(values) {
-                        approve_and_close_log_book(frm, values.approval_password);
-                    }, __('Approval Required'), __('Approve'));
-                } else {
-                    // Non-GMP: close directly, no password
-                    approve_and_close_log_book(frm);
-                }
-            }
+        get_gmp_status_for_logbook(frm, function(isGmp) {
+            prompt_for_approval_password_if_needed(frm, isGmp);
         });
     }).addClass("btn-success");
 }
