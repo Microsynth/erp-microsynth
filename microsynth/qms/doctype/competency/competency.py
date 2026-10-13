@@ -36,9 +36,11 @@ def invalidate_previous_versions(docname):
     base_name, current_suffix, available_versions = get_versioned_documents("Competency", docname)
 
     for suffix, version_name, status, docstatus in available_versions:
-        if suffix >= current_suffix or version_name == docname or docstatus != 1:
+        if suffix >= current_suffix or version_name == docname or docstatus != 1 or status == "Invalid":
             continue
-        frappe.db.set_value("Competency", version_name, "status", "Invalid", update_modified=False)
+        previous_version = frappe.get_doc("Competency", version_name)
+        previous_version.status = "Invalid"
+        previous_version.save()
 
 
 def validate_cancel_permission(doc):
@@ -271,7 +273,6 @@ def create_new_version(docname):
         frappe.throw(
             _("A new Competency version can only be created from a submitted competency in status Valid.")
         )
-
     base_name, current_suffix, available_versions = get_versioned_documents("Competency", docname)
     newer_versions = get_newer_active_versions(available_versions, current_suffix)
 
@@ -285,7 +286,6 @@ def create_new_version(docname):
             ).format(frappe.bold(docname), ", ".join(frappe.bold(name) for name in newer_versions)),
             title=_("Newer Version Exists"),
         )
-
     next_suffix = get_next_suffix(available_versions, current_suffix)
     if next_suffix > 99:
         frappe.throw(
@@ -294,7 +294,6 @@ def create_new_version(docname):
             ),
             title=_("Version Limit Reached"),
         )
-
     new_name = "{0}-{1}".format(base_name, next_suffix)
     if frappe.db.exists("Competency", new_name):
         frappe.throw(
@@ -303,7 +302,6 @@ def create_new_version(docname):
             ),
             title=_("Duplicate Version Name"),
         )
-
     new_doc = frappe.copy_doc(current_doc)
     new_doc.name = new_name
     new_doc.docstatus = 0
@@ -315,6 +313,5 @@ def create_new_version(docname):
     new_doc.modified_by = None
     new_doc.flags.name_set = True
     new_doc.insert()
-
     frappe.db.commit()
     return {"name": new_doc.name}
