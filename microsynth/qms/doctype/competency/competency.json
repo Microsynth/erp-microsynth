@@ -109,8 +109,8 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2026-10-09 17:28:45.898872",
- "modified_by": "Administrator",
+ "modified": "2026-10-13 11:59:06.687339",
+ "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "Competency",
  "owner": "Administrator",
@@ -171,7 +171,9 @@
    "write": 1
   }
  ],
+ "search_fields": "title",
  "sort_field": "modified",
  "sort_order": "DESC",
+ "title_field": "title",
  "track_changes": 1
 }
