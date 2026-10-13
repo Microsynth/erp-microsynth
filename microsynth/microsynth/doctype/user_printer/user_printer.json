@@ -58,9 +58,15 @@
    "fieldtype": "Link",
    "label": "Instrument Certification Label Printer",
    "options": "Brady Printer"
+  },
+  {
+   "fieldname": "document_printer",
+   "fieldtype": "Link",
+   "label": "Document Printer",
+   "options": "Document Printer"
   }
  ],
- "modified": "2026-06-05 10:08:17.139412",
+ "modified": "2026-09-28 16:10:39.204912",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "User Printer",
