@@ -99,7 +99,6 @@ class QMComputerisedSystem(Document):
             "regulatory_classification",
             "cs_type",
             "primary_version_control_method",
-            "version",
             "atr_frequency",
         }
 

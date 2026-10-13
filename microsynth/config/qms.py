@@ -112,6 +112,38 @@ def get_data():
             ]
         },
         {
+            "label": _("Computerised Systems"),
+            "icon": "octicon octicon-file-submodule",
+            "items": [
+                    {
+                       "type": "doctype",
+                       "name": "QM Computerised System",
+                       "label": _("Computerised System"),
+                       "description": _("Computerised System")
+                    },
+                    {
+                        "type": "report",
+                        "name": "Computerised System QMF",
+                        "label": _("Computerised System QMF"),
+                        "doctype": "QM Computerised System",
+                        "is_query_report": True
+                    },
+                    {
+                        "type": "doctype",
+                        "name": "QM Log Book",
+                        "label": _("Log Book entries"),
+                        "description": _("Log Book entries")
+                    },
+                    {
+                        "type": "report",
+                        "name": "Audit Trail Review Due",
+                        "label": _("Audit Trail Review Due"),
+                        "doctype": "QM Computerised System",
+                        "is_query_report": True
+                    }
+            ]
+        },
+        {
             "label": _("Analytical Procedures"),
             "icon": "octicon octicon-file-submodule",
             "items": [
