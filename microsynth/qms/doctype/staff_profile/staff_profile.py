@@ -254,6 +254,7 @@ def create_new_version(docname):
             title=_("Duplicate Version Name"),
         )
     new_doc = frappe.copy_doc(current_doc)
+    _copy_assignments_without_instruction_links(getattr(new_doc, "competencies", None) or [])
     new_doc.name = new_name
     new_doc.docstatus = 0
     new_doc.status = "Draft"
@@ -439,6 +440,16 @@ def _update_achieved_competencies_for_staff_profile(staff_profile):
     update_competency_assignments_for_trainee(trainee)
 
 
+def _copy_assignments_without_instruction_links(assignments):
+    if not assignments:
+        return assignments
+
+    for assignment in assignments:
+        if getattr(assignment, "competency_instruction", None):
+            assignment.competency_instruction = ""
+    return assignments
+
+
 class StaffProfile(Document):
     def validate(self):
         _throw_if_invalid_competency_versions(self.competencies)
@@ -465,5 +476,5 @@ class StaffProfile(Document):
 
     def on_cancel(self):
         self.status = "Cancelled"
-        self.save()
+        self.db_set("status", "Cancelled", update_modified=False)
         frappe.db.commit()

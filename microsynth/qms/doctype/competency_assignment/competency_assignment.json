@@ -31,6 +31,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Status",
+   "no_copy": 1,
    "options": "Planned\nAchieved",
    "read_only": 1,
    "reqd": 1
@@ -55,7 +56,8 @@
   {
    "fieldname": "remarks",
    "fieldtype": "Small Text",
-   "label": "Remarks"
+   "label": "Remarks",
+   "no_copy": 1
   },
   {
    "columns": 3,
@@ -81,6 +83,7 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Instruction",
+   "no_copy": 1,
    "options": "Competency Instruction",
    "read_only": 1
   },
@@ -89,11 +92,12 @@
    "fieldname": "competency_achieved_on",
    "fieldtype": "Datetime",
    "label": "Competency Achieved On",
+   "no_copy": 1,
    "read_only": 1
   }
  ],
  "istable": 1,
- "modified": "2026-10-09 12:21:58.103879",
+ "modified": "2026-10-13 11:33:48.364578",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "Competency Assignment",
