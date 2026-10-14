@@ -1,17 +1,5 @@
 /* Custom script extension for Contact */
 
-// extend/create dashboard
-cur_frm.dashboard.add_transactions([
-    {
-        'label': __("Selling"),
-        'items': ["Quotation", "Credit Account"]
-    },
-    {
-        'label': __("Marketing"),
-        'items': ["Contact Note", "Benchmark", "Product Idea"]
-    }
-]);
-
 
 let original_customer_link = null;
 

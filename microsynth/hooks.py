@@ -287,6 +287,7 @@ scheduler_events = {
 # generated from the base implementation of the doctype dashboard,
 # along with any modifications made in other Frappe apps
 override_doctype_dashboards = {
+    "Contact": "microsynth.microsynth.dashboard.contact_dashboard.get_data",
     "Customer": "microsynth.microsynth.dashboard.customer_dashboard.get_data",
 	"Quotation": "microsynth.microsynth.dashboard.quotation_dashboard.get_data",
 	"Sales Order": "microsynth.microsynth.dashboard.sales_order_dashboard.get_data",
