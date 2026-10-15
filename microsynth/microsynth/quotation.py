@@ -200,6 +200,16 @@ def validate_default_company(doc, event=None):
     if not doc.customer or not doc.company:
         frappe.throw("Customer and Company must be set.")
 
+    if doc.shipping_address_name:
+        shipping_country = frappe.get_value("Address", doc.shipping_address_name, "country")
+        if shipping_country and shipping_country not in {"Switzerland", "Germany", "Austria", "France", "Liechtenstein"}:
+            product_type = doc.get("product_type") or getattr(doc, "product_type", None)
+
+            if product_type == "Oligos" and doc.company != "Microsynth AG":
+                frappe.throw(
+                    f"<b>Oligo</b> Quotations for shipping country <b>{shipping_country}</b> must be issued by <b>Microsynth AG</b>."
+                )
+
     customer = frappe.get_doc("Customer", doc.customer)
 
     if not customer.default_company:
