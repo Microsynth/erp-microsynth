@@ -150,8 +150,8 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2026-10-09 17:29:36.291838",
- "modified_by": "Administrator",
+ "modified": "2026-10-15 14:05:39.833562",
+ "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "Staff Profile",
  "owner": "Administrator",
@@ -226,7 +226,9 @@
    "write": 1
   }
  ],
+ "search_fields": "employee_name",
  "sort_field": "modified",
  "sort_order": "DESC",
+ "title_field": "employee_name",
  "track_changes": 1
 }
