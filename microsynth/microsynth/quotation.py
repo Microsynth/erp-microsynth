@@ -143,6 +143,12 @@ def link_quotation_to_order(sales_order, quotation):
                 item.parent = so_doc.name
                 break
         item.save()
+
+    # Preserve the overall discount configuration from the Quotation.
+    so_doc.additional_discount_percentage = qtn.additional_discount_percentage or 0
+    so_doc.discount_amount = qtn.discount_amount or 0
+    so_doc.base_discount_amount = qtn.base_discount_amount or 0
+
     so_doc.save()  # necessary to update item amount, order total etc.
     return so_doc.name
 
