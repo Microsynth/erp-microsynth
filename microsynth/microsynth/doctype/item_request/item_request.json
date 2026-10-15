@@ -13,7 +13,7 @@
   "supplier",
   "supplier_part_no",
   "company",
-  "has_batch_no",
+  "material_code",
   "column_break_7",
   "status",
   "uom",
@@ -23,6 +23,7 @@
   "supplier_name",
   "schedule_date",
   "expense_account",
+  "has_batch_no",
   "section_break_13",
   "comment",
   "reject_message",
@@ -208,10 +209,16 @@
    "fieldname": "has_batch_no",
    "fieldtype": "Check",
    "label": "Enable batch tracking if a batch number is provided"
+  },
+  {
+   "description": "Optional Oligo Modification Code / Slims Content Type",
+   "fieldname": "material_code",
+   "fieldtype": "Data",
+   "label": "Material Code"
   }
  ],
  "is_submittable": 1,
- "modified": "2026-04-13 08:45:54.991738",
+ "modified": "2026-10-15 15:21:57.704620",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "Item Request",

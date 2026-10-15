@@ -832,7 +832,12 @@ function open_item_request_dialog(report, item_name, supplier_name, supplier_par
                     }
                 }
             },
-            {fieldtype: 'HTML', fieldname: 'order_preview'},
+            {fieldtype: 'Data', label: __('Material Code'), fieldname: 'material_code', description: 'Optional Oligo Modif. Code / Slims Content Type'},
+            {
+                fieldtype: 'HTML',
+                fieldname: 'order_preview',
+                options: `<div class="text-muted">${__('Fill in quantity, units and pack size to see the order preview.')}</div>`
+            },
 
             {fieldtype:'Section Break'},
 
@@ -891,7 +896,7 @@ function open_item_request_dialog(report, item_name, supplier_name, supplier_par
 
         if (!supplier) {
             d.set_df_property('currency', 'read_only', 0);
-            d.refresh_field('currency');
+            d.fields_dict.currency.refresh();
             return;
         }
         frappe.db.get_value(
@@ -912,7 +917,7 @@ function open_item_request_dialog(report, item_name, supplier_name, supplier_par
             } else {
                 d.set_df_property('currency', 'read_only', 0);
             }
-            d.refresh_field('currency');
+            d.fields_dict.currency.refresh();
         });
     };
     // Fetch Purchase UOM from Stock UOM if Stock UOM is set but not Purchase UOM
@@ -924,11 +929,11 @@ function open_item_request_dialog(report, item_name, supplier_name, supplier_par
         }
     };
     d.fields_dict.qty.$input.on('input', update_order_preview);
-    d.fields_dict.purchase_uom.$input.on('input', update_order_preview);
+    d.fields_dict.purchase_uom.df.onchange = update_order_preview;
     d.fields_dict.conversion_factor.$input.on('input', update_order_preview);
-    d.fields_dict.stock_uom.$input.on('input', update_order_preview);
+    d.fields_dict.stock_uom.df.onchange = update_order_preview;
     d.fields_dict.pack_size.$input.on('input', update_order_preview);
-    d.fields_dict.pack_uom.$input.on('input', update_order_preview);
+    d.fields_dict.pack_uom.df.onchange = update_order_preview;
     update_order_preview();
 
 
@@ -938,7 +943,9 @@ function open_item_request_dialog(report, item_name, supplier_name, supplier_par
             || !d.get_value('pack_size')
             || !d.get_value('pack_uom')
         ) {
-            d.fields_dict.order_preview.$wrapper.html('');
+            d.fields_dict.order_preview.$wrapper.html(`
+                <div class="text-muted">${__('Fill in quantity, units and pack size to see the order preview.')}</div>
+            `);
             return;
         }
         const qty = parseFloat(d.get_value('qty')) || 0;
