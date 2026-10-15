@@ -191,6 +191,12 @@ def validate_item_sales_status(doc, event=None):
 
 
 def validate_default_company(doc, event=None):
+    if getattr(doc, "amended_from", None):
+        predecessor_company = frappe.db.get_value("Quotation", doc.amended_from, "company")
+        if predecessor_company:
+            doc.company = predecessor_company
+            return
+
     if not doc.customer or not doc.company:
         frappe.throw("Customer and Company must be set.")
 
