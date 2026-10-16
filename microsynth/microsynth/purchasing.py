@@ -2788,6 +2788,26 @@ def add_location_to_item(item, location):
 
 
 @frappe.whitelist()
+def delete_locations_from_item(item, locations):
+    """Remove selected Item assignments without deleting the Location documents."""
+    if isinstance(locations, str):
+        locations = json.loads(locations)
+    if not isinstance(locations, list) or any(not isinstance(location, str) for location in locations):
+        frappe.throw(_("Locations must be a list of Location names."))
+    if not locations:
+        return
+
+    doc = frappe.get_doc("Item", item)
+    doc.check_permission("read")
+    selected = set(locations)
+    rows = doc.get("storage_locations") or []
+    remaining = [row for row in rows if row.location not in selected]
+    if len(remaining) != len(rows):
+        doc.set("storage_locations", remaining)
+        doc.save(ignore_permissions=True)
+
+
+@frappe.whitelist()
 def check_existing_supplier(supplier_name):
     supplier = frappe.db.get_value("Supplier", {"supplier_name": supplier_name}, "name")
     return {
