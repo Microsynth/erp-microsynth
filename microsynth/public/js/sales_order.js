@@ -49,6 +49,15 @@ frappe.ui.form.on('Sales Order', {
             frm.dashboard.add_comment( __("Are you sure to continue with a <b>manually created Customer</b>? Please check to change for a Customer created by the webshop with a numeric ID."), 'red', true);
         }
 
+        // A manually created, not yet saved Sales Order must not keep distributor fields
+        if (frm.doc.__islocal && frm.doc.customer == frm.doc.order_customer) {
+            ["order_customer", "order_tax_id", "order_customer_display"].forEach(fieldname => {
+                if (frm.doc[fieldname]) {
+                    frm.set_value(fieldname, "");
+                }
+            });
+        }
+
         if (!frm.doc.__islocal && frm.doc.docstatus == 1) {
             frm.add_custom_button(__("Print Delivery Label"), function() {
                 frappe.call({
