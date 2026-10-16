@@ -344,19 +344,14 @@ function open_search_dialog(report) {
                 update_list();
                 return;
             }
-            // Check if the Supplier has either no substitute_status or substitute_status "Verified".
-            // If not, show an error that the purchasing department should be contacted.
-            if (
-                selected.substitute_status &&
-                selected.substitute_status !== 'Verified'
-            ) {
+            // Only Discontinued and Blocked prevent manual ordering.
+            if (['Discontinued', 'Blocked'].includes(selected.substitute_status)) {
                 frappe.msgprint({
                     'title': __('Material Request not allowed'),
                     'indicator': 'red',
                     'message': __(
                         'The Supplier {0}: {1} has Substitute Status <b>{2}</b> for Item {3}: {4}.<br><br>' +
-                        'Material Requests are only allowed if the Supplier has substitute status ' +
-                        '"Verified" or no substitute status for the Item.<br><br>' +
+                        'Material Requests are not allowed for substitute status "Discontinued" or "Blocked".<br><br>' +
                         'Please select another combination of Item and Supplier or contact the Purchasing department.',
                         [
                             selected.supplier,

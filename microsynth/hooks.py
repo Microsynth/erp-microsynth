@@ -195,7 +195,11 @@ doc_events = {
         "on_submit": "microsynth.microsynth.credits.delivery_note_on_submit",
     },
     "Purchase Order": {
+        "validate": "microsynth.microsynth.purchasing.validate_purchase_order",
         "before_save": "microsynth.microsynth.purchasing.purchase_order_before_save"
+    },
+    "Material Request": {
+        "validate": "microsynth.microsynth.purchasing.validate_material_request"
     },
     "Sales Invoice": {
         "before_save": "microsynth.microsynth.taxes.set_alternative_tax_template",
