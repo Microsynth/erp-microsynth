@@ -201,6 +201,17 @@ def send_notification(assign, doc_name, recipient, message):
 def close(doc, user):
     # pull selected document
     qm_nc = frappe.get_doc("QM Nonconformity", doc)
+
+    if has_open_actions(qm_nc.name):
+        frappe.throw("QM Nonconformity cannot be closed while there are linked QM Actions that are not Completed or Cancelled.")
+
+    if qm_nc.status == "Completed" and qm_nc.nc_type == "Deviation":
+        if not can_close_completed_deviation(qm_nc.name, user):
+            if qm_nc.criticality_classification == "critical":
+                frappe.throw("A completed Deviation with critical classification can only be closed by a user with the QAU role when all linked QM Actions are Completed or Cancelled.")
+            elif qm_nc.criticality_classification == "non-critical":
+                frappe.throw("A completed Deviation with non-critical classification can only be closed by the creator or a user with the QAU role when all linked QM Actions are Completed or Cancelled.")
+
     if qm_nc.created_by == user or user_has_role(user, "QAU"):
         # remove deprecated closing signature if exists and user does not have role QAU (only QAU need to sign closure, and if the user has role QAU, the fresh signature should not be removed)
         if hasattr(qm_nc, 'signature') and qm_nc.signature and not user_has_role(user, "QAU"):
@@ -373,6 +384,36 @@ def has_non_completed_action(doc):
         ;""", as_dict=True)
 
     return len(non_completed_actions) > 0
+
+
+@frappe.whitelist()
+def has_open_actions(doc):
+    """
+    Returns whether there is at least one linked QM Action that is not yet
+    Completed or Cancelled.
+    """
+    open_actions = frappe.db.sql(f"""
+        SELECT `name`
+        FROM `tabQM Action`
+        WHERE `docstatus` < 2
+          AND `document_name` = '{doc}'
+          AND `status` NOT IN ('Completed', 'Cancelled')
+        ;""", as_dict=True)
+    return len(open_actions) > 0
+
+
+@frappe.whitelist()
+def can_close_completed_deviation(doc, user):
+    nc = frappe.get_doc("QM Nonconformity", doc)
+    if nc.nc_type != "Deviation" or nc.status != "Completed":
+        return False
+    if has_open_actions(doc):
+        return False
+    if nc.criticality_classification == "critical":
+        return user_has_role(user, "QAU")
+    if nc.criticality_classification == "non-critical":
+        return user_has_role(user, "QAU") or user == nc.created_by
+    return False
 
 
 @frappe.whitelist()

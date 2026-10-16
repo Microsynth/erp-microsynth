@@ -504,23 +504,36 @@ frappe.ui.form.on('QM Nonconformity', {
                             },
                             'callback': function(response) {
                                 var allowed = false;
-                                if (frappe.user.has_role('QAU')
-                                    || (frappe.session.user === frm.doc.created_by && frm.doc.nc_type == "Track & Trend")) {  // Track & Trend should never reach the status "Completed"
-                                    allowed = true;
-                                } else if (frm.doc.nc_type == "Event" && frm.doc.regulatory_classification != 'GMP') {
-                                    frappe.call({
-                                        'method': 'microsynth.qms.doctype.qm_nonconformity.qm_nonconformity.has_actions',
-                                        'args': {
-                                            'doc': frm.doc.name
-                                        },
-                                        'async': false,
-                                        'callback': function(response) {
-                                            if (!response.message.has_corrective_action) {
+                                frappe.call({
+                                    'method': 'microsynth.qms.doctype.qm_nonconformity.qm_nonconformity.has_open_actions',
+                                    'args': {
+                                        'doc': frm.doc.name
+                                    },
+                                    'async': false,
+                                    'callback': function(response) {
+                                        if (!response.message) {
+                                            if (frm.doc.nc_type == "Deviation") {
+                                                allowed = can_close_deviation(frm);
+                                            } else if (frappe.user.has_role('QAU')
+                                                || (frappe.session.user === frm.doc.created_by && frm.doc.nc_type == "Track & Trend")) {  // Track & Trend should never reach the status "Completed"
                                                 allowed = true;
+                                            } else if (frm.doc.nc_type == "Event" && frm.doc.regulatory_classification != 'GMP') {
+                                                frappe.call({
+                                                    'method': 'microsynth.qms.doctype.qm_nonconformity.qm_nonconformity.has_actions',
+                                                    'args': {
+                                                        'doc': frm.doc.name
+                                                    },
+                                                    'async': false,
+                                                    'callback': function(response) {
+                                                        if (!response.message.has_corrective_action) {
+                                                            allowed = true;
+                                                        }
+                                                    }
+                                                });
                                             }
                                         }
-                                    });
-                                }
+                                    }
+                                });
                                 if (allowed) {
                                     if (frm.doc.criticality_classification != "critical" || response.message || frm.doc.closure_comments) {
                                         // add close button
@@ -534,7 +547,15 @@ frappe.ui.form.on('QM Nonconformity', {
                                         frm.dashboard.add_comment( __("This is a critical Nonconformity. Please create a Change Request or explain in the Closure Comment why not."), 'red', true);
                                     }
                                 } else {
-                                    frm.dashboard.add_comment( __("This Nonconformity needs to be processed by QAU or its creator (non-GMP Event with no Corrective Actions)."), 'blue', true);
+                                    if (frm.doc.nc_type == "Deviation") {
+                                        if (frm.doc.criticality_classification == "critical") {
+                                            frm.dashboard.add_comment( __("This critical Deviation can only be closed by QAU when all linked QM Actions are Completed or Cancelled."), 'blue', true);
+                                        } else if (frm.doc.criticality_classification == "non-critical") {
+                                            frm.dashboard.add_comment( __("This non-critical Deviation can only be closed by QAU or its creator when all linked QM Actions are Completed or Cancelled."), 'blue', true);
+                                        }
+                                    } else {
+                                        frm.dashboard.add_comment( __("This Nonconformity needs to be processed by QAU or its creator (non-GMP Event with no Corrective Actions)."), 'blue', true);
+                                    }
                                     if (frappe.session.user === frm.doc.created_by && !frm.doc.in_approval) {
                                         cur_frm.page.set_primary_action(
                                             __("Handover to QAU"),
@@ -804,6 +825,29 @@ function close(frm) {
             }
         );
     }
+}
+
+function can_close_deviation(frm) {
+    if (frm.doc.nc_type !== "Deviation" || frm.doc.status !== "Completed") {
+        return false;
+    }
+    var result = false;
+    frappe.call({
+        'method': 'microsynth.qms.doctype.qm_nonconformity.qm_nonconformity.has_open_actions',
+        'args': {
+            'doc': frm.doc.name
+        },
+        'async': false,
+        'callback': function(response) {
+            var has_open_actions = !!response.message;
+            if (frm.doc.criticality_classification == "critical") {
+                result = frappe.user.has_role('QAU') && !has_open_actions;
+            } else if (frm.doc.criticality_classification == "non-critical") {
+                result = (frappe.user.has_role('QAU') || frappe.session.user === frm.doc.created_by) && !has_open_actions;
+            }
+        }
+    });
+    return result;
 }
 
 function calculate_risk_classification(occ_prob, impact, after_actions) {
