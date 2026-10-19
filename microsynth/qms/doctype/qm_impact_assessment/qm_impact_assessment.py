@@ -41,7 +41,7 @@ def create_impact_assessment(dt, dn, title, qm_process, creator, due_date):
     add({
         'doctype': "QM Impact Assessment",
         'name': assessment.name,
-        'assign_to': creator,
+        'assign_to': [creator],
         'notify': True
     })
     return assessment.name

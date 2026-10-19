@@ -89,7 +89,7 @@ def assign(doc, reviewer):
     add({
         'doctype': "QM Review",
         'name': doc,
-        'assign_to': reviewer,
+        'assign_to': [reviewer],
         'notify': True
     })
     return

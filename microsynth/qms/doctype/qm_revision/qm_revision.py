@@ -66,7 +66,7 @@ def assign(doc, revisor):
     add({
         'doctype': "QM Revision",
         'name': doc,
-        'assign_to': revisor
+        'assign_to': [revisor]
     })
 
 

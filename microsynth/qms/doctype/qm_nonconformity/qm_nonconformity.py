@@ -183,7 +183,7 @@ def send_notification(assign, doc_name, recipient, message):
         add({
             'doctype': "QM Nonconformity",
             'name': doc_name,
-            'assign_to': recipient,
+            'assign_to': [recipient],
             'description': message,
             'notify': True
         })

@@ -33,7 +33,7 @@ def reject_item_request(item_request, reject_reason=None):
     add({
         'doctype': "Item Request",
         'name': item_request,
-        'assign_to': doc.owner,
+        'assign_to': [doc.owner],
         'description': note,
         'notify': True
     })

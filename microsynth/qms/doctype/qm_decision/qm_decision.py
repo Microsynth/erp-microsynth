@@ -44,7 +44,7 @@ def create_decision(approver, decision, dt, dn, from_status, to_status, comments
         add({
             'doctype': dt,
             'name': dn,
-            'assign_to': refdoc_creator,
+            'assign_to': [refdoc_creator],
             'description': description,
             'notify': True
         })

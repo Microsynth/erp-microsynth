@@ -340,7 +340,7 @@ def notify_new_creator(qm_document, new_creator):
     add({
         'doctype': "QM Document",
         'name': qm_document.name,
-        'assign_to': new_creator,
+        'assign_to': [new_creator],
         'description': f"You are assigned as the new creator of QM Document '{qm_document.name}'.",
         'notify': True
     })

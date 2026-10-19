@@ -145,7 +145,7 @@ def assign(doc, responsible_person):
     add({
         'doctype': "QM Action",
         'name': doc,
-        'assign_to': responsible_person,
+        'assign_to': [responsible_person],
         'notify': False
     })
 
@@ -156,7 +156,7 @@ def assign_and_notify(doc, responsible_person):
     add({
         'doctype': "QM Action",
         'name': doc,
-        'assign_to': responsible_person,
+        'assign_to': [responsible_person],
         'notify': True
     })
 
