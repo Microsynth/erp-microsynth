@@ -100,6 +100,31 @@ def get_assignments(employees):
 	""", values={"employees": tuple(employee["name"] for employee in employees)}, as_dict=True)
 
 
+def get_linked_department_employees(filters):
+	conditions = []
+	values = {}
+	if filters.get("company"):
+		conditions.append("employee.company = %(company)s")
+		values["company"] = filters.get("company")
+	if filters.get("department"):
+		conditions.append("""
+			employee.department = %(department)s OR EXISTS (
+				SELECT 1 FROM `tabDepartment Link` additional_department
+				WHERE additional_department.parent = employee.name
+					AND additional_department.parenttype = 'Employee'
+					AND additional_department.parentfield = 'additional_departments'
+					AND additional_department.department = %(department)s
+			)
+		""")
+		values["department"] = filters.get("department")
+	conditions_sql = " WHERE " + " AND ".join(conditions) if conditions else ""
+	return frappe.db.sql("""
+		SELECT employee.name
+		FROM `tabEmployee` employee
+		{conditions}
+	""".format(conditions=conditions_sql), values=values, as_dict=True)
+
+
 def get_competencies(filters):
 	# Select the department's catalogue independently of Staff Profiles. Unassigned
 	# competencies remain visible; assignments cannot bypass the department filter.
@@ -133,6 +158,10 @@ def get_competencies(filters):
 	if not employees:
 		return competencies
 
+	department_employees = tuple(employee["name"] for employee in get_linked_department_employees(filters))
+	if not department_employees:
+		return competencies
+
 	extra_competencies = frappe.db.sql("""
 		SELECT DISTINCT assignment.competency AS name, competency.title
 		FROM `tabStaff Profile` profile
@@ -143,8 +172,8 @@ def get_competencies(filters):
 		INNER JOIN `tabCompetency` competency
 			ON competency.name = assignment.competency
 		WHERE profile.status IN ('Valid', 'To Sign') AND profile.docstatus = 1
-			AND profile.employee IN %(employees)s
-	""", values={"employees": tuple(employee["name"] for employee in employees)}, as_dict=True)
+			AND profile.employee IN %(department_employees)s
+	""", values={"department_employees": department_employees}, as_dict=True)
 	competencies_by_name = {competency["name"]: competency for competency in competencies}
 	for competency in extra_competencies:
 		competencies_by_name.setdefault(competency["name"], competency)
