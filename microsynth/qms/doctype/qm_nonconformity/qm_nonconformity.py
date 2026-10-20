@@ -392,6 +392,7 @@ def has_change(doc):
     return len(changes) > 0
 
 
+@frappe.whitelist()
 def get_allowed_classification_for_process(doctype, txt, searchfield, start, page_len, filters):
     if not 'process' in filters or not filters['process']:
         return []
@@ -406,6 +407,7 @@ def get_allowed_classification_for_process(doctype, txt, searchfield, start, pag
         )
 
 
+@frappe.whitelist()
 def get_allowed_classification_for_hierarchy(doctype, txt, searchfield, start, page_len, filters):
     if not 'hierarchy' in filters or not filters['hierarchy']:
         return []

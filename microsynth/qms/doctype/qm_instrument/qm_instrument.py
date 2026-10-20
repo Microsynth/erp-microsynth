@@ -135,6 +135,7 @@ class QMInstrument(Document):
         return label
 
 
+@frappe.whitelist()
 def get_allowed_category(doctype, txt, searchfield, start, page_len, filters):
     """
     Return all QM Instrument Categories that are not linked on another QM Instrument Category via QM Instrument Category Link, i.e. that are not used as subcategory in another category.
@@ -152,6 +153,7 @@ def get_allowed_category(doctype, txt, searchfield, start, page_len, filters):
     )
 
 
+@frappe.whitelist()
 def get_allowed_subcategory_for_category(doctype, txt, searchfield, start, page_len, filters):
     """
     bench execute microsynth.qms.doctype.qm_instrument.qm_instrument.get_allowed_subcategory_for_category --kwargs "{'doctype': 'QM Instrument', 'txt': '', 'searchfield': 'name', 'start': 0, 'page_len': 20, 'filters': {'category': 'Sequencing'}}"
