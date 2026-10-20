@@ -851,7 +851,7 @@ function request_qm_action(action_type) {
             "callback": function(response) {
                 cur_frm.reload_doc();
                 frappe.show_alert( __(action_type + " created") +
-                            ": <a href='/desk#Form/QM Action/" +
+                            ": <a href='/app/qm-action/" +
                             response.message + "'>" + response.message +
                             "</a>"
                         );
@@ -886,7 +886,7 @@ function create_change(frm) {
             "callback": function(response) {
                 cur_frm.reload_doc();
                 frappe.show_alert( __("QM Change created") +
-                            ": <a href='/desk#Form/QM Change/" +
+                            ": <a href='/app/qm-change/" +
                             response.message + "'>" + response.message +
                             "</a>"
                         );

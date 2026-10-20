@@ -158,7 +158,7 @@ def create_pdf(filters):
             enriched_data[note['contact_person']] = note
         else:
             note_content = enriched_data[note['contact_person']]['notes']
-            url = f'<a href="https://erp.microsynth.local/desk#Form/Contact%20Note/{note["name"]}"><b>{note["name"]}</b></a>'
+            url = f'<a href="https://erp.microsynth.local/app/contact-note/{note["name"]}"><b>{note["name"]}</b></a>'
             note_content += f"<br>Contact Note {url} <b>({note['contact_note_type']})</b> from <b>{note['date'].strftime('%d.%m.%Y')}</b> created by <b>{note['owner']}:</b><p>{note['notes']}</p>"
             enriched_data[note['contact_person']]['notes'] = note_content
     data = list(enriched_data.values())

@@ -800,7 +800,7 @@ function create_qm_decision(decision, from_status, to_status) {
                                             }
                                         });
                                         if (decision == "Reject") {
-                                            frappe.show_alert("Rejected with <a href='/desk#Form/QM Decision/" + qm_decision + "'>" + qm_decision + "</a> and notified creator.");
+                                            frappe.show_alert("Rejected with <a href='/app/qm-decision/" + qm_decision + "'>" + qm_decision + "</a> and notified creator.");
                                             cur_frm.reload_doc();
                                         } else {
                                             set_status(to_status);
@@ -844,7 +844,7 @@ function request_impact_assessment() {
             "callback": function(response) {
                 cur_frm.reload_doc();
                 frappe.show_alert( __("QM Impact Assessment created") +
-                            ": <a href='/desk#Form/QM Impact Assessment/" +
+                            ": <a href='/app/qm-impact-assessment/" +
                             response.message + "'>" + response.message +
                             "</a>"
                         );
@@ -880,7 +880,7 @@ function request_qm_action(action_type) {
             "callback": function(response) {
                 cur_frm.reload_doc();
                 frappe.show_alert( __(action_type + " created") +
-                            ": <a href='/desk#Form/QM Action/" +
+                            ": <a href='/app/qm-action/" +
                             response.message + "'>" + response.message +
                             "</a>"
                         );

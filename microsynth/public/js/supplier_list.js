@@ -60,7 +60,7 @@ function open_simplified_supplier_creation_dialog() {
                                 frappe.msgprint({
                                     'title': __("Already Existing Supplier Name"),
                                     'message': __("A Supplier with this name already exists: ") +
-                                             `<a href="/desk#Form/Supplier/${r.message.supplier}">${r.message.supplier}</a>`,
+                                             `<a href="/app/supplier/${r.message.supplier}">${r.message.supplier}</a>`,
                                     'indicator': "red"
                                 });
                             }

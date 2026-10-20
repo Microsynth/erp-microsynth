@@ -113,7 +113,7 @@ frappe.ui.form.on('Quotation', {
                                     message_html += `
                                         <tr>
                                         <td style="border:1px solid #ccc; padding:6px;">
-                                            <a href="/desk#Form/Sales Order/${so.name}" target="_blank">${so.name}</a>
+                                            <a href="/app/sales-order/${so.name}" target="_blank">${so.name}</a>
                                         </td>
                                         <td style="border:1px solid #ccc; padding:6px;">${so.status || ''}</td>
                                         <td style="border:1px solid #ccc; padding:6px;">${so.web_order_id || ''}</td>
@@ -507,7 +507,7 @@ function create_order_and_deposit_invoice(frm) {
 
             const accounts = r.message || [];
             if (accounts.length === 0) {
-                const contact_link = `<a href="/desk#Form/Contact/${encodeURIComponent(frm.doc.contact_person)}" target="_blank">
+                const contact_link = `<a href="/app/contact/${encodeURIComponent(frm.doc.contact_person)}" target="_blank">
                     ${frm.doc.contact_person}
                 </a>`;
 

@@ -379,7 +379,7 @@ frappe.invoice_entry = {
             quick_entry.style.display = "None";
             full_form.style.display = "Block";
             // load full form
-            form_frame.innerHTML = "<iframe id='iframe_" + purchase_invoice_name + "' class='pdf' style='width: 100%; border: 0px; margin-top: 5px;' src='/desk#Form/Purchase Invoice/" + purchase_invoice_name + "'></iframe>";
+            form_frame.innerHTML = "<iframe id='iframe_" + purchase_invoice_name + "' class='pdf' style='width: 100%; border: 0px; margin-top: 5px;' src='/app/purchase-invoice/" + purchase_invoice_name + "'></iframe>";
         }
     },
     close_document: function(purchase_invoice_name) {

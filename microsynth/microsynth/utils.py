@@ -123,7 +123,7 @@ def check_contact_to_customer():
             sales_invoices = frappe.get_all("Sales Invoice", filters=my_filters, fields=['name'])
             sum_linked_docs = len(quotations) + len(sales_orders) + len(delivery_notes) + len(sales_invoices)
             #print(f"Contact '{contact.name}' is not linked to any Customer.")
-            url = f"https://erp.microsynth.local/desk#Form/Contact/{contact.name}"
+            url = f"https://erp.microsynth.local/app/contact/{contact.name}"
             message += f"<br><a href={url}>{contact.name}</a>: {contact.full_name}, created by {contact.owner} on {contact.creation}, {sum_linked_docs} linked Documents"
             print(f"{url}: {contact.full_name}, created by {contact.owner} on {contact.creation}, {sum_linked_docs} linked Documents")
             counter += 1
@@ -158,7 +158,7 @@ def disable_contacts_without_customers():
                 continue
             contact.status = 'Disabled'
             contact.save()
-            url = f"https://erp.microsynth.local/desk#Form/Contact/{contact.name}"
+            url = f"https://erp.microsynth.local/app/contact/{contact.name}"
             print(f"Disabled {url}: {contact.full_name}, created by {contact.owner} on {contact.creation}")
             counter += 1
     print(f"Disabled {counter} Contacts with a numeric ID that are not linked to any Customer.")
@@ -748,7 +748,7 @@ def has_intercompany_orders(po_no):
         for so_id in sales_order_ids:
             so_id = so_id.strip()
             if frappe.db.exists("Sales Order", so_id):
-                html_parts.append("<a href='/desk#Form/Sales Order/" + so_id + "'>" + so_id + "</a>")
+                html_parts.append("<a href='/app/sales-order/" + so_id + "'>" + so_id + "</a>")
         if len(html_parts) > 0:
             return ', '.join(html_parts)
         else:

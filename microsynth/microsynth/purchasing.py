@@ -3747,7 +3747,7 @@ def report_purchase_receipt_drafts(company="Microsynth AG"):
     if len(purchase_receipt_drafts):
         pr_draft_details = ""
         for pr in purchase_receipt_drafts:
-            url = f"https://erp.microsynth.local/desk#Form/Purchase%20Receipt/{pr['name']}"
+            url = f"https://erp.microsynth.local/app/purchase-receipt/{pr['name']}"
             pr_draft_details += f"<br><a href={url}>{pr['name']}</a>: {pr['title']}, created {pr['creation']} by {pr['owner']}"
 
         email_template = frappe.get_doc("Email Template", "Purchase Receipt Drafts to be submitted")

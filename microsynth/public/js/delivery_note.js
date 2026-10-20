@@ -68,7 +68,7 @@ frappe.ui.form.on('Delivery Note', {
         if (!frm.doc.__islocal && frm.doc.docstatus == 1) {
             has_intercompany_order(frm).then(response => {
                 if (response.message){
-                    frm.dashboard.add_comment("Please also see <a href='/desk#Form/Sales Order/" + response.message + "'>" + response.message + "</a>", 'green', true);
+                    frm.dashboard.add_comment("Please also see <a href='/app/sales-order/" + response.message + "'>" + response.message + "</a>", 'green', true);
                 }
             });
         }

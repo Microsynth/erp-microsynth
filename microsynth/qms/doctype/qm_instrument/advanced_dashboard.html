@@ -3,7 +3,7 @@
         {% if changes %}
             <h6>{{ _("QM Changes") }}</h6>
             {% for c in changes %}
-                <a href="/desk#Form/QM Change/{{ c.name }}">
+                <a href="/app/qm-change/{{ c.name }}">
                     <i class="fa fa-chain"></i>
                     {{ c.title }} ({{ c.status }})
                 </a><br>
@@ -15,7 +15,7 @@
         {% if qm_documents %}
             <h6>{{ _("Related documents") }}</h6>
             {% for d in qm_documents %}
-                <a href="/desk#Form/QM Document/{{ d }}">
+                <a href="/app/qm-document/{{ d }}">
                     <i class="fa fa-chain"></i>
                     {{ d.split("-")[0] }}
                 </a><br>

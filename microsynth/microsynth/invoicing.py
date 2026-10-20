@@ -2584,7 +2584,7 @@ def report_sales_invoice_drafts():
     if len(sales_invoice_drafts):
         si_draft_details = ""
         for si in sales_invoice_drafts:
-            url = f"https://erp.microsynth.local/desk#Form/Sales%20Invoice/{si['name']}"
+            url = f"https://erp.microsynth.local/app/sales-invoice/{si['name']}"
             si_draft_details += f"<br><a href={url}>{si['name']}</a>: {si['title']}, created by {si['owner']}"
 
         email_template = frappe.get_doc("Email Template", "Sales Invoice Drafts to be submitted")

@@ -8,7 +8,7 @@
     </thead>
         <tr>
             <td>{{ _("Document") }}</td>
-            <td><a href="/desk#Form/Purchase Invoice/{{ name }}">{{ name }}</a></td>
+            <td><a href="/app/purchase-invoice/{{ name }}">{{ name }}</a></td>
             <td rowspan=12>
                 {% for a in attachments %}
                 <iframe class="pdf" src="{{ a.file_url }}"></iframe>
@@ -26,7 +26,7 @@
         <tr>
             <td>{{ _("Supplier") }}</td>
             <td>
-                <a href="/desk#Form/Supplier/{{ supplier }}">{{ supplier_name }}</a>
+                <a href="/app/supplier/{{ supplier }}">{{ supplier_name }}</a>
             </td>
         </tr>
         <tr>

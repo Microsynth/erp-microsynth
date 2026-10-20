@@ -677,7 +677,7 @@ function open_confirmation_dialog(selected, report) {
                 },
                 callback(r) {
                     if (!r.exc && r.message) {
-                        const link = `<a href="/desk#Form/Material Request/${r.message}" target="_blank">${r.message}</a>`;
+                        const link = `<a href="/app/material-request/${r.message}" target="_blank">${r.message}</a>`;
                         frappe.show_alert({message: __('Material Request created and submitted: {0}', [link]), indicator: 'green'});
                         d.hide();
                         report.refresh();
@@ -868,7 +868,7 @@ function open_item_request_dialog(report, item_name, supplier_name, supplier_par
                 'args': { 'data': values },
                 callback(r) {
                     if (!r.exc) {
-                        const link = `<a href="/desk#Form/Item Request/${r.message}" target="_blank">${r.message}</a>`;
+                        const link = `<a href="/app/item-request/${r.message}" target="_blank">${r.message}</a>`;
                         frappe.msgprint({
                           title: __('Success'),
                           indicator: 'green',

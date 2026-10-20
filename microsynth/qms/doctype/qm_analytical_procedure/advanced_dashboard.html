@@ -3,7 +3,7 @@
         {% if studies %}
             <h6>{{ _("Studies") }}</h6>
             {% for s in studies %}
-                <a href="/desk#Form/QM Study/{{ s.name }}">
+                <a href="/app/qm-study/{{ s.name }}">
                     <i class="fa fa-chain"></i>
                     {{ s.title }} {% if s.completion_date %}(completed {{ s.completion_date.strftime('%d.%m.%Y') }}){% else %}(no completion date){% endif %}
                 </a><br>
@@ -15,7 +15,7 @@
         {% if qm_documents %}
             <h6>{{ _("Related documents") }}</h6>
             {% for d in qm_documents %}
-                <a href="/desk#Form/QM Document/{{ d }}">
+                <a href="/app/qm-document/{{ d }}">
                     <i class="fa fa-chain"></i>
                     {{ d.split("-")[0] }}
                 </a><br>

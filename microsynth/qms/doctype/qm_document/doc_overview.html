@@ -19,7 +19,7 @@
         {% if docs_linking_to_this %}
             <h6>{{ _("Valid documents that link here") }}</h6>
             {% for d in docs_linking_to_this %}
-                <a href="/desk#Form/QM Document/{{ d.document }}">
+                <a href="/app/qm-document/{{ d.document }}">
                     <i class="fa fa-chain"></i>
                     {{ d.document.split("-")[0] }}
                 </a><br>
@@ -31,7 +31,7 @@
         {% if relating_docs %}
             <h6>{{ _("Related documents") }}</h6>
             {% for d in relating_docs %}
-                <a href="/desk#Form/QM Document/{{ d }}">
+                <a href="/app/qm-document/{{ d }}">
                     <i class="fa fa-chain"></i>
                     {{ d.split("-")[0] }}
                 </a><br>

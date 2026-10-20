@@ -1061,7 +1061,7 @@ function open_change_credit_accounts_dialog(frm) {
                             if (!r.exc && r.message) {
                                 frappe.show_alert({
                                     message: __("New Sales Invoice created: {0}", [
-                                        `<a href="/desk#Form/Sales Invoice/${r.message}" target="_blank">${r.message}</a>`
+                                        `<a href="/app/sales-invoice/${r.message}" target="_blank">${r.message}</a>`
                                     ]),
                                     indicator: "green"
                                 });

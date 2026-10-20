@@ -3,7 +3,7 @@
         {% if corrections %}
             <h6>{{ _("Corrections") }}</h6>
             {% for c in corrections %}
-                <a href="/desk#Form/QM Action/{{ c.name }}">
+                <a href="/app/qm-action/{{ c.name }}">
                     <i class="fa fa-chain"></i>
                     {{ c.title }} ({{ c.status }})
                 </a><br>
@@ -15,7 +15,7 @@
         {% if changes %}
             <h6>{{ _("Preventive Actions (QM Change)") }}</h6>
             {% for c in changes %}
-                <a href="/desk#Form/QM Change/{{ c.name }}">
+                <a href="/app/qm-change/{{ c.name }}">
                     <i class="fa fa-chain"></i>
                     {{ c.title }} ({{ c.status }})
                 </a><br>
@@ -27,7 +27,7 @@
         {% if corrective_actions %}
             <h6>{{ _("Corrective Actions") }}</h6>
             {% for ca in corrective_actions %}
-                <a href="/desk#Form/QM Action/{{ ca.name }}">
+                <a href="/app/qm-action/{{ ca.name }}">
                     <i class="fa fa-chain"></i>
                     {{ ca.title }} ({{ ca.status }})
                 </a><br>
@@ -39,7 +39,7 @@
         {% if effectiveness_checks %}
             <h6>{{ _("Effectiveness Checks") }}</h6>
             {% for ec in effectiveness_checks %}
-                <a href="/desk#Form/QM Action/{{ ec.name }}">
+                <a href="/app/qm-action/{{ ec.name }}">
                     <i class="fa fa-chain"></i>
                     {{ ec.title }} ({{ ec.status }})
                 </a><br>

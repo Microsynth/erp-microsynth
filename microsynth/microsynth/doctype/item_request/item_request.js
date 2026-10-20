@@ -243,12 +243,12 @@ function open_material_request_dialog(selected, frm) {
                         //     'title': __('Success'),
                         //     'indicator': 'green',
                         //     'message': __('Material Request {0} created', [
-                        //         `<a href="/desk#Form/Material Request/${r.message}" target="_blank">${r.message}</a>`
+                        //         `<a href="/app/material-request/${r.message}" target="_blank">${r.message}</a>`
                         //     ])
                         // });
                         frappe.show_alert({
                             message: __('Material Request {0} created', [
-                                `<a href="/desk#Form/Material Request/${r.message}" target="_blank">${r.message}</a>`
+                                `<a href="/app/material-request/${r.message}" target="_blank">${r.message}</a>`
                             ]),
                             indicator: 'green'
                         });

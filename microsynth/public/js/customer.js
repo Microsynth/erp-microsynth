@@ -298,7 +298,7 @@ function create_payment_reminder(frm) {
                 'callback': function(response) {
                     if (response.message) {
                         frappe.show_alert( __("Reminder created") +
-                            ": <a href='/desk#Form/Payment Reminder/" +
+                            ": <a href='/app/payment-reminder/" +
                             response.message + "'>" + response.message +
                             "</a>"
                         );
