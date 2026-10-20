@@ -27,7 +27,7 @@
    "label": "Description"
   }
  ],
- "modified": "2026-10-20 15:13:11.379621",
+ "modified": "2026-10-20 15:29:20.508887",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "Competency Scope",
@@ -86,7 +86,9 @@
   }
  ],
  "quick_entry": 1,
+ "search_fields": "scope",
  "sort_field": "modified",
  "sort_order": "DESC",
+ "title_field": "scope",
  "track_changes": 1
 }
