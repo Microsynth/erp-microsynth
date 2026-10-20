@@ -1,4 +1,5 @@
 {
+ "allow_rename": 1,
  "autoname": "field:scope",
  "creation": "2026-10-07 14:51:29.405581",
  "doctype": "DocType",
@@ -26,8 +27,8 @@
    "label": "Description"
   }
  ],
- "modified": "2026-10-09 17:33:17.490012",
- "modified_by": "Administrator",
+ "modified": "2026-10-20 15:13:11.379621",
+ "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "Competency Scope",
  "owner": "Administrator",
