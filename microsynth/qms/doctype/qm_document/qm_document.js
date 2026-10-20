@@ -592,7 +592,7 @@ function reject() {
 
 
 function create_training_request(user_name, due_date) {
-    frappe.call({
+    return frappe.call({
         'method': 'microsynth.qms.doctype.qm_training_record.qm_training_record.create_training_record',
         'args': {
             'trainee': user_name,
@@ -636,12 +636,25 @@ function request_training_prompt(trainees) {
         },
         { 'fieldname': 'due_date', 'fieldtype': 'Date', 'label': __('Due date'), 'reqd': 1 }
     ],
-    function(values){
-        for (var i = 0; i < values.trainees.length; i++) {
-            if (values.trainees[i].user_name) {
-                create_training_request(values.trainees[i].user_name, values.due_date);
-            }
+    async function(values){
+        if (values.due_date < frappe.datetime.get_today()) {
+            frappe.throw(__('Due date cannot be in the past.'));
         }
+        frappe.dom.freeze(__('Creating QM Training Records. Please wait...'));
+        try {
+            for (var trainee of values.trainees) {
+                if (trainee.user_name) {
+                    await create_training_request(trainee.user_name, values.due_date);
+                }
+            }
+        } finally {
+            frappe.dom.unfreeze();
+        }
+        frappe.msgprint({
+            title: __('Training requested'),
+            message: __('All QM Training Records have been created successfully.'),
+            indicator: 'green'
+        });
     },
     __('Add or delete Trainees if necessary'),
     __('Request training')

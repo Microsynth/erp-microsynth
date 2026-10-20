@@ -35,29 +35,30 @@ def get_overview(qm_revision):
 
 @frappe.whitelist()
 def create_revision(revisor, dt, dn, due_date):
-    revision = frappe.get_doc(
-        {
-            'doctype': 'QM Revision',
-            'revisor': revisor,
-            'document_type': dt,
-            'document_name': dn,
-            'due_date': due_date
-        })
+    for attempt in range(3):
+        try:
+            revision = frappe.get_doc(
+                {
+                    'doctype': 'QM Revision',
+                    'revisor': revisor,
+                    'document_type': dt,
+                    'document_name': dn,
+                    'due_date': due_date
+                })
+            revision.save(ignore_permissions=True)
+            assign(revision.name, revisor)
 
-    revision.save(ignore_permissions = True)
-    frappe.db.commit()
+            if dt == "QM Document":
+                qm_doc = frappe.get_doc("QM Document", dn)
+                if qm_doc.docstatus == 0:
+                    qm_doc.submit()
 
-    # create assignment to user
-    assign(revision.name, revisor)
-
-    # submit qm document
-    if dt == "QM Document":
-        qm_doc = frappe.get_doc("QM Document", dn)
-        if qm_doc.docstatus == 0:
-            qm_doc.submit()
             frappe.db.commit()
-
-    return revision.name
+            return revision.name
+        except frappe.QueryDeadlockError:
+            frappe.db.rollback()
+            if attempt == 2:
+                raise
 
 
 @frappe.whitelist()

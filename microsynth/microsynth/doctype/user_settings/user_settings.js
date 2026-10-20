@@ -81,9 +81,22 @@ function request_sop_training(frm) {
                 { 'fieldname': 'due_date', 'fieldtype': 'Date', 'label': __('Due date'), 'reqd': 1 }
             ],
             async function(values){
-                for (var qm_document of values.qm_documents) {
-                    await create_training_request(qm_document.qm_document, frm.doc.name, values.due_date);
+                if (values.due_date < frappe.datetime.get_today()) {
+                    frappe.throw(__('Due date cannot be in the past.'));
                 }
+                frappe.dom.freeze(__('Creating QM Training Records. Please wait...'));
+                try {
+                    for (var qm_document of values.qm_documents) {
+                        await create_training_request(qm_document.qm_document, frm.doc.name, values.due_date);
+                    }
+                } finally {
+                    frappe.dom.unfreeze();
+                }
+                frappe.msgprint({
+                    title: __('Training requested'),
+                    message: __('All QM Training Records have been created successfully.'),
+                    indicator: 'green'
+                });
             },
             __('Add or delete SOPs if necessary'),
             __('Request training')
