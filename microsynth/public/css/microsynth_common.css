@@ -1,4 +1,4 @@
-/* disable the browser-print button */
-a.btn-print-print {
-    display: none;
+/* disable the browser-print button in v2025 */
+#page-print .primary-action {
+  display: none;
 }
