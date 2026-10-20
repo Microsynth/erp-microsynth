@@ -17,6 +17,15 @@ frappe.ui.form.on('Quotation Item', {
 });
 
 
+function should_confirm_genetic_analysis(frm) {
+    const is_draft = frm.doc.docstatus === 0;
+    const is_genetic_analysis = frm.doc.product_type === "Genetic Analysis";
+    const is_microsynth_ag = frm.doc.company === "Microsynth AG";
+    const has_shipping_address = !!frm.doc.shipping_address_name;
+
+    return is_draft && is_genetic_analysis && !is_microsynth_ag && has_shipping_address;
+}
+
 frappe.ui.form.on('Quotation', {
     refresh(frm){
         // remove Menu > Email if document is not valid
@@ -245,9 +254,49 @@ frappe.ui.form.on('Quotation', {
     },
 
     before_submit(frm) {
-        // Check if contact_person is set
-        if (frm.doc.contact_person) {
-            // Prevent automatic submission while we wait for confirmation
+        if (frm.__microsynth_submit_guard) {
+            delete frm.__microsynth_submit_guard;
+            return;
+        }
+        if (frm.doc.product_type === "Genetic Analysis" && frm.doc.company !== "Microsynth AG" && frm.doc.shipping_address_name) {
+            frappe.validated = false;
+            frappe.call({
+                method: 'frappe.client.get_value',
+                args: {
+                    doctype: 'Address',
+                    filters: { name: frm.doc.shipping_address_name },
+                    fieldname: 'country'
+                },
+                async: false,
+                callback: function(r) {
+                    const country = r.message && r.message.country;
+                    const is_non_core_country = !!country && !["Switzerland", "Germany", "Austria", "France", "Liechtenstein"].includes(country);
+                    if (!is_non_core_country) {
+                        frappe.validated = true;
+                        return;
+                    }
+                    frappe.confirm(
+                        `<b>Genetic Analysis</b> quotation for shipping country <b>${frappe.utils.escape_html(country)}</b> is not issued by <b>Microsynth AG</b>. Do you want to proceed at your own risk?`,
+                        function() {
+                            frm.__microsynth_submit_guard = true;
+                            frappe.validated = true;
+                            frm.save('Submit');
+                        },
+                        function() {
+                            frappe.validated = false;
+                            frappe.msgprint({
+                                title: __('Warning'),
+                                indicator: 'orange',
+                                message: __('Submission cancelled. Please change the company before submitting.')
+                            });
+                        }
+                    );
+                }
+            });
+            return;
+        }
+        const has_contact_person = !!frm.doc.contact_person;
+        if (has_contact_person) {
             frappe.validated = false;
             frappe.call({
                 'method': 'frappe.client.get_value',
@@ -269,15 +318,15 @@ frappe.ui.form.on('Quotation', {
                             function () {
                                 frappe.msgprint("Submission cancelled. Please select a Contact Person with a Webshop Account.");
                             },
-                            function () {
+                            function() {
+                                frm.__microsynth_submit_guard = true;
                                 frappe.validated = true;
                                 frm.save('Submit');
                             }
                         );
-                    } else {
-                        // Contact has a webshop account → allow submission
-                        frappe.validated = true;
+                        return;
                     }
+                    frappe.validated = true;
                 }
             });
         }

@@ -12,9 +12,12 @@ frappe.ui.form.on('Item', {
 
         // Only show button for Item Group "Purchasing"
         if (frm.doc.item_group === "Purchasing") {
-            frm.add_custom_button(__("Add Location"), function () {
+            frm.add_custom_button(__("Add"), function () {
                 show_add_location_dialog(frm);
-            });
+            }, __("Location"));
+            frm.add_custom_button(__("Delete"), function () {
+                show_delete_location_dialog(frm);
+            }, __("Location"));
 
             if (!frm.doc.__islocal) {
                 frm.add_custom_button(__("Purchase History"), function () {
@@ -49,9 +52,9 @@ frappe.ui.form.on('Item', {
             .map(row => row.supplier_part_no)
             .filter(code => code);
 
+        // Also clear the previous locations when the last assignment was removed.
+        frm.dashboard.clear_comment();
         if (storage_locations.length || supplier_item_codes.length) {
-            // Remove previous dashboard comments
-            frm.dashboard.clear_comment();
 
             const supplierCodesText = supplier_item_codes.length
                 ? `<br><b>Supplier Item Code${supplier_item_codes.length > 1 ? "s" : ""}:</b> ${supplier_item_codes.join(", ")}`
@@ -536,6 +539,55 @@ function show_add_location_dialog(frm) {
 
     // Initialize states: disable child fields at start
     refresh_field_states(d);
+}
+
+
+async function show_delete_location_dialog(frm) {
+    const locations = [...new Set((frm.doc.storage_locations || []).map(row => row.location).filter(Boolean))];
+    if (!locations.length) {
+        frappe.msgprint(__("No storage locations assigned to this Item."));
+        return;
+    }
+
+    const results = await Promise.all(locations.map(location => frappe.call({
+        method: "microsynth.microsynth.purchasing.get_location_path_string",
+        args: { location_name: location }
+    })));
+
+    const dialog = new frappe.ui.Dialog({
+        title: __("Select Storage Locations To Delete"),
+        fields: locations.map((location, index) => ({
+            fieldname: `location_${index}`,
+            fieldtype: "Check",
+            label: frappe.utils.escape_html(results[index].message || location),
+            default: 0
+        })),
+        primary_action_label: __("Delete"),
+        primary_action(values) {
+            const selected = locations.filter((location, index) => values[`location_${index}`]);
+            if (!selected.length) {
+                dialog.hide();
+                return;
+            }
+            dialog.disable_primary_action();
+            frappe.call({
+                method: "microsynth.microsynth.purchasing.delete_locations_from_item",
+                args: { item: frm.doc.name, locations: selected },
+                freeze: true,
+                callback(r) {
+                    if (!r.exc) {
+                        dialog.hide();
+                        frm.reload_doc();
+                        frappe.show_alert(__("Storage location assignments deleted."), 5);
+                    }
+                },
+                always() {
+                    dialog.enable_primary_action();
+                }
+            });
+        }
+    });
+    dialog.show();
 }
 
 

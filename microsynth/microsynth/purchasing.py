@@ -2183,6 +2183,41 @@ def send_material_request_owner_emails(doc, event=None):
         )
 
 
+def validate_supplier_orderable(item_code, supplier):
+    """Prevent ordering discontinued or blocked Item/Supplier combinations."""
+    if not item_code or not supplier:
+        return
+    supplier_rows = frappe.get_all(
+        "Item Supplier",
+        filters={"parent": item_code, "parenttype": "Item", "supplier": supplier},
+        fields=["substitute_status"]
+    )
+    for row in supplier_rows:
+        substitute_status = row.get("substitute_status")
+        if substitute_status in ("Discontinued", "Blocked"):
+            frappe.throw(
+                _(f"Item {item_code} cannot be ordered from Supplier {supplier}: Substitute Status is {substitute_status}. Please select another supplier or contact the Purchasing department."),
+                _("Ordering not allowed")
+            )
+
+
+def validate_purchasing_substitute_status(doc, event=None):
+    """Apply the ordering restriction to requests and orders, including direct edits."""
+    if doc.doctype == "Material Request" and doc.material_request_type != "Purchase":
+        return
+    for row in doc.items:
+        supplier = doc.supplier if doc.doctype == "Purchase Order" else row.get("supplier")
+        validate_supplier_orderable(row.item_code, supplier)
+
+
+def validate_purchase_order(doc, event=None):
+    validate_purchasing_substitute_status(doc)
+
+
+def validate_material_request(doc, event=None):
+    validate_purchasing_substitute_status(doc)
+
+
 @frappe.whitelist()
 def create_material_request(item_code, qty, schedule_date, company, item_name=None, rate=0, currency=None, comment=None, supplier=None, requested_by=None):
     if not (item_code and qty and schedule_date and company):
@@ -2209,14 +2244,18 @@ def create_material_request(item_code, qty, schedule_date, company, item_name=No
                     supplier_currency = frappe.get_value("Supplier", supplier, "default_currency")
                     break
             if not supplier:
-                entry = item_doc.supplier_items[0]
+                entry = next((row for row in item_doc.supplier_items
+                              if row.substitute_status not in ("Discontinued", "Blocked")),
+                             item_doc.supplier_items[0])
                 supplier = entry.supplier
                 supplier_currency = frappe.get_value("Supplier", supplier, "default_currency")
-                frappe.log_error(f"Item {item_code} has multiple suppliers but none marked as 'Verified'. Using first supplier {supplier}.", "purchasing.create_material_request")
+                frappe.log_error(f"Item {item_code} has multiple suppliers but none marked as 'Verified' or without a status. Using supplier {supplier}.", "purchasing.create_material_request")
         else:
             frappe.throw(f"Item {item_code} is not assigned to any Supplier, unable to create a Material Request. Please contact the purchasing department.")
     else:
         supplier_currency = frappe.get_value("Supplier", supplier, "default_currency")
+
+    validate_supplier_orderable(item_code, supplier)
 
     if (not currency or not rate) and supplier_currency:
         currency = supplier_currency
@@ -2746,6 +2785,26 @@ def add_location_to_item(item, location):
 
     doc.append("storage_locations", {"location": location})
     doc.save(ignore_permissions=True)
+
+
+@frappe.whitelist()
+def delete_locations_from_item(item, locations):
+    """Remove selected Item assignments without deleting the Location documents."""
+    if isinstance(locations, str):
+        locations = json.loads(locations)
+    if not isinstance(locations, list) or any(not isinstance(location, str) for location in locations):
+        frappe.throw(_("Locations must be a list of Location names."))
+    if not locations:
+        return
+
+    doc = frappe.get_doc("Item", item)
+    doc.check_permission("read")
+    selected = set(locations)
+    rows = doc.get("storage_locations") or []
+    remaining = [row for row in rows if row.location not in selected]
+    if len(remaining) != len(rows):
+        doc.set("storage_locations", remaining)
+        doc.save(ignore_permissions=True)
 
 
 @frappe.whitelist()

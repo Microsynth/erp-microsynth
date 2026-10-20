@@ -452,6 +452,7 @@ def create_item_request(data):
     ir.has_batch_no = data.get('has_batch_no', 0)
     ir.comment = data.get('comment')
     ir.status = "Pending"
+    ir.material_code = data.get('material_code')
     ir.insert()
     ir.submit()
     return ir.name
