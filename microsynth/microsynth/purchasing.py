@@ -241,30 +241,44 @@ def select_quotation_for_item(item_code, consolidated_total_qty, supplier_doc, c
             selection['warnings'].append(
                 f"Item {item_code}: found Supplier Quotations but none are currently valid."
             )
-        # Fallback: try to derive a rate from supplier's default price list
-        if supplier_doc.default_currency != currency:
-            conversion_rate = get_exchange_rate(from_currency=supplier_doc.default_currency, to_currency=currency, company=company, date=today_date)
-        else:
-            conversion_rate = 1
-
-        item_details = get_item_details({
-            "item_code": item_code,
-            "qty": consolidated_total_qty,
-            "price_list": supplier_doc.default_price_list,
-            "supplier": supplier_doc.name,
-            "company": company,
-            "buying": 1,
-            "currency": currency,
-            "conversion_rate": conversion_rate,
-            "doctype": "Purchase Order",
-        })
-        if item_details and item_details.get("price_list_rate") is not None:
-            selection['rate'] = flt(item_details.get("price_list_rate"))
-        else:
-            selection['warnings'].append(
-                f"Item {item_code}: no valid Item Price found in price list {supplier_doc.default_price_list}."
+        # Fallback: if the supplier price list already contains the requested currency, use that exact rate and do not convert it.
+        exact_currency_rate = None
+        if supplier_doc.default_price_list:
+            item_price_filters = {
+                "item_code": item_code,
+                "price_list": supplier_doc.default_price_list,
+                "currency": currency,
+            }
+            exact_currency_rate = frappe.db.get_value(
+                "Item Price",
+                item_price_filters,
+                "price_list_rate"
             )
+        if exact_currency_rate is not None:
+            selection['rate'] = flt(exact_currency_rate)
+        else:
+            if supplier_doc.default_currency != currency:
+                conversion_rate = get_exchange_rate(from_currency=supplier_doc.default_currency, to_currency=currency, company=company, date=today_date)
+            else:
+                conversion_rate = 1
 
+            item_details = get_item_details({
+                "item_code": item_code,
+                "qty": consolidated_total_qty,
+                "price_list": supplier_doc.default_price_list,
+                "supplier": supplier_doc.name,
+                "company": company,
+                "buying": 1,
+                "currency": currency,
+                "conversion_rate": conversion_rate,
+                "doctype": "Purchase Order",
+            })
+            if item_details and item_details.get("price_list_rate") is not None:
+                selection['rate'] = flt(item_details.get("price_list_rate"))
+            else:
+                selection['warnings'].append(
+                    f"Item {item_code}: no valid Item Price found in price list {supplier_doc.default_price_list}."
+                )
     return selection
 
 
