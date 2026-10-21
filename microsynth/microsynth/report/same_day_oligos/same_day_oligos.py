@@ -88,7 +88,7 @@ def get_data(filters=None):
                 WHEN `tabSales Order`.`web_order_id` IS NOT NULL
                     AND `tabSales Order`.`web_order_id` != ''
                 THEN CONCAT(
-                    '<a href="/desk#query-report/Sales Document Overview?web_order_id=',
+                    '<a href="/app/query-report/Sales Document Overview?web_order_id=',
                     `tabSales Order`.`web_order_id`,
                     '" target="_blank">',
                     `tabSales Order`.`web_order_id`,

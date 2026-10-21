@@ -345,7 +345,7 @@ function render_duplicate_comment(frm, contacts) {
     const label = contacts.length === 1 ? "potential Duplicate:" : "potential Duplicates:";
     let html = `<br>${contacts.length} ${label}<br>`;
     contacts.slice(0, 10).forEach(c => {
-        html += `<b>${c.name}</b>: ${c.first_name} ${c.last_name || ''}, Institute: ${c.institute || ''} (<a href="/desk#contact_merger?contact_1=${frm.doc.name}&contact_2=${c.name}">Open in Contact Merger</a>)<br>`;
+        html += `<b>${c.name}</b>: ${c.first_name} ${c.last_name || ''}, Institute: ${c.institute || ''} (<a href="/app/contact_merger?contact_1=${frm.doc.name}&contact_2=${c.name}">Open in Contact Merger</a>)<br>`;
     });
     if (contacts.length > 10) {
         html += "<b>...</b><br>";

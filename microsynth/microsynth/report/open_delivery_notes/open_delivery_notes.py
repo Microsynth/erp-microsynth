@@ -60,7 +60,7 @@ def get_data(filters):
             CASE
                 WHEN `tabDelivery Note`.`web_order_id` IS NOT NULL AND `tabDelivery Note`.`web_order_id` != ''
                 THEN CONCAT(
-                    '<a href="/desk#query-report/Sales Document Overview?web_order_id=',
+                    '<a href="/app/query-report/Sales Document Overview?web_order_id=',
                     `tabDelivery Note`.`web_order_id`,
                     '" target="_blank">',
                     `tabDelivery Note`.`web_order_id`,

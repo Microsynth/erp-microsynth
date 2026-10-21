@@ -96,7 +96,7 @@ def reassign(pinv, user, reason, new_assignee):
             'doctype': "Purchase Invoice",
             'name': pinv,
             'assign_to': [new_assignee],
-            'description': f'You are assigned to Purchase Invoice {pinv} by {user}.\n{reason_string}\nPlease check it in the <a href="https://erp.microsynth.local/desk#approval-manager">Approval Manager</a>.',
+            'description': f'You are assigned to Purchase Invoice {pinv} by {user}.\n{reason_string}\nPlease check it in the <a href="https://erp.microsynth.local/app/approval-manager">Approval Manager</a>.',
             'notify': True
         })
 

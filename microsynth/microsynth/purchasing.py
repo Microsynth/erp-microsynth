@@ -573,7 +573,7 @@ def create_approval_request(assign_to, dt, dn):
             'doctype': dt,
             'name': dn,
             'assign_to': [assign_to],
-            'description': f'Please check the {dt} {dn} in the <a href="https://erp.microsynth.local/desk#approval-manager">Approval Manager</a>.',
+            'description': f'Please check the {dt} {dn} in the <a href="https://erp.microsynth.local/app/approval-manager">Approval Manager</a>.',
             'notify': False  # Send email
         })
         # create an Email without a direct link to the Document itself
@@ -581,7 +581,7 @@ def create_approval_request(assign_to, dt, dn):
             recipients = assign_to,
             sender = frappe.session.user,
             subject = f"Approval Request for {dt} {dn}",
-            content = f'Please check the {dt} {dn} in the <a href="https://erp.microsynth.local/desk#approval-manager">Approval Manager</a> and approve or reject it.',
+            content = f'Please check the {dt} {dn} in the <a href="https://erp.microsynth.local/app/approval-manager">Approval Manager</a> and approve or reject it.',
             send_email = True
         )
         if dt == "Purchase Invoice":
