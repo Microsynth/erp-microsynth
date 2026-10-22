@@ -158,6 +158,7 @@ def get_data(filters):
 
             WHERE TRUE
                 {criteria}
+            ORDER BY `tabCustomer`.`name` ASC;
         """.format(criteria=criteria)
 
         fetched_data = frappe.db.sql(sql_query, as_dict = True)
