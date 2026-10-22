@@ -4,3 +4,4 @@
 *.swp
 tags
 microsynth/docs/current
+dist/
