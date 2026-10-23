@@ -159,12 +159,12 @@ frappe.contact_merger = {
     },
     open_contact_1: function() {
         var contact_1 = document.getElementById("contact_1").value;
-        var target = "/desk" + frappe.utils.get_form_link("Contact", contact_1);
+        var target = frappe.utils.get_form_link("Contact", contact_1);
         window.open(target);
     },
     open_contact_2: function() {
         var contact_2 = document.getElementById("contact_2").value;
-        var target = "/desk" + frappe.utils.get_form_link("Contact", contact_2);
+        var target = frappe.utils.get_form_link("Contact", contact_2);
         window.open(target);
     },
     get_request_arguments: function() {
