@@ -139,6 +139,21 @@
   margin: 0 5px;
 }
 
+.material-counter .counter-icon {
+  width: 20px;
+  height: 20px;
+  vertical-align: middle;
+  fill: none;
+  stroke: currentColor;
+  --icon-stroke: currentColor;
+  --icon-fill: currentColor;
+}
+
+.material-counter .remove-row .counter-icon {
+  fill: currentColor;
+  stroke: none;
+}
+
 .material-counter #item_table {
   margin: 10px 0;
   width: 100%;

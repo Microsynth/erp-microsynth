@@ -90,7 +90,7 @@ function run() {
                             let has_material_code = Boolean((item.material_code || "").trim());
                             let row = `
                                 <tr class="${has_material_code ? "has-material-code" : "no-material-code"}">
-                                    <td class="action-column"><button type="button" class="btn btn-danger btn-sm remove-row" aria-label="Remove item" title="Remove item"><i class="fa fa-times" aria-hidden="true"></i></button></td>
+                                    <td class="action-column"><button type="button" class="btn btn-danger btn-sm remove-row" aria-label="Remove item" title="Remove item"><svg class="counter-icon" aria-hidden="true"><use href="#icon-close"></use></svg></button></td>
                                     <td class="item-column">${item.name}</td>
                                     <td class="item-name-column">${item.item_name}</td>
                                     <td class="material-code-column">${item.material_code || ""}</td>

@@ -8,14 +8,14 @@
                 <div class="counter-field warehouse-field">
                     <label class="control-label" for="warehouse">Warehouse</label>
                     <div class="input-group">
-                        <span class="input-group-addon"><i class="fa fa-cube"></i></span>
+                        <span class="input-group-addon"><svg class="counter-icon" aria-hidden="true"><use href="#icon-stock"></use></svg></span>
                         <input type="text" class="form-control" placeholder="Warehouse" id="warehouse" readonly>
                     </div>
                 </div>
                 <div class="counter-field">
                     <label class="control-label" for="processes">Process</label>
                     <div class="input-group">
-                        <span class="input-group-addon"><i class="fa fa-users"></i></span>
+                        <span class="input-group-addon"><svg class="counter-icon" aria-hidden="true"><use href="#icon-users"></use></svg></span>
                         <select class="form-control" placeholder="Process" id="processes" onchange="get_users_for_process(this)">
                         </select>
                     </div>
@@ -23,7 +23,7 @@
                 <div class="counter-field">
                     <label class="control-label" for="users">User</label>
                     <div class="input-group">
-                        <span class="input-group-addon"><i class="fa fa-user"></i></span>
+                        <span class="input-group-addon"><svg class="counter-icon" aria-hidden="true"><use href="#icon-customer"></use></svg></span>
                         <select class="form-control" placeholder="User" id="users" onchange="focus_on_scanner_input()">
                         </select>
                     </div>
@@ -32,7 +32,7 @@
                 <div class="counter-field scanner-field">
                     <label class="control-label" for="scanner_input">Scan Item</label>
                     <div class="input-group">
-                        <span class="input-group-addon"><i class="fa fa-barcode"></i></span>
+                        <span class="input-group-addon"><svg class="counter-icon" aria-hidden="true"><use href="#icon-scan"></use></svg></span>
                         <input type="text" class="form-control" placeholder="Scan Data Matrix Code" id="scanner_input" autocomplete="off" autocapitalize="off" spellcheck="false" autofocus>
                     </div>
                 </div>
