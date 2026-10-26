@@ -68,8 +68,9 @@ frappe.ui.form.on('QM Revision', {
 
 
 function sign() {
-    cur_frm.set_value("revisor", frappe.session.user);
-    cur_frm.save().then(function() {
+    cur_frm.set_value("revisor", frappe.session.user).then(function() {
+        return cur_frm.is_dirty() ? cur_frm.save() : Promise.resolve();
+    }).then(function() {
         frappe.prompt([
                 {'fieldname': 'password', 'fieldtype': 'Password', 'label': __('Approval Password'), 'reqd': 1}  
             ],
@@ -110,8 +111,9 @@ function change_revisor(frm) {
             }
         ],
         function(values){
-            cur_frm.set_value("revisor", values.new_revisor);
-            cur_frm.save().then(function() {
+            cur_frm.set_value("revisor", values.new_revisor).then(function() {
+                return cur_frm.is_dirty() ? cur_frm.save() : Promise.resolve();
+            }).then(function() {
                 // assign QM Revision to new revisor
                 frappe.call({
                     'method': 'microsynth.qms.doctype.qm_revision.qm_revision.assign',

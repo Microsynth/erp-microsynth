@@ -64,8 +64,9 @@ frappe.ui.form.on('QM Review', {
 
 
 function sign() {
-    cur_frm.set_value("reviewer", frappe.session.user);
-    cur_frm.save().then(function() {
+    cur_frm.set_value("reviewer", frappe.session.user).then(function() {
+        return cur_frm.is_dirty() ? cur_frm.save() : Promise.resolve();
+    }).then(function() {
         frappe.prompt([
                 {'fieldname': 'password', 'fieldtype': 'Password', 'label': __('Approval Password'), 'reqd': 1}
             ],
@@ -161,8 +162,9 @@ function change_reviewer(frm) {
                 'callback': function (r) {
                     var doc = r.message;
                     if (((doc.created_by || doc.owner) !== locals.new_reviewer)) {
-                        cur_frm.set_value("reviewer", locals.new_reviewer);
-                        cur_frm.save().then(function() {
+                        cur_frm.set_value("reviewer", locals.new_reviewer).then(function() {
+                            return cur_frm.is_dirty() ? cur_frm.save() : Promise.resolve();
+                        }).then(function() {
                             // assign
                             frappe.call({
                                 'method': 'microsynth.qms.doctype.qm_review.qm_review.assign',
