@@ -497,8 +497,9 @@ function sign_creation() {
         ],
         function(values){
             // set the created_on date to the current date
-            cur_frm.set_value("created_on", frappe.datetime.get_today());
-            cur_frm.save().then(function() {
+            cur_frm.set_value("created_on", frappe.datetime.get_today()).then(function() {
+                return cur_frm.is_dirty() ? cur_frm.save() : Promise.resolve();
+            }).then(function() {
                 // check password and if correct, submit
                 frappe.call({
                     'method': 'microsynth.qms.signing.sign',
