@@ -93,7 +93,7 @@ frappe.ui.form.on('Quotation', {
         if (frm.doc.docstatus == 1) {
             setTimeout(function() {
                 // remove Create > Sales Order
-                $("a[data-label='" + encodeURI(__("Sales Order")) + "']").parent().remove();
+                frm.remove_custom_button(__("Sales Order"), __("Create"));
 
                 // Add own button to create Sales Order from Quotation
                 frm.add_custom_button(__('Sales Order'), function() {
