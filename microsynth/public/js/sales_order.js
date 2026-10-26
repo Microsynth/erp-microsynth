@@ -305,13 +305,20 @@ function fetch_default_company_from_customer(customer) {
         "callback": function(response) {
             let customer_doc = response.message;
             if (customer_doc && customer_doc.default_company) {
-                if (cur_frm.doc.__islocal) {
+                const has_quotation = (cur_frm.doc.items || []).some(item => item.prevdoc_docname);
+                if (cur_frm.doc.__islocal && !has_quotation) {
                     cur_frm.set_value("company", customer_doc.default_company);
+                } else if (cur_frm.doc.__islocal && has_quotation && cur_frm.doc.company !== customer_doc.default_company) {
+                    frappe.msgprint({
+                        title: __('Company Mismatch'),
+                        indicator: 'orange',
+                        message: __("The selected Customer <b>" + customer + "</b> has Default Company <b>{0}</b> which is different from Company <b>{1}</b> set on this Sales Order derived from the <b>Quotation</b>. Please check the Company field on the Quotation and on this Sales Order.", [customer_doc.default_company, cur_frm.doc.company])
+                    });
                 } else if (cur_frm.doc.company !== customer_doc.default_company) {
                     frappe.msgprint({
                         title: __('Company Mismatch'),
                         indicator: 'orange',
-                        message: __("The selected Customer has Default Company {0} which is different from Company {1} set on this Sales Order. Please check the Company field.", [customer_doc.default_company, cur_frm.doc.company])
+                        message: __("The selected Customer <b>" + customer + "</b> has Default Company <b>{0}</b> which is different from Company <b>{1}</b> set on this Sales Order. Please check the <b>Company</b> field.", [customer_doc.default_company, cur_frm.doc.company])
                     });
                 }
             }
