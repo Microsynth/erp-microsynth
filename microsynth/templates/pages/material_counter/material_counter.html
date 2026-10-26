@@ -1,56 +1,64 @@
 {% extends "templates/web.html" %}
 
 {% block page_content %}
-<div style="margin: 5px; margin-top: 0px; border-top: 1px solid white; ">
+<div class="material-counter">
     <div class="section-body">
         <div class="row">
             <div class="form-column col-sm-4">
-                <label class="control-label" style="padding-right: 0px;">Warehouse</label>
-                <div class="input-group">
-                    <span class="input-group-addon"><i class="fa fa-cube"></i></span>
-                    <input type="text" class="form-control" placeholder="Warehouse" id="warehouse" readonly>
+                <div class="counter-field warehouse-field">
+                    <label class="control-label" for="warehouse">Warehouse</label>
+                    <div class="input-group">
+                        <span class="input-group-addon"><i class="fa fa-cube"></i></span>
+                        <input type="text" class="form-control" placeholder="Warehouse" id="warehouse" readonly>
+                    </div>
                 </div>
-                <label class="control-label" style="padding-right: 0px;">Process</label>
-                <div class="input-group">
-                    <span class="input-group-addon"><i class="fa fa-users"></i></span>
-                    <select class="form-control" placeholder="Process" id="processes" onchange="get_users_for_process(this)">
-                    </select>
+                <div class="counter-field">
+                    <label class="control-label" for="processes">Process</label>
+                    <div class="input-group">
+                        <span class="input-group-addon"><i class="fa fa-users"></i></span>
+                        <select class="form-control" placeholder="Process" id="processes" onchange="get_users_for_process(this)">
+                        </select>
+                    </div>
                 </div>
-                <label class="control-label" style="padding-right: 0px;">User</label>
-                <div class="input-group">
-                    <span class="input-group-addon"><i class="fa fa-user"></i></span>
-                    <select class="form-control" placeholder="User" id="users" onchange="focus_on_scanner_input()">
-                    </select>
+                <div class="counter-field">
+                    <label class="control-label" for="users">User</label>
+                    <div class="input-group">
+                        <span class="input-group-addon"><i class="fa fa-user"></i></span>
+                        <select class="form-control" placeholder="User" id="users" onchange="focus_on_scanner_input()">
+                        </select>
+                    </div>
                 </div>
                 <!-- Scanner Input -->
-                <label class="control-label" style="padding-right: 0px;">Scan Item</label>
-                <div class="input-group">
-                    <span class="input-group-addon"><i class="fa fa-barcode"></i></span>
-                    <input type="text" class="form-control" placeholder="Scan Data Matrix Code" id="scanner_input" autofocus>
+                <div class="counter-field scanner-field">
+                    <label class="control-label" for="scanner_input">Scan Item</label>
+                    <div class="input-group">
+                        <span class="input-group-addon"><i class="fa fa-barcode"></i></span>
+                        <input type="text" class="form-control" placeholder="Scan Data Matrix Code" id="scanner_input" autocomplete="off" autocapitalize="off" spellcheck="false" autofocus>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
 <!-- Item Table -->
-<table class="table table-bordered" id="item_table" style="margin: 10px; width: 98%;">
+<table class="table table-bordered" id="item_table">
     <thead>
         <tr>
-            <th>Action</th>
-            <th>Item</th>
-            <th>Item Name</th>
-            <th>Material Code</th>
-            <th>Quantity</th>
-            <th>Batch No</th>
+            <th scope="col" class="action-column" aria-label="Action"><span class="desktop-heading">Action</span></th>
+            <th scope="col" class="item-column">Item</th>
+            <th scope="col" class="item-name-column">Item Name</th>
+            <th scope="col" class="material-code-column"><span class="desktop-heading">Material Code</span><span class="mobile-heading">Material / Name</span></th>
+            <th scope="col" class="quantity-column"><span class="desktop-heading">Quantity</span><span class="mobile-heading">Qty</span></th>
+            <th scope="col" class="batch-column">Batch No</th>
         </tr>
     </thead>
     <tbody></tbody>
 </table>
 
 <!-- Checkout Button -->
-<div style="margin: 10px;">
+<div class="checkout-actions">
     <button type="button" class="btn btn-primary" id="checkout_button">Check Out</button>
+</div>
 </div>
 
 {% endblock %}

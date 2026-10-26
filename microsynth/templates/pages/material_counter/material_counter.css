@@ -134,3 +134,156 @@
   .btn-login-area {
     display: none;
   }
+
+.material-counter {
+  margin: 0 5px;
+}
+
+.material-counter #item_table {
+  margin: 10px 0;
+  width: 100%;
+}
+
+.material-counter .checkout-actions {
+  padding: 10px 0;
+}
+
+.material-counter .mobile-heading {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .material-counter {
+    margin: 0;
+  }
+
+  .material-counter .row {
+    margin: 0;
+  }
+
+  .material-counter .form-column {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+    padding: 0;
+    width: 100%;
+  }
+
+  .material-counter .counter-field {
+    min-width: 0;
+  }
+
+  .material-counter .warehouse-field,
+  .material-counter .scanner-field {
+    grid-column: 1 / -1;
+  }
+
+  .material-counter .control-label {
+    margin-bottom: 4px;
+  }
+
+  .material-counter .input-group {
+    width: 100%;
+    table-layout: fixed;
+  }
+
+  .material-counter .input-group-addon {
+    width: 36px;
+    padding: 4px 8px;
+  }
+
+  .material-counter .form-control,
+  .material-counter .btn {
+    min-height: 44px;
+    font-size: 16px;
+  }
+
+  .material-counter .form-control {
+    padding: 8px;
+  }
+
+  .material-counter #item_table {
+    display: block;
+    border: 0;
+    font-size: 14px;
+  }
+
+  .material-counter #item_table thead,
+  .material-counter #item_table tbody {
+    display: block;
+  }
+
+  .material-counter #item_table tr {
+    display: grid;
+    grid-template-columns: 48px minmax(0, 1fr) minmax(0, 1.5fr) 72px;
+    align-items: center;
+    border-bottom: 1px solid #d1d8dd;
+  }
+
+  .material-counter #item_table th,
+  .material-counter #item_table td {
+    min-width: 0;
+    padding: 8px 4px;
+    border: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .material-counter #item_table .action-column {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .material-counter #item_table .item-column {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .material-counter #item_table .item-name-column,
+  .material-counter #item_table .material-code-column {
+    grid-column: 3;
+    grid-row: 1;
+  }
+
+  .material-counter #item_table .quantity-column {
+    grid-column: 4;
+    grid-row: 1;
+  }
+
+  .material-counter #item_table .batch-column,
+  .material-counter #item_table thead .item-name-column,
+  .material-counter #item_table .has-material-code .item-name-column,
+  .material-counter #item_table .no-material-code .material-code-column,
+  .material-counter .desktop-heading {
+    display: none;
+  }
+
+  .material-counter .mobile-heading {
+    display: inline;
+  }
+
+  .material-counter .remove-row {
+    width: 44px;
+    padding: 6px;
+    font-size: 24px;
+    line-height: 1;
+    touch-action: manipulation;
+  }
+
+  .material-counter .qty-input {
+    width: 100%;
+  }
+
+  .material-counter .checkout-actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 3;
+    padding-bottom: max(10px, env(safe-area-inset-bottom));
+    background: #fff;
+    border-top: 1px solid #d1d8dd;
+  }
+
+  .material-counter #checkout_button {
+    width: 100%;
+    touch-action: manipulation;
+  }
+}

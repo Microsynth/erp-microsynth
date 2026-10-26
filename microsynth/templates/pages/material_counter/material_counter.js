@@ -87,14 +87,15 @@ function run() {
                         });
 
                         if (!found) {
+                            let has_material_code = Boolean((item.material_code || "").trim());
                             let row = `
-                                <tr>
-                                    <td><button class="btn btn-danger btn-sm remove-row">×</button></td>
-                                    <td>${item.name}</td>
-                                    <td>${item.item_name}</td>
-                                    <td>${item.material_code || ""}</td>
-                                    <td><input type="number" value="1" min="1" class="form-control qty-input" onchange="focus_on_scanner_input()" ${qty_editable}></td>
-                                    <td>${batch_no}</td>
+                                <tr class="${has_material_code ? "has-material-code" : "no-material-code"}">
+                                    <td class="action-column"><button type="button" class="btn btn-danger btn-sm remove-row" aria-label="Remove item" title="Remove item"><i class="fa fa-times" aria-hidden="true"></i></button></td>
+                                    <td class="item-column">${item.name}</td>
+                                    <td class="item-name-column">${item.item_name}</td>
+                                    <td class="material-code-column">${item.material_code || ""}</td>
+                                    <td class="quantity-column"><input type="number" value="1" min="1" inputmode="numeric" aria-label="Quantity" class="form-control qty-input" onchange="focus_on_scanner_input()" ${qty_editable}></td>
+                                    <td class="batch-column">${batch_no}</td>
                                 </tr>`;
                             $('#item_table tbody').append(row);
                         }
