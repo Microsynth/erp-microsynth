@@ -5,6 +5,11 @@ const document_types_with_review = ['SOP', 'FLOW', 'QMH'];
 
 
 frappe.ui.form.on('QM Document', {
+    setup: function(frm) {
+        // remove Menu > Duplicate and disable Shift + D
+        frm.meta.allow_copy = true;
+        frm.copy_doc = () => false;
+    },
     refresh: function(frm) {
         // fresh document: add creation tags
         if (frm.doc.__islocal) {
@@ -323,10 +328,6 @@ frappe.ui.form.on('QM Document', {
                 ]
             };
         };
-
-        // remove Menu > Duplicate
-        var target ="span[data-label='" + __("Duplicate") + "']";
-        $(target).parent().parent().remove();
 
     },
     document_type: function(frm) {
