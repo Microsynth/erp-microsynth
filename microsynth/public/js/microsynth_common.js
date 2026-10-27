@@ -80,7 +80,7 @@ function hide_in_words() {
 function access_protection() {
     // disable all attachments
     var styleSheet = document.createElement("style");
-    styleSheet.innerText = ".remove-btn { display: none !important; }";
+    styleSheet.innerText = ".attachment-row .remove-btn { display: none !important; }";
     document.head.appendChild(styleSheet);
 }
 
