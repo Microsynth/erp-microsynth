@@ -359,6 +359,16 @@ def notify_q_releasable(qm_document):
         )
 
 
+def send_status_notification(**kwargs):
+    try:
+        make(**kwargs)
+    except Exception:
+        frappe.log_error(
+            message=frappe.get_traceback(),
+            title=f"QM Document notification failed: {kwargs.get('subject')}"
+        )
+
+
 def notify_pvs_about_valid_status(qm_document):
     if qm_document.company:
         companies = [qm_document.company]
@@ -374,7 +384,7 @@ def notify_pvs_about_valid_status(qm_document):
         frappe.log_error(f"Found no PV for QM Document '{qm_document.name}' with QM Process '{qm_document.qm_process}' and Company '{qm_document.company}'.", "qm_document.notify_pvs_about_valid_status")
 
     url_string = f"<a href={get_url_to_form('QM Document', qm_document.name)}>{qm_document.name}</a>"
-    make(
+    send_status_notification(
         recipients = ','.join(list(pvs)),
         sender = 'erp@microsynth.ch',
         sender_full_name = 'Microsynth ERP',
@@ -394,7 +404,7 @@ def invalidate_document(qm_document):
     # send a notification to the creator
     url_string = f"<a href={get_url_to_form('QM Document', qm_document.name)}>{qm_document.name}</a>"
     if qm_document.created_by:  # do not try to send an email to a non-existing creator (can only happen for imported QM Documents)
-        make(
+        send_status_notification(
             recipients = qm_document.created_by,
             sender = 'erp@microsynth.ch',
             sender_full_name = 'Microsynth ERP',
