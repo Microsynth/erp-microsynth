@@ -17,7 +17,7 @@ frappe.ui.form.on('QM Nonconformity', {
 
         // remove option to attach files depending on status
         if (["Closed", "Cancelled"].includes(frm.doc.status) || !(frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) {
-            var attach_btns = document.getElementsByClassName("add-attachment");
+            var attach_btns = document.getElementsByClassName("add-attachment-btn");
             for (var i = 0; i < attach_btns.length; i++) {
                 attach_btns[i].style.visibility = "hidden";
             }

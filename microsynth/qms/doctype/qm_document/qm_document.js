@@ -301,7 +301,7 @@ frappe.ui.form.on('QM Document', {
 
         // remove attach file depending on status
         if (!["Draft"].includes(frm.doc.status)) {
-            var attach_btns = document.getElementsByClassName("add-attachment");
+            var attach_btns = document.getElementsByClassName("add-attachment-btn");
             for (var i = 0; i < attach_btns.length; i++) {
                 attach_btns[i].style.visibility = "hidden";
             }
