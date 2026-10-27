@@ -403,7 +403,19 @@ function clear_review(frm) {
 
 function request_review() {
     frappe.prompt([
-        {'fieldname': 'reviewer', 'fieldtype': 'Link', 'label': __('Reviewer'), 'options':'User', 'reqd': 1},
+        {
+            'fieldname': 'reviewer',
+            'fieldtype': 'Link',
+            'label': __('Reviewer'),
+            'options': 'User',
+            'reqd': 1,
+            'get_query': function() {
+                return {
+                    query: 'microsynth.qms.doctype.qm_document.qm_document.reviewer_query',
+                    filters: {qm_document: cur_frm.doc.name}
+                };
+            }
+        },
         {'fieldname': 'due_date', 'fieldtype': 'Date', 'label': __('Due date'), 'reqd': 1}
     ],
     function(values){

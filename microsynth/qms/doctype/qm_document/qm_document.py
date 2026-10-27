@@ -919,6 +919,30 @@ def get_overview_wrapper(doc_name):
 
 
 @frappe.whitelist()
+@frappe.validate_and_sanitize_search_inputs
+def reviewer_query(doctype, txt, searchfield, start, page_len, filters):
+    qm_doc = frappe.get_doc("QM Document", filters.get("qm_document"))
+    qm_doc.check_permission("read")
+    if frappe.session.user != qm_doc.created_by and "QAU" not in frappe.get_roles():
+        frappe.throw("Only the creator or QAU may select a reviewer.", frappe.PermissionError)
+
+    return frappe.get_all(
+        "User",
+        filters={
+            "enabled": 1,
+            "user_type": "System User",
+            "name": ["!=", qm_doc.created_by],
+        },
+        or_filters={"name": ["like", f"%{txt}%"], "full_name": ["like", f"%{txt}%"]},
+        fields=["name", "full_name"],
+        order_by="name asc",
+        limit_start=start,
+        limit_page_length=page_len,
+        as_list=True,
+    )
+
+
+@frappe.whitelist()
 def get_valid_sops(qm_process_assignments):
     """
     """
