@@ -117,6 +117,7 @@ frappe.ui.form.on('QM Document', {
 
         // allow review when document is on created with an attachment
         if ((["Created"].includes(frm.doc.status))
+            && (isQAU || frappe.session.user === frm.doc.created_by)
             && (!frm.doc.reviewed_on)
             && (!frm.doc.reviewed_by)
             && ((cur_frm.attachments)
