@@ -682,7 +682,8 @@ function change_creator() {
              'fieldtype': 'Link',
              'label': __('New Creator'),
              'reqd': 1,
-             'options': 'User'
+            'options': 'User',
+            'get_query': get_system_user_query()
             }
         ],
         function(values){
@@ -875,7 +876,14 @@ function request_qm_action(action_type) {
     frappe.prompt([
         {'fieldname': 'title', 'fieldtype': 'Data', 'label': __('Title'), 'reqd': 1},
         {'fieldname': 'qm_process', 'fieldtype': 'Link', 'options': 'QM Process', 'default': cur_frm.doc.qm_process, 'label': __('Process'), 'reqd': 1},
-        {'fieldname': 'responsible_person', 'fieldtype': 'Link', 'label': __('Responsible Person'), 'options':'User', 'reqd': 1},
+        {
+            'fieldname': 'responsible_person',
+            'fieldtype': 'Link',
+            'label': __('Responsible Person'),
+            'options': 'User',
+            'reqd': 1,
+            'get_query': get_system_user_query()
+        },
         {'fieldname': 'due_date', 'fieldtype': 'Date', 'label': __('Due date'), 'reqd': 1},
         {'fieldname': 'description', 'fieldtype': 'Text', 'label': __('Description')}
     ],
@@ -911,7 +919,14 @@ function create_change(frm) {
     frappe.prompt([
         {'fieldname': 'title', 'fieldtype': 'Data', 'label': __('Title'), 'reqd': 1},
         {'fieldname': 'qm_process', 'fieldtype': 'Link', 'options': 'QM Process', 'default': cur_frm.doc.qm_process, 'label': __('Process'), 'reqd': 1},
-        {'fieldname': 'creator', 'fieldtype': 'Link', 'label': __('Responsible Person'), 'options':'User', 'reqd': 1},
+        {
+            'fieldname': 'creator',
+            'fieldtype': 'Link',
+            'label': __('Responsible Person'),
+            'options': 'User',
+            'reqd': 1,
+            'get_query': get_system_user_query()
+        },
         {'fieldname': 'company', 'fieldtype': 'Link', 'options': 'Company', 'default': cur_frm.doc.company, 'label': __('Company'), 'reqd': 1},
         {'fieldname': 'description', 'fieldtype': 'Text', 'label': __('Description Change')}
     ],

@@ -1,5 +1,18 @@
 /* common functions */
 
+function get_system_user_query(exclude_user) {
+    return function() {
+        const filters = {};
+        if (exclude_user) {
+            filters.exclude_user = exclude_user;
+        }
+        return {
+            query: 'microsynth.qms.queries.system_user_query',
+            filters: filters
+        };
+    };
+}
+
 // naming series automation
 function prepare_naming_series(frm) {
     locals.naming_series_map = null;

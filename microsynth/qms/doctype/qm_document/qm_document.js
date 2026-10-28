@@ -444,7 +444,14 @@ function request_review() {
 
 function request_revision() {
     frappe.prompt([
-        {'fieldname': 'revisor', 'fieldtype': 'Link', 'label': __('Revisor'), 'options':'User', 'reqd': 1},
+        {
+            'fieldname': 'revisor',
+            'fieldtype': 'Link',
+            'label': __('Revisor'),
+            'options': 'User',
+            'reqd': 1,
+            'get_query': get_system_user_query()
+        },
         {'fieldname': 'due_date', 'fieldtype': 'Date', 'label': __('Due date'), 'reqd': 1}
     ],
     function(values){
@@ -798,7 +805,8 @@ function change_creator() {
              'fieldtype': 'Link',
              'label': __('New Creator'),
              'reqd': 1,
-             'options': 'User'
+             'options': 'User',
+             'get_query': get_system_user_query()
             }
         ],
         function(values){

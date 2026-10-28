@@ -85,7 +85,7 @@ frappe.approval_manager = {
     reassign: function(pinv) {
         // Show dialog for reason, allow to assign to a different person
         frappe.prompt([
-            {'fieldname': 'new_assignee', 'fieldtype': 'Link', 'options': 'User', 'label': __('Assign to'), 'reqd': 1},
+            {'fieldname': 'new_assignee', 'fieldtype': 'Link', 'options': 'User', 'label': __('Assign to'), 'reqd': 1, 'get_query': get_system_user_query()},
             {'fieldname': 'reason', 'fieldtype': 'Text', 'label': __('Reason')}
         ],
             function(values){

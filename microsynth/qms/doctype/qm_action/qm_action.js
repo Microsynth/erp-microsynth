@@ -178,7 +178,8 @@ function change_responsible_person(frm) {
              'fieldtype': 'Link',
              'label': __('New Responsible Person'),
              'reqd': 1,
-             'options': 'User'
+             'options': 'User',
+             'get_query': get_system_user_query()
             }
         ],
         function(values){

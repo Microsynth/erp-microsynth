@@ -107,7 +107,8 @@ function change_revisor(frm) {
              'fieldtype': 'Link',
              'label': __('New Revisor'),
              'reqd': 1,
-             'options': 'User'
+             'options': 'User',
+             'get_query': get_system_user_query()
             }
         ],
         function(values){

@@ -11,6 +11,7 @@ from frappe.desk.form.load import get_attachments
 from frappe.desk.form.assign_to import add, clear
 from frappe.core.doctype.communication.email import make
 from microsynth.qms.doctype.qm_training_record.qm_training_record import create_training_record
+from microsynth.qms.queries import system_user_query
 
 
 document_types_with_review = ['SOP', 'FLOW', 'QMH']
@@ -926,19 +927,8 @@ def reviewer_query(doctype, txt, searchfield, start, page_len, filters):
     if frappe.session.user != qm_doc.created_by and "QAU" not in frappe.get_roles():
         frappe.throw("Only the creator or QAU may select a reviewer.", frappe.PermissionError)
 
-    return frappe.get_all(
-        "User",
-        filters={
-            "enabled": 1,
-            "user_type": "System User",
-            "name": ["!=", qm_doc.created_by],
-        },
-        or_filters={"name": ["like", f"%{txt}%"], "full_name": ["like", f"%{txt}%"]},
-        fields=["name", "full_name"],
-        order_by="name asc",
-        limit_start=start,
-        limit_page_length=page_len,
-        as_list=True,
+    return system_user_query(
+        doctype, txt, searchfield, start, page_len, {"exclude_user": qm_doc.created_by}
     )
 
 
