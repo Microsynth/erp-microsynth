@@ -115,7 +115,7 @@ def get_yearly_order_sum(contact_id):
     yearly_order_sum = []
     for year in range(current_year, current_year-2, -1):
         data = frappe.db.sql(f"""
-                        SELECT SUM(`base_net_total`) AS `total`, `currency`
+                        SELECT SUM(`net_total`) AS `total`, `currency`
                         FROM `tabSales Order`
                         WHERE `contact_person` = '{contact_id}'
                         AND `docstatus` = 1
@@ -192,19 +192,19 @@ def get_product_type(contact):
     last_day_help = add_months(query_date, -1)
     last_day = get_last_day(last_day_help)
     sql_query = """
-                    SELECT SUM(`base_net_total`) AS `total`,`product_type`, COUNT(`name`) AS `qty`, `currency`
+                    SELECT SUM(`net_total`) AS `total`, `product_type`, COUNT(`name`) AS `qty`, `currency`
                     FROM `tabSales Order`
                     WHERE `contact_person` = '{contact}'
                     AND `docstatus` = 1
                     AND `transaction_date` BETWEEN '{start}' AND '{end}'
-                    GROUP BY `tabSales Order`.`product_type`
+                    GROUP BY `tabSales Order`.`product_type`, `currency`
                 """.format(contact=contact, start=first_day, end=last_day)
 
     volumes = frappe.db.sql(sql_query, as_dict=True)
-    total_volume = 0
     total_qty = 0
+    volume_by_currency = {}
     for volume in volumes:
-        total_volume += volume.total
+        volume_by_currency[volume.currency] = volume_by_currency.get(volume.currency, 0) + (volume.total or 0)
         total_qty += volume.qty
         data.append({
             'period': "{0} - {1}".format(first_day.strftime("%d.%m.%Y"), last_day.strftime("%d.%m.%Y")),
@@ -213,10 +213,10 @@ def get_product_type(contact):
             'qty': volume.qty,
             'currency': volume.currency
         })
-    percent_volume = (100 / total_volume) if total_volume > 0 else 1
     percent_qty = (100 / total_qty) if total_qty > 0 else 1
     for d in data:
-        d['percent_volume'] = round((d['volume'] * percent_volume), 2)
+        currency_total = volume_by_currency[d['currency']]
+        d['percent_volume'] = round((d['volume'] * 100 / currency_total), 2) if currency_total > 0 else 0
         d['percent_qty'] = round((d['qty'] * percent_qty), 2)
 
     # ~ print(data)
