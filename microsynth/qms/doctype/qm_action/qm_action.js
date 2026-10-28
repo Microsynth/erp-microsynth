@@ -65,7 +65,7 @@ frappe.ui.form.on('QM Action', {
             cur_frm.add_custom_button(
                 __("Change Responsible Person"),
                 function() {
-                    change_responsible_person();
+                    change_responsible_person(frm);
                 }
             );
         }
@@ -170,7 +170,8 @@ frappe.ui.form.on('QM Action', {
 });
 
 
-function change_responsible_person() {
+function change_responsible_person(frm) {
+    const action = frm.doc.name;
     frappe.prompt(
         [
             {'fieldname': 'new_responsible_person',
@@ -181,18 +182,17 @@ function change_responsible_person() {
             }
         ],
         function(values){
-            cur_frm.set_value("responsible_person", values.new_responsible_person);
-            cur_frm.save();
             frappe.call({
                 'method': 'microsynth.qms.doctype.qm_action.qm_action.change_responsible_person',
                 'args': {
                     'user': frappe.session.user,
-                    'action': cur_frm.doc.name,
+                    'action': action,
                     'responsible_person': values.new_responsible_person
                 },
-                'async': false,
                 'callback': function(response) {
-                    cur_frm.reload_doc();
+                    if (!response.exc) {
+                        frm.reload_doc();
+                    }
                 }
             });
         },
