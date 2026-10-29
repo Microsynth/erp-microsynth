@@ -18,10 +18,12 @@ frappe.ui.form.on('Staff Profile', {
         sync_competency_instruction_buttons(frm);
 
         if (!frm.is_new() && frm.doc.docstatus === 0 && (!frm.doc.status || frm.doc.status === 'Draft') && frm.perm[0].write) {
-            frm.add_custom_button(__('Add Department competencies'), function() {
+            frm.add_custom_button(__('from Employee Department(s)'), function() {
                 add_department_competencies(frm);
-            });
-            add_template_competencies_button(frm);
+            }, __('Add Competencies'));
+            frm.add_custom_button(__('from Staff Profile Template'), function() {
+                prompt_template_competencies(frm);
+            }, __('Add Competencies'));
         }
         if (frm.doc.docstatus === 1 && frm.doc.status !== "To Sign") {
             frm.page.clear_primary_action();
@@ -97,7 +99,7 @@ function add_department_competencies(frm) {
                 return;
             }
             const dialog = new frappe.ui.Dialog({
-                title: __('Add Department competencies'),
+                title: __('Add Competencies from Employee Department(s)'),
                 size: 'large',
                 fields: [{ fieldname: 'competency_selection', fieldtype: 'HTML' }],
                 primary_action_label: __('Add'),
@@ -155,30 +157,28 @@ function add_department_competencies(frm) {
 }
 
 
-function add_template_competencies_button(frm) {
-    if (!frm.doc.employee) {
-        return;
-    }
-    const employee = frm.doc.employee;
-    frappe.call({
-        'method': 'microsynth.qms.doctype.staff_profile.staff_profile.get_linked_staff_profile_template',
-        'args': {
-            'docname': frm.doc.name,
-            'employee': employee
-        },
-        'callback': function(response) {
-            if (frm.doc.employee !== employee || frm.is_new() || frm.doc.docstatus !== 0 || (frm.doc.status && frm.doc.status !== 'Draft')) {
-                return;
+function prompt_template_competencies(frm) {
+    frappe.prompt([
+        {
+            fieldname: 'template_name',
+            fieldtype: 'Link',
+            label: __('Staff Profile Template'),
+            options: 'Staff Profile Template',
+            reqd: 1,
+            get_query: function() {
+                return {
+                    filters: {
+                        disabled: 0
+                    }
+                };
             }
-            const template = response.message || {};
-            if (!template.template_name) {
-                return;
-            }
-            frm.add_custom_button(__('Add Template competencies'), function() {
-                add_template_competencies(frm, template.template_name);
-            });
         }
-    });
+    ], function(values) {
+        if (!values.template_name) {
+            return;
+        }
+        add_template_competencies(frm, values.template_name);
+    }, __('Select Staff Profile Template'), __('Add Competencies'));
 }
 
 
@@ -190,10 +190,9 @@ function add_template_competencies(frm, template_name) {
     const employee = frm.doc.employee;
     validate_staff_profile_template(template_name, function(validatedTemplateName) {
         frappe.call({
-            'method': 'microsynth.qms.doctype.staff_profile.staff_profile.get_linked_template_competencies',
+            'method': 'microsynth.qms.doctype.staff_profile.staff_profile.get_template_competencies',
             'args': {
                 'docname': frm.doc.name,
-                'employee': employee,
                 'template_name': validatedTemplateName
             },
             'callback': function(response) {
@@ -202,17 +201,17 @@ function add_template_competencies(frm, template_name) {
                     return;
                 }
                 const data = response.message || {};
-                const competencies = data.competencies || [];
-                const existing = new Set((frm.doc.competencies || []).map(row => row.competency));
+                const competencies = (data.competencies || []).filter(function(competency) {
+                    return !((frm.doc.competencies || []).map(row => row.competency).includes(competency.competency));
+                });
                 let added = 0;
 
                 competencies.forEach(function(competency) {
-                    if (!competency.competency || existing.has(competency.competency)) {
+                    if (!competency.competency) {
                         return;
                     }
 
                     frm.add_child('competencies', competency);
-                    existing.add(competency.competency);
                     added += 1;
                 });
                 if (!added) {

@@ -156,26 +156,26 @@ def get_linked_staff_profile_template(docname, employee=None):
 
 
 @frappe.whitelist()
-def get_linked_template_competencies(docname, employee=None, template_name=None):
+def get_template_competencies(docname, template_name=None):
     profile = _get_writable_draft_staff_profile(docname)
 
-    employee = employee or profile.employee
-    if not employee:
-        frappe.throw(_("Please select an Employee first."))
+    if not template_name:
+        frappe.throw(_("Please select a Staff Profile Template."))
 
-    template_details = _get_staff_profile_template_details_for_employee(employee)
-    linked_template_name = template_details.get("template_name")
-    if not linked_template_name:
-        frappe.throw(_("No Staff Profile Template is linked to this employee via Job Applicant and Job Opening."))
-
-    if template_name and template_name != linked_template_name:
-        frappe.throw(_("The linked Staff Profile Template has changed. Please reopen the Staff Profile."))
-
-    template = _get_validated_staff_profile_template(linked_template_name)
+    template = _get_validated_staff_profile_template(template_name)
+    existing_competencies = {
+        row.get("competency")
+        for row in (profile.get("competencies") or [])
+        if row.get("competency")
+    }
+    competencies = [
+        row for row in get_staff_profile_template_competency_values(template)
+        if row.get("competency") and row.get("competency") not in existing_competencies
+    ]
     return {
         "template_name": template.name,
         "template_title": template.get("template_title") or template.name,
-        "competencies": get_staff_profile_template_competency_values(template),
+        "competencies": competencies,
     }
 
 
