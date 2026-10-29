@@ -4,6 +4,9 @@
 
 from __future__ import unicode_literals
 
+import csv
+import re
+
 import frappe
 from frappe import _
 from frappe.model.document import Document
@@ -20,10 +23,11 @@ class Competency(Document):
     def before_cancel(self):
         validate_cancel_permission(self)
 
-    def on_submit(self):
+    def before_submit(self):
         self.status = "Valid"
+
+    def on_submit(self):
         invalidate_previous_versions(self.name)
-        self.save()
         frappe.db.commit()
 
     def on_cancel(self):
@@ -315,3 +319,256 @@ def create_new_version(docname):
     new_doc.insert()
     frappe.db.commit()
     return {"name": new_doc.name}
+
+
+COMPETENCY_IMPORT_MAX_TITLE_LENGTH = 140
+COMPETENCY_IMPORT_MANDATORY_COLUMNS = 5
+COMPETENCY_IMPORT_FIRST_QM_DOCUMENT_COLUMN = 5
+
+
+def import_competencies(path, dry_run=True, verbose=False):
+    """
+    Import Competencies from a semicolon-separated CSV file. The first line is a header and is ignored,
+    the column positions are fixed:
+
+    0 Department(s), comma-separated (mandatory)
+    1 Title, < 140 characters (mandatory)
+    2 Prerequisite Type(s), comma-separated (mandatory)
+    3 Scope, created if it does not exist (mandatory)
+    4 Description (mandatory)
+    5, 7, 9, ... QM Document (version suffix is removed, the Valid version is used)
+    6, 8, 10, ... QM Document title (ignored)
+
+    Competencies are inserted and submitted (status Valid). A Competency is not imported if a non-cancelled Competency with
+    the same Title, Departments and Prerequisite Types already exists.
+
+    Nothing is written to the database if dry_run is set (default).
+
+    bench execute microsynth.qms.doctype.competency.competency.import_competencies --kwargs "{'path': '"/home/libracore/comp.csv"', 'dry_run': True, 'verbose': True}"
+    """
+    dry_run = _to_bool(dry_run)
+    verbose = _to_bool(verbose)
+    mode = "DRY RUN" if dry_run else "IMPORT"
+    summary = {"created": 0, "skipped_existing": 0, "errors": 0, "warnings": 0, "scopes_created": 0}
+
+    def log(message):
+        if verbose:
+            print(message)
+
+    def warn(line_number, message):
+        summary["warnings"] += 1
+        print(f"WARNING (line {line_number}): {message}")
+
+    def error(line_number, message):
+        summary["errors"] += 1
+        print(f"ERROR (line {line_number}): {message}")
+
+    try:
+        with open(path, "r", encoding="utf-8-sig", newline="") as csv_file:
+            rows = list(csv.reader(csv_file, delimiter=";"))
+    except (OSError, UnicodeDecodeError, csv.Error) as err:
+        print(f"ERROR: Unable to read '{path}': {err}")
+        summary["errors"] += 1
+        return summary
+
+    print(f"[{mode}] Reading {max(len(rows) - 1, 0)} data row(s) from {path}")
+
+    prerequisite_types = [
+        row.name for row in frappe.get_all("Competency Prerequisite Type", fields=["name"])
+    ]
+    scopes_to_create = set()
+    seen_keys = set()
+
+    for line_number, raw_row in enumerate(rows[1:], start=2):
+        row = [(cell or "").strip() for cell in raw_row]
+        if not any(row):
+            continue
+        row += [""] * (COMPETENCY_IMPORT_MANDATORY_COLUMNS - len(row))
+
+        department_cell, title, prerequisite_cell, scope, description = row[:COMPETENCY_IMPORT_MANDATORY_COLUMNS]
+        log(f"Line {line_number}: processing '{title}'")
+
+        missing = [
+            str(index + 1)
+            for index, value in enumerate(row[:COMPETENCY_IMPORT_MANDATORY_COLUMNS])
+            if not value
+        ]
+        if missing:
+            error(line_number, f"Mandatory column(s) {', '.join(missing)} empty. Skipping row.")
+            continue
+
+        if len(title) >= COMPETENCY_IMPORT_MAX_TITLE_LENGTH:
+            error(
+                line_number,
+                f"Title has {len(title)} characters but must be shorter than {COMPETENCY_IMPORT_MAX_TITLE_LENGTH}. Skipping row.",
+            )
+            continue
+
+        # Departments
+        departments = _split_unique(department_cell)
+        unknown_departments = [d for d in departments if not frappe.db.exists("Department", d)]
+        if unknown_departments:
+            error(line_number, f"Unknown Department(s): {', '.join(unknown_departments)}. Skipping row.")
+            continue
+
+        # Prerequisite Types
+        resolved_types = []
+        unknown_types = []
+        for requested in _split_unique(prerequisite_cell):
+            resolved = _resolve_prerequisite_type(requested, prerequisite_types)
+            if not resolved:
+                unknown_types.append(requested)
+            elif resolved not in resolved_types:
+                if resolved != requested:
+                    log(f"Line {line_number}: Prerequisite Type '{requested}' mapped to '{resolved}'")
+                resolved_types.append(resolved)
+        if unknown_types:
+            error(line_number, f"Unknown Prerequisite Type(s): {', '.join(unknown_types)}. Skipping row.")
+            continue
+
+        # Existing Competency?
+        key = (title, frozenset(departments), frozenset(resolved_types))
+        if key in seen_keys:
+            existing = "earlier row of this file"
+        else:
+            existing = _find_existing_competency(title, departments, resolved_types)
+        if existing:
+            summary["skipped_existing"] += 1
+            print(f"Line {line_number}: Competency '{title}' already exists ({existing}). Skipping row.")
+            continue
+        seen_keys.add(key)
+
+        # QM Documents
+        qm_documents = []
+        for column in range(COMPETENCY_IMPORT_FIRST_QM_DOCUMENT_COLUMN, len(row), 2):
+            qm_document = row[column]
+            if not qm_document:
+                continue
+            base_name = re.sub(r"-\d+$", "", qm_document)
+            valid_documents = frappe.get_all(
+                "QM Document",
+                filters={"name": ["like", f"{base_name}-%"], "status": "Valid"},
+                fields=["name", "title"],
+                order_by="version desc",
+                limit_page_length=1,
+            )
+            if not valid_documents:
+                warn(line_number, f"No Valid version found for QM Document '{qm_document}'. Skipping this QM Document.")
+                continue
+            valid_document = valid_documents[0]
+            if valid_document.name in [d["qm_document"] for d in qm_documents]:
+                continue
+            log(f"Line {line_number}: QM Document '{qm_document}' -> '{valid_document.name}'")
+            qm_documents.append({"qm_document": valid_document.name, "title": valid_document.title})
+
+        # Scope
+        scope_exists = frappe.db.exists("Competency Scope", scope)
+        scope_missing = not scope_exists and scope not in scopes_to_create
+
+        competency = frappe.get_doc({
+            "doctype": "Competency",
+            "title": title,
+            "status": "Draft",
+            "scope": scope,
+            "description": description,
+            "departments": [{"department": department} for department in departments],
+            "prerequisite_types": [{"competency_prerequisite": ptype} for ptype in resolved_types],
+            "qm_documents": qm_documents,
+            "trainings": [],
+        })
+        try:
+            if dry_run:
+                competency.validate()
+                if scope_missing:
+                    scopes_to_create.add(scope)
+                    summary["scopes_created"] += 1
+                    print(f"Line {line_number}: would create Competency Scope '{scope}'")
+                summary["created"] += 1
+                print(f"Line {line_number}: would create and submit Competency '{title}'")
+            else:
+                if scope_missing:
+                    frappe.get_doc({"doctype": "Competency Scope", "scope": scope}).insert()
+                    scopes_to_create.add(scope)
+                    summary["scopes_created"] += 1
+                    print(f"Line {line_number}: created Competency Scope '{scope}'")
+                competency.insert()
+                competency.submit()
+                frappe.db.commit()
+                summary["created"] += 1
+                print(f"Line {line_number}: created and submitted Competency {competency.name} '{title}'")
+        except Exception as err:
+            frappe.db.rollback()
+            error(line_number, f"Unable to {'validate' if dry_run else 'create'} Competency '{title}': {err}. Skipping row.")
+
+    if dry_run:
+        frappe.db.rollback()
+
+    print(
+        f"[{mode}] Done: {summary['created']} {'would be ' if dry_run else ''}created, "
+        f"{summary['skipped_existing']} already existing, {summary['scopes_created']} "
+        f"Scope(s) {'would be ' if dry_run else ''}created, {summary['warnings']} warning(s), {summary['errors']} error(s)."
+    )
+    return summary
+
+
+def _to_bool(value):
+    if isinstance(value, str):
+        return value.strip().lower() in ("1", "true", "yes", "y")
+    return bool(value)
+
+
+def _split_unique(cell):
+    values = []
+    for value in (cell or "").split(","):
+        value = value.strip()
+        if value and value not in values:
+            values.append(value)
+    return values
+
+
+def _resolve_prerequisite_type(requested, available_types):
+    """
+    Match a requested Prerequisite Type against the existing ones: exact, case-insensitive,
+    then ignoring a trailing plural 's' (e.g. 'QM Documents' -> 'QM Document').
+    """
+    if requested in available_types:
+        return requested
+    normalized = {name.casefold(): name for name in available_types}
+    candidate = requested.casefold()
+    if candidate in normalized:
+        return normalized[candidate]
+    for variant in (candidate[:-1] if candidate.endswith("s") else None, f"{candidate}s"):
+        if variant and variant in normalized:
+            return normalized[variant]
+    return None
+
+
+def _find_existing_competency(title, departments, prerequisite_types):
+    """
+    Return the name of a non-cancelled Competency with the same title, departments and
+    prerequisite types, otherwise None.
+    """
+    candidates = frappe.get_all(
+        "Competency", filters={"title": title, "docstatus": ["!=", 2]}, fields=["name"]
+    )
+    for candidate in candidates:
+        name = candidate.name
+        existing_departments = {
+            row.department
+            for row in frappe.get_all(
+                "Department Link",
+                filters={"parent": name, "parenttype": "Competency"},
+                fields=["department"],
+            )
+        }
+        existing_types = {
+            row.competency_prerequisite
+            for row in frappe.get_all(
+                "Competency Prerequisite Type Link",
+                filters={"parent": name, "parenttype": "Competency"},
+                fields=["competency_prerequisite"],
+            )
+        }
+        if existing_departments == set(departments) and existing_types == set(prerequisite_types):
+            return name
+    return None
