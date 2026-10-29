@@ -143,17 +143,17 @@ def get_competency_requirement_details(competency_name, trainee, employee=None):
     }
     if not prerequisite_types:
         missing.append(_("The Competency has no prerequisite types configured."))
-    supported_types = {"QM Document", "Training", "On-the-Job Instruction", "Competency Instruction"}
+    supported_types = {"QM Document", "Training", "On-the-Job Instruction"}
     for prerequisite in sorted(prerequisite_types - supported_types):
-        missing.append(_("Unsupported prerequisite type: {0}. Manual review is required.").format(prerequisite))
+        missing.append(_(f"Unsupported prerequisite type: {prerequisite}. Manual review is required."))
 
     employee = employee or (frappe.db.get_value("Employee", {"user_id": trainee}, "name") if trainee else None)
     details["instructions"] = _get_submitted_competency_instructions(competency_name, employee)
-    if prerequisite_types & {"On-the-Job Instruction", "Competency Instruction"} and not details["instructions"]:
-        missing.append(_("Competency Instruction: a submitted instruction for this employee and Competency is required."))
+    if prerequisite_types & {"On-the-Job Instruction"} and not details["instructions"]:
+        missing.append(_("Open the Staff Profile and confirm Instruction for this Competency."))
 
     if not trainee and prerequisite_types & {"QM Document", "Training"}:
-        missing.append(_("The Employee has no linked User; document signatures and training participation cannot be verified."))
+        missing.append(_("The Employee has no linked User; document signatures and training participation cannot be verified; please contact HR."))
 
     if "QM Document" in prerequisite_types:
         linked_documents = [row.qm_document for row in (competency.qm_documents or []) if getattr(row, "qm_document", None)]
@@ -164,7 +164,7 @@ def get_competency_requirement_details(competency_name, trainee, employee=None):
             details["records"].extend(records)
             if not records:
                 title = frappe.db.get_value("QM Document", document_name, "title") or document_name
-                missing.append(_("QM Document to sign: {0} ({1}).").format(document_name, title))
+                missing.append(_(f"QM Document to sign: {document_name} ({title})."))
 
     if "Training" in prerequisite_types:
         linked_templates = [row.training_template for row in (competency.trainings or []) if getattr(row, "training_template", None)]
@@ -174,7 +174,7 @@ def get_competency_requirement_details(competency_name, trainee, employee=None):
             courses = _get_passed_training_courses(trainee, template)
             details["courses"].extend(courses)
             if not courses:
-                missing.append(_("QM Training Template to complete in a submitted QM Training Course with outcome Passed: {0}.").format(template))
+                missing.append(_(f"Create and submit a QM Training Course for QM Training Template {template} and ensure that the Employee completes it with outcome Passed."))
     # A document/course may satisfy more than one linked reference.
     for key in ("instructions", "courses", "records"):
         details[key] = list({row.get("name"): row for row in details[key]}.values())

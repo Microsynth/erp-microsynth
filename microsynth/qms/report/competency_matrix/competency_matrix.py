@@ -109,21 +109,21 @@ def _build_assignment_details_html(assignment, competency, details):
 	if details["missing"]:
 		items.extend(_detail_item(_("Missing requirement"), reason) for reason in details["missing"])
 		if competency.status == "Invalid":
-			warning = _("This Competency is Invalid. This does not by itself mean that achievement evidence is missing. The saved assignment status has not been changed.")
+			warning = _("This Competency is Invalid, but can be achieved.")
 			base_name, current_suffix, versions = get_versioned_documents("Competency", assignment.competency)
 			newer_valid_versions = [
 				name for suffix, name, status, docstatus in versions
 				if suffix > current_suffix and status == "Valid" and docstatus == 1
 			]
 			if newer_valid_versions:
-				warning += " " + _("A newer submitted, Valid version is available; see the link below.")
+				warning += " " + _("A newer submitted, Valid version of this Competency is available; see the link below.")
 				items.append(_detail_item(_("Newer Valid Competency"), newer_valid_versions[-1], "Competency"))
 			else:
 				warning += " " + _("No newer submitted, Valid version of this Competency was found.")
 		elif assignment.status == "Achieved":
-			warning = _("Data inconsistency: this assignment is marked Achieved, but its current requirements are not supported by submitted evidence. Review the missing requirements below. The saved status has not been changed.")
+			warning = _("Data inconsistency: this assignment is marked Achieved, but its current requirements are not supported by submitted evidence. Review the missing requirements below.")
 	elif assignment.status != "Achieved":
-		warning = _("Data inconsistency: all requirements are supported by the evidence below, but this assignment is still Planned. The saved status has not been changed.")
+		warning = _("Data inconsistency: all requirements are supported by the evidence below, but this assignment is still Planned.")
 	if warning:
 		warning = f'<div class="alert alert-warning">{escape(warning)}</div>'
 	return f"<div><h4>{title}</h4>{warning}<ul>{''.join(items)}</ul></div>"
