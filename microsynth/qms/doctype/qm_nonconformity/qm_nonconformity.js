@@ -844,7 +844,7 @@ function can_close_deviation(frm) {
             if (frm.doc.criticality_classification == "critical") {
                 result = frappe.user.has_role('QAU') && !has_open_actions;
             } else if (frm.doc.criticality_classification == "non-critical") {
-                result = (frappe.user.has_role('QAU') || frappe.session.user === frm.doc.created_by) && !has_open_actions;
+                result = (frappe.user.has_role('QAU') || (frm.doc.regulatory_classification === "GMP" && frappe.session.user === frm.doc.created_by)) && !has_open_actions;
             }
         }
     });

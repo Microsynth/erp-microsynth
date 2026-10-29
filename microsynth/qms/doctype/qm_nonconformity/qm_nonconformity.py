@@ -202,14 +202,20 @@ def send_notification(assign, doc_name, recipient, message):
 @frappe.whitelist()
 def close(doc, user):
     # pull selected document
+    user = frappe.session.user
     qm_nc = frappe.get_doc("QM Nonconformity", doc)
+
+    if qm_nc.nc_type == "Deviation" and qm_nc.regulatory_classification != "GMP" and not user_has_role(user, "QAU"):
+        frappe.throw("A non-GMP Deviation can only be closed by a user with the QAU role.")
 
     if has_open_actions(qm_nc.name):
         frappe.throw("QM Nonconformity cannot be closed while there are linked QM Actions that are not Completed or Cancelled.")
 
     if qm_nc.status == "Completed" and qm_nc.nc_type == "Deviation":
         if not can_close_completed_deviation(qm_nc.name, user):
-            if qm_nc.criticality_classification == "critical":
+            if qm_nc.regulatory_classification != "GMP":
+                frappe.throw("A non-GMP Deviation can only be closed by a user with the QAU role.")
+            elif qm_nc.criticality_classification == "critical":
                 frappe.throw("A completed Deviation with critical classification can only be closed by a user with the QAU role when all linked QM Actions are Completed or Cancelled.")
             elif qm_nc.criticality_classification == "non-critical":
                 frappe.throw("A completed Deviation with non-critical classification can only be closed by the creator or a user with the QAU role when all linked QM Actions are Completed or Cancelled.")
@@ -411,6 +417,8 @@ def can_close_completed_deviation(doc, user):
         return False
     if has_open_actions(doc):
         return False
+    if nc.regulatory_classification != "GMP":
+        return user_has_role(user, "QAU")
     if nc.criticality_classification == "critical":
         return user_has_role(user, "QAU")
     if nc.criticality_classification == "non-critical":
