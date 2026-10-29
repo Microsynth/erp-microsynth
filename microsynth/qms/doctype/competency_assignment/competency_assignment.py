@@ -5,6 +5,7 @@
 from __future__ import unicode_literals
 
 import frappe
+from frappe import _
 from frappe.model.document import Document
 from frappe.utils import now_datetime
 
@@ -51,9 +52,9 @@ def _matches_versioned_document_name(qm_document_name, candidate_name):
     return base_name == candidate_base
 
 
-def _has_signed_qm_training_record(trainee, qm_document_name):
+def _get_signed_qm_training_records(trainee, qm_document_name):
     if not trainee or not qm_document_name:
-        return False
+        return []
     base_name, _ = split_versioned_name(qm_document_name)
     records = frappe.get_all(
         "QM Training Record",
@@ -64,22 +65,25 @@ def _has_signed_qm_training_record(trainee, qm_document_name):
             ["signed_on", "is", "set"],
             ["docstatus", "=", 1],
         ],
-        fields=["name"],
+        fields=["name", "document_name", "signed_on"],
     )
-    return bool(records)
+    # Reject similarly prefixed documents and SQL wildcard matches from other bases.
+    return [record for record in records if _matches_versioned_document_name(
+        qm_document_name, record.get("document_name")
+    )]
 
 
-def _has_passed_training_template(trainee, training_template_name):
+def _get_passed_training_courses(trainee, training_template_name):
     if not trainee or not training_template_name:
-        return False
+        return []
     courses = frappe.get_all(
         "QM Training Course",
         filters={"training_template": training_template_name, "docstatus": 1},
-        fields=["name"],
+        fields=["name", "training_template", "date", "int_ext", "internal_trainer", "external_trainer"],
     )
     course_names = [course.get("name") for course in courses]
     if not course_names:
-        return False
+        return []
     participants = frappe.get_all(
         "QM Training Course Participant",
         filters=[
@@ -89,40 +93,92 @@ def _has_passed_training_template(trainee, training_template_name):
             ["user", "=", trainee],
             ["outcome", "=", "Passed"],
         ],
+        fields=["parent"],
+    )
+    passed_names = {row.get("parent") for row in participants}
+    return [course for course in courses if course.get("name") in passed_names]
+
+
+def _get_submitted_competency_instructions(competency_name, employee):
+    if not competency_name or not employee:
+        return []
+    profiles = frappe.get_all("Staff Profile", filters={"employee": employee}, fields=["name"])
+    profile_names = [row.get("name") for row in profiles]
+    if not profile_names:
+        return []
+    assignments = frappe.get_all(
+        "Competency Assignment",
+        filters={"parenttype": "Staff Profile", "parent": ["in", profile_names], "competency": competency_name},
         fields=["name"],
     )
-    return bool(participants)
+    assignment_names = [row.get("name") for row in assignments]
+    if not assignment_names:
+        return []
+    # Reuse submitted instructions across profile versions, but never across
+    # employees or Competency versions. Cancelled/draft instructions do not count.
+    return frappe.get_all(
+        "Competency Instruction",
+        filters={"trainee": employee, "competency_assignment": ["in", assignment_names], "docstatus": 1},
+        fields=["name", "instructor", "date"],
+    )
 
 
 def _competency_requirements_met(competency_name, trainee):
     if not competency_name or not trainee:
         return False
+    return not get_competency_requirement_details(competency_name, trainee)["missing"]
 
+
+def get_competency_requirement_details(competency_name, trainee, employee=None):
+    """Use the same evidence and mandatory requirements for updates and reporting."""
     competency = frappe.get_doc("Competency", competency_name)
-    if not competency or competency.docstatus != 1 or competency.status != "Valid":
-        return False
-
+    details = {"instructions": [], "courses": [], "records": [], "missing": []}
+    missing = details["missing"]
+    if competency.docstatus != 1 or competency.status != "Valid":
+        missing.append(_("The Competency must be submitted and Valid."))
     prerequisite_types = {
         row.competency_prerequisite
         for row in (competency.prerequisite_types or [])
         if getattr(row, "competency_prerequisite", None)
     }
+    if not prerequisite_types:
+        missing.append(_("The Competency has no prerequisite types configured."))
+    supported_types = {"QM Document", "Training", "On-the-Job Instruction", "Competency Instruction"}
+    for prerequisite in sorted(prerequisite_types - supported_types):
+        missing.append(_("Unsupported prerequisite type: {0}. Manual review is required.").format(prerequisite))
+
+    employee = employee or (frappe.db.get_value("Employee", {"user_id": trainee}, "name") if trainee else None)
+    details["instructions"] = _get_submitted_competency_instructions(competency_name, employee)
+    if prerequisite_types & {"On-the-Job Instruction", "Competency Instruction"} and not details["instructions"]:
+        missing.append(_("Competency Instruction: a submitted instruction for this employee and Competency is required."))
+
+    if not trainee and prerequisite_types & {"QM Document", "Training"}:
+        missing.append(_("The Employee has no linked User; document signatures and training participation cannot be verified."))
 
     if "QM Document" in prerequisite_types:
         linked_documents = [row.qm_document for row in (competency.qm_documents or []) if getattr(row, "qm_document", None)]
         if not linked_documents:
-            return False
-        if any(not _has_signed_qm_training_record(trainee, linked_document) for linked_document in linked_documents):
-            return False
+            missing.append(_("QM Document prerequisite: no QM Documents are linked."))
+        for document_name in linked_documents:
+            records = _get_signed_qm_training_records(trainee, document_name)
+            details["records"].extend(records)
+            if not records:
+                title = frappe.db.get_value("QM Document", document_name, "title") or document_name
+                missing.append(_("QM Document to sign: {0} ({1}).").format(document_name, title))
 
     if "Training" in prerequisite_types:
         linked_templates = [row.training_template for row in (competency.trainings or []) if getattr(row, "training_template", None)]
         if not linked_templates:
-            return False
-        if any(not _has_passed_training_template(trainee, template) for template in linked_templates):
-            return False
-
-    return True
+            missing.append(_("Training prerequisite: no QM Training Templates are linked."))
+        for template in linked_templates:
+            courses = _get_passed_training_courses(trainee, template)
+            details["courses"].extend(courses)
+            if not courses:
+                missing.append(_("QM Training Template to complete in a submitted QM Training Course with outcome Passed: {0}.").format(template))
+    # A document/course may satisfy more than one linked reference.
+    for key in ("instructions", "courses", "records"):
+        details[key] = list({row.get("name"): row for row in details[key]}.values())
+    return details
 
 
 def update_competency_assignments_for_trainee(trainee, document_type=None, document_name=None):

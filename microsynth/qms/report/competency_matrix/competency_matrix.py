@@ -3,8 +3,16 @@
 
 from __future__ import unicode_literals
 
+from html import escape
+
 import frappe
 from frappe import _
+from frappe.utils import get_url_to_form
+
+from microsynth.qms.doctype.competency_assignment.competency_assignment import (
+	get_competency_requirement_details,
+)
+from microsynth.qms.versioning import get_versioned_documents
 
 
 def execute(filters=None):
@@ -13,6 +21,112 @@ def execute(filters=None):
 	assignments = get_assignments(employees)
 	competencies = get_competencies(filters)
 	return get_columns(employees), get_data(employees, competencies, assignments)
+
+
+@frappe.whitelist()
+def get_cell_details(assignment_names=None):
+	if not assignment_names:
+		return {"title": _("Competency Details"), "html": "<p>{0}</p>".format(_("No assignment selected."))}
+
+	if isinstance(assignment_names, str):
+		# frappe.call serializes array arguments as JSON before sending them.
+		if assignment_names.lstrip().startswith("["):
+			assignment_names = frappe.parse_json(assignment_names)
+		else:
+			assignment_names = [name.strip() for name in assignment_names.split(",") if name.strip()]
+	assignment_names = [name for name in (assignment_names or []) if name]
+	if not assignment_names:
+		return {"title": _("Competency Details"), "html": "<p>{0}</p>".format(_("No assignment selected."))}
+
+	sections = []
+	for assignment_name in assignment_names:
+		if not frappe.db.exists("Competency Assignment", assignment_name):
+			continue
+		assignment = frappe.get_doc("Competency Assignment", assignment_name)
+		competency = frappe.get_doc("Competency", assignment.competency) if assignment.competency else None
+		employee_name = None
+		if assignment.parenttype == "Staff Profile" and assignment.parent:
+			employee_name = frappe.db.get_value("Staff Profile", assignment.parent, "employee")
+		trainee = frappe.db.get_value("Employee", employee_name, "user_id") if employee_name else None
+		details = get_competency_requirement_details(assignment.competency, trainee, employee_name)
+		sections.append(_build_assignment_details_html(assignment, competency, details))
+
+	if not sections:
+		return {"title": _("Competency Details"), "html": "<p>{0}</p>".format(_("No competency details available."))}
+
+	return {
+		"title": _("Competency Details"),
+		"html": "<div>{0}</div>".format("".join(sections)),
+	}
+
+
+def _detail_item(label, value, doctype=None, name=None):
+	text = escape(str(value or _('Not set')))
+	if doctype and (name or value):
+		# Let the installed Frappe version choose desk#Form/... versus /app/....
+		url = escape(get_url_to_form(doctype, name or value), quote=True)
+		text = f'<a href="{url}" target="_blank" rel="noopener noreferrer">{text}</a>'
+	return f"<li><strong>{escape(str(label))}:</strong> {text}</li>"
+
+
+def _build_assignment_details_html(assignment, competency, details):
+	title = escape(str(competency.title or assignment.competency))
+	items = [
+		_detail_item(_("Competency"), assignment.competency, "Competency"),
+		_detail_item(_("Status"), _(assignment.status)),
+		_detail_item(_("Staff Profile"), assignment.parent, "Staff Profile"),
+	]
+	# Include references even when their requirements have not been fulfilled yet.
+	for row in competency.qm_documents or []:
+		if row.qm_document:
+			items.append(_detail_item(_("Required QM Document"), row.qm_document, "QM Document"))
+	for row in competency.trainings or []:
+		if row.training_template:
+			items.append(_detail_item(_("QM Training Template"), row.training_template, "QM Training Template"))
+	if assignment.status == "Achieved":
+		items.append(_detail_item(_("Competency Achieved On"), assignment.competency_achieved_on))
+
+	for instruction in details["instructions"]:
+		instructor = frappe.db.get_value("User", instruction.get("instructor"), "full_name") or instruction.get("instructor")
+		items.append(_detail_item(_("Competency Instruction"), instruction.get("name"), "Competency Instruction"))
+		items.append(_detail_item(_("Instructor"), instructor))
+		items.append(_detail_item(_("Date"), instruction.get("date")))
+	for course in details["courses"]:
+		trainer = course.get("external_trainer") if course.get("int_ext") == "External" else course.get("internal_trainer")
+		if course.get("int_ext") != "External" and trainer:
+			trainer = frappe.db.get_value("User", trainer, "full_name") or trainer
+		items.append(_detail_item(_("QM Training Course"), course.get("name"), "QM Training Course"))
+		items.append(_detail_item(_("Trainer"), trainer))
+		items.append(_detail_item(_("Date"), course.get("date")))
+	for record in details["records"]:
+		document_name = record.get("document_name")
+		items.append(_detail_item(_("QM Training Record"), record.get("name"), "QM Training Record"))
+		items.append(_detail_item(_("Document Name"), document_name, "QM Document"))
+		items.append(_detail_item(_("QM Document Title"), frappe.db.get_value("QM Document", document_name, "title") or document_name, "QM Document", document_name))
+		items.append(_detail_item(_("Signed on"), record.get("signed_on")))
+
+	warning = ""
+	if details["missing"]:
+		items.extend(_detail_item(_("Missing requirement"), reason) for reason in details["missing"])
+		if competency.status == "Invalid":
+			warning = _("This Competency is Invalid. This does not by itself mean that achievement evidence is missing. The saved assignment status has not been changed.")
+			base_name, current_suffix, versions = get_versioned_documents("Competency", assignment.competency)
+			newer_valid_versions = [
+				name for suffix, name, status, docstatus in versions
+				if suffix > current_suffix and status == "Valid" and docstatus == 1
+			]
+			if newer_valid_versions:
+				warning += " " + _("A newer submitted, Valid version is available; see the link below.")
+				items.append(_detail_item(_("Newer Valid Competency"), newer_valid_versions[-1], "Competency"))
+			else:
+				warning += " " + _("No newer submitted, Valid version of this Competency was found.")
+		elif assignment.status == "Achieved":
+			warning = _("Data inconsistency: this assignment is marked Achieved, but its current requirements are not supported by submitted evidence. Review the missing requirements below. The saved status has not been changed.")
+	elif assignment.status != "Achieved":
+		warning = _("Data inconsistency: all requirements are supported by the evidence below, but this assignment is still Planned. The saved status has not been changed.")
+	if warning:
+		warning = f'<div class="alert alert-warning">{escape(warning)}</div>'
+	return f"<div><h4>{title}</h4>{warning}<ul>{''.join(items)}</ul></div>"
 
 
 def get_employees(filters):
@@ -87,7 +201,7 @@ def get_assignments(employees):
 		return []
 
 	return frappe.db.sql("""
-		SELECT profile.employee, assignment.competency, assignment.status,
+		SELECT assignment.name, profile.employee, assignment.competency, assignment.status,
 			assignment.responsibility_role, assignment.level, profile.status AS profile_status
 		FROM `tabStaff Profile` profile
 		INNER JOIN `tabCompetency Assignment` assignment
@@ -219,6 +333,7 @@ def get_data(employees, competencies, assignments):
 			"label": label or assignment["status"],
 			"status": assignment["status"],
 			"profile_status": profile_status,
+			"assignment_name": assignment.get("name"),
 		})
 
 	data = []
