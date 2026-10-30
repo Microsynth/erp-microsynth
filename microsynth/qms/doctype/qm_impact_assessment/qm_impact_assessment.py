@@ -10,6 +10,26 @@ from frappe.model.document import Document
 
 
 class QMImpactAssessment(Document):
+    def validate(self):
+        old_doc = self.get_doc_before_save()
+        if not old_doc or old_doc.docstatus != 0 or old_doc.status != "Draft":
+            return
+
+        changed_fields = [
+            field.fieldname
+            for field in self.meta.fields
+            if self.get(field.fieldname) != old_doc.get(field.fieldname)
+        ]
+        if self.docstatus != old_doc.docstatus:
+            changed_fields.append("docstatus")
+
+        user = frappe.session.user
+        roles = set(frappe.get_roles(user))
+        if changed_fields and not _can_edit_draft(user, old_doc.created_by, roles):
+            frappe.throw(
+                "Only the assigned Responsible Person or a user with the QAU role can edit a Draft QM Impact Assessment."
+            )
+
     def on_submit(self):
         self.status = "Completed"
         self.completion_date = today()
@@ -20,6 +40,10 @@ class QMImpactAssessment(Document):
         self.status = "Cancelled"
         self.save()
         frappe.db.commit()
+
+
+def _can_edit_draft(user, responsible_person, roles):
+    return user == responsible_person or "QAU" in roles
 
 
 @frappe.whitelist()

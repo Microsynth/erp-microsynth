@@ -4,13 +4,25 @@
 frappe.ui.form.on('QM Impact Assessment', {
     refresh: function(frm) {
 
-        cur_frm.set_df_property('status', 'read_only', true);
-        cur_frm.set_df_property('qm_process', 'read_only', true);
-        cur_frm.set_df_property('due_date', 'read_only', true);
-        cur_frm.set_df_property('document_type', 'read_only', true);
-        cur_frm.set_df_property('document_name', 'read_only', true);
-        cur_frm.set_df_property('created_on', 'read_only', true);
-        cur_frm.set_df_property('created_by', 'read_only', true);
+        [
+            'status',
+            'qm_process',
+            'due_date',
+            'document_type',
+            'document_name',
+            'created_on',
+            'created_by'
+        ].forEach(function(fieldname) {
+            cur_frm.set_df_property(fieldname, 'read_only', true);
+        });
+
+        var can_edit_draft = frm.doc.docstatus === 0
+            && frm.doc.status === 'Draft'
+            && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'));
+
+        ['title', 'assessment_summary'].forEach(function(fieldname) {
+            cur_frm.set_df_property(fieldname, 'read_only', !can_edit_draft);
+        });
 
         // remove Menu > Duplicate
         var target ="span[data-label='" + __("Duplicate") + "']";
