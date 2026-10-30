@@ -283,6 +283,21 @@ def update_status(qm_document, status):
         ):
             qm_doc.status = status
             qm_doc.save()
+            if status in ("Invalid", "Valid"):
+                frappe.db.savepoint("qm_document_competencies")
+                try:
+                    if status == "Invalid":
+                        from microsynth.qms.doctype.competency.competency import invalidate_competencies_for_qm_document
+                        invalidate_competencies_for_qm_document(qm_doc.name)
+                    else:
+                        from microsynth.qms.doctype.competency.competency import renew_competencies_for_qm_document
+                        renew_competencies_for_qm_document(qm_doc.name)
+                except Exception:
+                    frappe.db.rollback(save_point="qm_document_competencies")
+                    frappe.log_error(
+                        title="QM Document competency update failed",
+                        message=f"QM Document: {qm_doc.name}\nStatus: {status}\n{frappe.get_traceback()}",
+                    )
             frappe.db.commit()
     else:
         frappe.throw(f"Update QM Document Status: Status transition is not allowed {qm_doc.status} --> {status}")

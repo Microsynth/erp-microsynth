@@ -55,22 +55,17 @@ def _matches_versioned_document_name(qm_document_name, candidate_name):
 def _get_signed_qm_training_records(trainee, qm_document_name):
     if not trainee or not qm_document_name:
         return []
-    base_name, _ = split_versioned_name(qm_document_name)
-    records = frappe.get_all(
+    return frappe.get_all(
         "QM Training Record",
         filters=[
             ["trainee", "=", trainee],
             ["document_type", "=", "QM Document"],
-            ["document_name", "like", f"{base_name}-%"],
+            ["document_name", "=", qm_document_name],
             ["signed_on", "is", "set"],
             ["docstatus", "=", 1],
         ],
         fields=["name", "document_name", "signed_on"],
     )
-    # Reject similarly prefixed documents and SQL wildcard matches from other bases.
-    return [record for record in records if _matches_versioned_document_name(
-        qm_document_name, record.get("document_name")
-    )]
 
 
 def _get_passed_training_courses(trainee, training_template_name):

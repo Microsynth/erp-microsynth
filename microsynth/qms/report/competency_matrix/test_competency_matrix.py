@@ -99,8 +99,8 @@ class TestCompetencyMatrix(unittest.TestCase):
 
     def document(self, signed=True, **overrides):
         self.competency.qm_documents = [Row(qm_document="SOP-2")]
-        self.add("QM Document", name="SOP-1", title="Document title")
-        values = dict(name="QMTR-1", trainee="trainee", document_type="QM Document", document_name="SOP-1", signed_on="2026-10-01" if signed else None, docstatus=1)
+        self.add("QM Document", name="SOP-2", title="Document title")
+        values = dict(name="QMTR-1", trainee="trainee", document_type="QM Document", document_name="SOP-2", signed_on="2026-10-01" if signed else None, docstatus=1)
         values.update(overrides)
         return self.add("QM Training Record", **values)
 
@@ -140,19 +140,28 @@ class TestCompetencyMatrix(unittest.TestCase):
         self.instruction()
         self.assertTrue(self.details()["missing"])
 
-    def test_older_document_version_is_visible_evidence(self):
+    def test_older_document_version_does_not_satisfy_new_version(self):
+        self.require("QM Document")
+        self.document(document_name="SOP-1")
+        details = self.details()
+        self.assertTrue(details["missing"])
+        self.assertEqual([], details["records"])
+        self.assertFalse(self.functions["_competency_requirements_met"](self.competency.name, "trainee"))
+        self.assertIn("SOP-2", self.html(details))
+
+    def test_exact_document_version_is_visible_evidence(self):
         self.require("QM Document")
         self.document()
         details = self.details()
         self.assertEqual([], details["missing"])
         self.assignment.status = "Achieved"
         html = self.html(details)
-        for value in ("QMTR-1", "SOP-1", "Document title", "2026-10-01"):
+        for value in ("QMTR-1", "SOP-2", "Document title", "2026-10-01"):
             self.assertIn(value, html)
 
     def test_unsigned_cancelled_and_unrelated_records_rejected(self):
         self.require("QM Document")
-        for overrides in ({"signed_on": None}, {"docstatus": 2}, {"document_name": "SOP-extra-1"}, {"trainee": "OTHER"}):
+        for overrides in ({"signed_on": None}, {"docstatus": 0}, {"docstatus": 2}, {"document_name": "SOP-extra-1"}, {"trainee": "OTHER"}):
             with self.subTest(overrides=overrides):
                 self.rows["QM Training Record"] = []
                 self.document(**overrides)
@@ -255,7 +264,7 @@ class TestCompetencyMatrix(unittest.TestCase):
         for doctype, name in (
             ("Competency", "COMP-1-1"), ("Staff Profile", "NEW"),
             ("QM Training Template", "TEMPLATE-1"), ("Competency Instruction", "CIN-1"),
-            ("QM Training Record", "QMTR-1"), ("QM Document", "SOP-1"),
+            ("QM Training Record", "QMTR-1"), ("QM Document", "SOP-2"),
             ("QM Training Course", "COURSE-1"),
         ):
             self.assertIn(f'href="/desk#Form/{quote(doctype, safe="")}/{name}"', html)

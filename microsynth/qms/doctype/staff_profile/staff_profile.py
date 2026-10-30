@@ -10,9 +10,12 @@ from datetime import datetime
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import cint, nowdate
+from frappe.utils import cint, nowdate, now_datetime
 
-from microsynth.qms.doctype.competency_assignment.competency_assignment import update_competency_assignments_for_trainee
+from microsynth.qms.doctype.competency_assignment.competency_assignment import (
+    get_competency_requirement_details,
+    update_competency_assignments_for_trainee,
+)
 from microsynth.qms.doctype.staff_profile_template.staff_profile_template import (
     _get_validated_staff_profile_template,
     get_staff_profile_template_competency_values,
@@ -302,6 +305,7 @@ def create_new_version(docname):
     new_doc.modified = None
     new_doc.modified_by = None
     new_doc.flags.name_set = True
+    _replace_invalid_competency_versions(new_doc)
     new_doc.insert()
     frappe.db.commit()
     return {"name": new_doc.name}
@@ -479,6 +483,36 @@ def _copy_assignments_without_instruction_links(assignments):
         if getattr(assignment, "competency_instruction", None):
             assignment.competency_instruction = ""
     return assignments
+
+
+def _replace_invalid_competency_versions(staff_profile):
+    trainee = None
+    if staff_profile.employee:
+        trainee = frappe.db.get_value("Employee", staff_profile.employee, "user_id")
+
+    for assignment in staff_profile.competencies or []:
+        if not assignment.competency:
+            continue
+        current_version = frappe.db.get_value(
+            "Competency", assignment.competency, ["status", "docstatus"], as_dict=True
+        )
+        if current_version and current_version.get("status") == "Valid" and current_version.get("docstatus") == 1:
+            continue
+        _, _, versions = get_versioned_documents("Competency", assignment.competency)
+        valid_versions = [version for version in versions if version[2] == "Valid" and version[3] == 1]
+        if not valid_versions:
+            continue
+
+        replacement = max(valid_versions, key=lambda version: version[0])[1]
+        assignment.competency = replacement
+        assignment.competency_title = frappe.db.get_value("Competency", replacement, "title")
+        assignment.status = "Planned"
+        assignment.competency_achieved_on = None
+        assignment.competency_instruction = ""
+        requirements = get_competency_requirement_details(replacement, trainee, employee=staff_profile.employee)
+        if not requirements["missing"]:
+            assignment.status = "Achieved"
+            assignment.competency_achieved_on = now_datetime()
 
 
 def _clean_legacy_import_value(value):

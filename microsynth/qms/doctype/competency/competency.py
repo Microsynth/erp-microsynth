@@ -12,23 +12,35 @@ from frappe import _
 from frappe.model.document import Document
 
 from microsynth.qms.doctype.qm_document.qm_document import get_valid_version
-from microsynth.qms.versioning import get_newer_active_versions, get_next_suffix, get_versioned_documents
+from microsynth.qms.versioning import get_newer_active_versions, get_next_suffix, get_versioned_documents, split_versioned_name
 
 
 class Competency(Document):
     def validate(self):
         validate_prerequisite_types(self)
-        validate_linked_qm_documents(self)
+        if self.docstatus == 0 or self.status != "Invalid":
+            validate_linked_qm_documents(self)
 
     def before_cancel(self):
         validate_cancel_permission(self)
 
     def before_submit(self):
+        base_name, current_suffix, available_versions = get_versioned_documents("Competency", self.name)
+        newer_submitted_versions = [
+            name for suffix, name, status, docstatus in available_versions
+            if suffix > current_suffix and docstatus == 1
+        ]
+        if newer_submitted_versions:
+            frappe.throw(
+                _("Cannot submit Competency {0} because a newer submitted version already exists: {1}.").format(
+                    frappe.bold(self.name), ", ".join(frappe.bold(name) for name in newer_submitted_versions)
+                ),
+                title=_("Newer Version Exists"),
+            )
         self.status = "Valid"
 
     def on_submit(self):
         invalidate_previous_versions(self.name)
-        frappe.db.commit()
 
     def on_cancel(self):
         self.status = "Invalid"
@@ -44,7 +56,88 @@ def invalidate_previous_versions(docname):
             continue
         previous_version = frappe.get_doc("Competency", version_name)
         previous_version.status = "Invalid"
-        previous_version.save()
+        previous_version.save(ignore_permissions=True)
+
+
+def invalidate_competencies_for_qm_document(qm_document_name):
+    links = frappe.get_all(
+        "QM Document Link",
+        filters={"parenttype": "Competency", "parentfield": "qm_documents", "qm_document": qm_document_name},
+        fields=["parent"],
+    )
+    for competency_name in sorted({row.get("parent") for row in links if row.get("parent")}):
+        competency = frappe.get_doc("Competency", competency_name)
+        if competency.docstatus != 1 or competency.status != "Valid":
+            continue
+        competency.status = "Invalid"
+        competency.save(ignore_permissions=True)
+        competency.add_comment(
+            "Comment",
+            _("Automatically invalidated because linked QM Document {0} was invalidated.").format(qm_document_name),
+        )
+        _create_qm_document_replacement(competency)
+
+
+def renew_competencies_for_qm_document(qm_document_name):
+    base_name, _ = split_versioned_name(qm_document_name)
+    links = frappe.get_all(
+        "QM Document Link",
+        filters={
+            "parenttype": "Competency",
+            "parentfield": "qm_documents",
+            "qm_document": ["like", "{0}-%".format(base_name)],
+        },
+        fields=["parent", "qm_document"],
+    )
+    competency_names = {
+        row.get("parent") for row in links
+        if row.get("parent") and split_versioned_name(row.get("qm_document") or "")[0] == base_name
+    }
+    for competency_name in sorted(competency_names):
+        competency = frappe.get_doc("Competency", competency_name)
+        _create_qm_document_replacement(competency)
+
+
+def _create_qm_document_replacement(competency):
+    if competency.docstatus != 1 or competency.status != "Invalid":
+        return
+    base_name, current_suffix, available_versions = get_versioned_documents("Competency", competency.name)
+    if any(suffix > current_suffix and docstatus == 1 for suffix, name, status, docstatus in available_versions):
+        return
+
+    replacements = {}
+    for row in competency.qm_documents or []:
+        if not row.qm_document or frappe.db.get_value("QM Document", row.qm_document, "status") == "Valid":
+            continue
+        valid_document = get_valid_version(split_versioned_name(row.qm_document)[0])
+        if not valid_document:
+            return
+        replacements[row.qm_document] = valid_document
+    if not replacements:
+        return
+
+    next_suffix = get_next_suffix(available_versions, current_suffix)
+    if next_suffix > 99:
+        frappe.throw(
+            _("Cannot create a new version for Competency {0} because the version suffix would exceed 99.").format(
+                frappe.bold(competency.name)
+            ),
+            title=_("Version Limit Reached"),
+        )
+    new_doc = _copy_competency_version(competency, "{0}-{1}".format(base_name, next_suffix))
+    for row in new_doc.qm_documents or []:
+        replacement = replacements.get(row.qm_document)
+        if replacement:
+            row.qm_document = replacement.get("name")
+            row.title = replacement.get("title")
+    new_doc.flags.ignore_permissions = True
+    new_doc.insert(ignore_permissions=True)
+    new_doc.submit()
+    new_doc.add_comment(
+        "Comment",
+        _("Automatically created from Competency {0} with updated QM Document versions.").format(competency.name),
+    )
+    return new_doc
 
 
 def validate_cancel_permission(doc):
@@ -306,6 +399,13 @@ def create_new_version(docname):
             ),
             title=_("Duplicate Version Name"),
         )
+    new_doc = _copy_competency_version(current_doc, new_name)
+    new_doc.insert()
+    frappe.db.commit()
+    return {"name": new_doc.name}
+
+
+def _copy_competency_version(current_doc, new_name):
     new_doc = frappe.copy_doc(current_doc)
     new_doc.name = new_name
     new_doc.docstatus = 0
@@ -316,9 +416,7 @@ def create_new_version(docname):
     new_doc.modified = None
     new_doc.modified_by = None
     new_doc.flags.name_set = True
-    new_doc.insert()
-    frappe.db.commit()
-    return {"name": new_doc.name}
+    return new_doc
 
 
 COMPETENCY_IMPORT_MAX_TITLE_LENGTH = 140
