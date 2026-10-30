@@ -221,6 +221,23 @@ frappe.ui.form.on('QM Change', {
             frm.set_df_property('current_state', 'hidden', false);
         }
 
+        // Apply the strict edit rules after the status-specific field settings above.
+        var is_qau = frappe.user.has_role('QAU');
+        var can_edit_impact = is_qau
+            && ['Draft', 'Created', 'Assessment & Classification'].includes(frm.doc.status)
+            && frm.doc.regulatory_classification === 'GMP';
+        cur_frm.set_df_property('impact', 'read_only', !can_edit_impact);
+        var impact_grid = cur_frm.get_field('impact').grid;
+        impact_grid.fields_map['qm_change_impact'].read_only = !can_edit_impact;
+        impact_grid.fields_map['impact_answer'].read_only = !can_edit_impact;
+        cur_frm.refresh_field('impact');
+
+        if (frm.doc.status === 'Assessment & Classification') {
+            ['regulatory_classification', 'impact_description', 'risk_classification'].forEach(function(fieldname) {
+                cur_frm.set_df_property(fieldname, 'read_only', !is_qau);
+            });
+        }
+
 
         // BUTTONS
 
