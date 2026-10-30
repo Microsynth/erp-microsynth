@@ -180,15 +180,6 @@ frappe.ui.form.on('QM Change', {
             cur_frm.set_df_property('closure_comments', 'read_only', true);
         }
 
-        // Reference fields can be edited in all status unequals Cancelled
-        if (frm.doc.docstatus < 2) {
-            cur_frm.set_df_property('qm_documents', 'read_only', false);
-            cur_frm.set_df_property('customers', 'read_only', false);
-        } else {
-            cur_frm.set_df_property('qm_documents', 'read_only', true);
-            cur_frm.set_df_property('customers', 'read_only', true);
-        }
-
         // lock all fields (except References) of CC type "procurement" in status
         // "Assessment & Classification" and "Planning" for all non-QAU users
         if ((["Assessment & Classification", "Planning"].includes(frm.doc.status)
@@ -198,8 +189,6 @@ frappe.ui.form.on('QM Change', {
             || (["Closed", "Cancelled"].includes(frm.doc.status)
                 || !(frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU')))) {
             cur_frm.set_df_property('cc_type', 'read_only', true);
-            cur_frm.set_df_property('qm_documents', 'read_only', true);
-            cur_frm.set_df_property('customers', 'read_only', true);
             cur_frm.set_df_property('qm_process', 'read_only', true);
             cur_frm.set_df_property('title', 'read_only', true);
             cur_frm.set_df_property('company', 'read_only', true);
@@ -238,6 +227,11 @@ frappe.ui.form.on('QM Change', {
             });
         }
 
+        var can_edit_references = !['Closed', 'Cancelled'].includes(frm.doc.status)
+            && (frappe.session.user === frm.doc.created_by || is_qau);
+        ['qm_documents', 'customers', 'instruments', 'computerised_systems'].forEach(function(fieldname) {
+            cur_frm.set_df_property(fieldname, 'read_only', !can_edit_references);
+        });
 
         // BUTTONS
 

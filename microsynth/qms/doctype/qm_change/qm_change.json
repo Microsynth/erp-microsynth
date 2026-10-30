@@ -1,4 +1,5 @@
 {
+ "actions": [],
  "autoname": "naming_series:",
  "creation": "2024-06-21 09:42:27.533475",
  "doctype": "DocType",
@@ -321,12 +322,14 @@
    "options": "\nA \u2013 complex or computerised devices\nB \u2013 standard devices with straightforward measurement\nC \u2013 devices without measuring function"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "instruments",
    "fieldtype": "Table",
    "label": "Instruments",
    "options": "QM Instrument Link"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "computerised_systems",
    "fieldtype": "Table",
    "label": "Computerised Systems",
@@ -334,8 +337,9 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2026-08-17 14:23:31.590864",
- "modified_by": "Administrator",
+ "links": [],
+ "modified": "2026-10-30 14:06:17.149599",
+ "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Change",
  "owner": "Administrator",
@@ -387,8 +391,10 @@
    "role": "NGS Lab User"
   }
  ],
+ "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
+ "states": [],
  "title_field": "title",
  "track_changes": 1
 }

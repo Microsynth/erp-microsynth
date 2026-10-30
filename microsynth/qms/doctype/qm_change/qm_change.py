@@ -10,7 +10,38 @@ from microsynth.microsynth.utils import user_has_role
 from microsynth.qms.doctype.qm_action.qm_action import assign_and_notify
 
 
+def _references(doc):
+    return tuple(
+        tuple(row.get(field) for row in doc.get(table) or [])
+        for table, field in (
+            ("qm_documents", "qm_document"),
+            ("customers", "customer"),
+            ("instruments", "qm_instrument"),
+            ("computerised_systems", "qm_computerised_system"),
+        )
+    )
+
+
 class QMChange(Document):
+    def validate(self):
+        old_doc = self.get_doc_before_save()
+        if old_doc and _references(self) == _references(old_doc):
+            return
+        if not old_doc and not any(self.get(field) for field in (
+            "qm_documents", "customers", "instruments", "computerised_systems"
+        )):
+            return
+
+        if (
+            self.status in {"Closed", "Cancelled"}
+            or (old_doc and old_doc.status in {"Closed", "Cancelled"})
+            or (
+                frappe.session.user != (old_doc.created_by if old_doc else self.created_by)
+                and not user_has_role(frappe.session.user, "QAU")
+            )
+        ):
+            frappe.throw("Only the QM Change Creator or QAU can edit References before closure.", frappe.PermissionError)
+
     def on_submit(self):
         self.status = "Created"
         self.save()
