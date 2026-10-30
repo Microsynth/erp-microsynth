@@ -31,6 +31,13 @@ def get_data(filters):
         conditions += " AND `tabQM Change`.`status` = %(status_qm_change)s"
         values["status_qm_change"] = filters["status_qm_change"]
 
+    if filters.get("cc_type"):
+        conditions += " AND `tabQM Change`.`cc_type` = %(cc_type)s"
+        values["cc_type"] = filters["cc_type"]
+
+    if filters.get("exclude_completed_closed_cancelled_changes"):
+        conditions += " AND `tabQM Change`.`status` NOT IN ('Completed', 'Closed', 'Cancelled')"
+
     if filters.get("status_qm_action"):
         conditions += " AND `tabQM Action`.`status` = %(status_qm_action)s"
         values["status_qm_action"] = filters["status_qm_action"]

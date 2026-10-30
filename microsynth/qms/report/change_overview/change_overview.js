@@ -39,7 +39,18 @@ frappe.query_reports["Change Overview"] = {
             label: __("Action Type"),
             fieldtype: "Select",
             options: "\nCorrection\nCorrective Action\nNC Effectiveness Check\nChange Control Action\nCC Effectiveness Check"
-        }
+        },
+        {
+            fieldname: "cc_type",
+            label: __("Change Control Type"),
+            fieldtype: "Select",
+            options: "\nshort\nfull\nprocurement"
+        },
+        {
+            fieldname: "exclude_completed_closed_cancelled_changes",
+            label: __("Active QM Changes only"),
+            fieldtype: "Check"
+        },
     ],
     'onload': function(report) {
         hide_chart_buttons();
