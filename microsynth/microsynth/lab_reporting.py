@@ -257,6 +257,18 @@ def create_analysis_report(content=None):
                 'reference': None}
 
 
+def _validate_single_sample_report(analysis_report, analysis_report_doc, log_title):
+    if len(analysis_report_doc.sample_details) > 1:
+        msg = f"Analysis Report '{analysis_report}' has {len(analysis_report_doc.sample_details)} sample details, but the file naming is only defined for reports with a single sample."
+    elif not analysis_report_doc.sample_details:
+        msg = f"Analysis Report '{analysis_report}' has no sample details, but the file naming is only defined for reports with exactly one sample."
+    else:
+        return True
+    frappe.log_error(msg, log_title)
+    frappe.throw(msg)
+    return False
+
+
 def create_pdf_attachment(analysis_report):
     """
     Creates the PDF file for a given Analysis Report name and attaches the file to the record in the ERP.
@@ -265,17 +277,10 @@ def create_pdf_attachment(analysis_report):
     """
     doctype = printformat = "Analysis Report"
     analysis_report_doc = frappe.get_doc("Analysis Report", analysis_report)
-    if len(analysis_report_doc.sample_details) == 1:
-        sample = analysis_report_doc.sample_details[0].sample
-        sample_name = frappe.get_value("Sample", sample, "sample_name")
-    elif len(analysis_report_doc.sample_details) > 1:
-        msg = f"Analysis Report '{analysis_report}' has {len(analysis_report_doc.sample_details)} sample details, but the file naming is only defined for reports with a single sample."
-        frappe.log_error(msg, "lab_reporting.create_pdf_attachment")
-        frappe.throw(msg)
-    else:
-        msg = f"Analysis Report '{analysis_report}' has no sample details, but the file naming is only defined for reports with exactly one sample."
-        frappe.log_error(msg, "lab_reporting.create_pdf_attachment")
-        frappe.throw(msg)
+    if not _validate_single_sample_report(analysis_report, analysis_report_doc, "lab_reporting.create_pdf_attachment"):
+        return
+    sample = analysis_report_doc.sample_details[0].sample
+    sample_name = frappe.get_value("Sample", sample, "sample_name")
     doctype_folder = create_folder(doctype, "Home")
     title_folder = create_folder(sample_name, doctype_folder)
     # TODO: How to set the file name to sample_name?
@@ -378,17 +383,10 @@ def webshop_upload(contact_id, web_order_id, analysis_reports):
             frappe.throw(f"Got no Web Order ID and Analysis Report '{analysis_report}' has no Web Order ID. Unable to create a folder.")
 
         analysis_report_doc = frappe.get_doc("Analysis Report", analysis_report)
-        if len(analysis_report_doc.sample_details) == 1:
-            sample = analysis_report_doc.sample_details[0].sample
-            sample_name = frappe.get_value("Sample", sample, "sample_name")
-        elif len(analysis_report_doc.sample_details) > 1:
-            msg = f"Analysis Report '{analysis_report}' has {len(analysis_report_doc.sample_details)} sample details, but the file naming is only defined for reports with a single sample."
-            frappe.log_error(msg, "lab_reporting.webshop_upload")
-            frappe.throw(msg)
-        else:
-            msg = f"Analysis Report '{analysis_report}' has no sample details, but the file naming is only defined for reports with exactly one sample."
-            frappe.log_error(msg, "lab_reporting.webshop_upload")
-            frappe.throw(msg)
+        if not _validate_single_sample_report(analysis_report, analysis_report_doc, "lab_reporting.webshop_upload"):
+            return
+        sample = analysis_report_doc.sample_details[0].sample
+        sample_name = frappe.get_value("Sample", sample, "sample_name")
 
         content_pdf = frappe.get_print(
             "Analysis Report",
