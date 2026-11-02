@@ -53,7 +53,7 @@ def initialize_webshop_address_doc(webshop_account, shipping_contact, billing_co
     """
     if frappe.db.exists("Webshop Address", webshop_account):
         msg = f"There exists already a Webshop Address '{webshop_account}'. Unable to create a new one."
-        frappe.log_error(msg, "webshop.initialize_webshop_address_doc")
+        frappe.log_error(title="webshop.initialize_webshop_address_doc", message=msg)
         frappe.throw(msg)
     # create a new Webshop Address
     webshop_address_doc = frappe.get_doc({
@@ -256,7 +256,7 @@ def create_update_contact_doc(contact_data):
     except Exception as err:
         msg = f"Failed to save contact: {err}"
         print(msg)
-        frappe.log_error(msg)
+        frappe.log_error(title="webshop.create_update_contact_doc", message=msg)
         return None
 
 
@@ -350,7 +350,7 @@ def create_update_address_doc(address_data, is_deleted=False, customer_id=None):
     except Exception as err:
         msg = f"Failed to save address: {err}"
         print(msg)
-        frappe.log_error(msg)
+        frappe.log_error(title="webshop.create_update_address_doc", message=msg)
         return None
 
 
@@ -949,7 +949,7 @@ def request_quote(content, client="webshop"):
         shipping_address = frappe.get_doc("Address", content['delivery_address'])
         express_shipping = get_express_shipping_item(content['customer'], shipping_address.country)
         if not express_shipping:
-            frappe.log_error(f"Found no express shipping item for Customer {content['customer']} and Country {shipping_address.country} in currency {customer_doc.default_currency}.", "webshop.request_quote")
+            frappe.log_error(title="webshop.request_quote", message=f"Found no express shipping item for Customer {content['customer']} and Country {shipping_address.country} in currency {customer_doc.default_currency}.")
             if 'shipping_contact' in content and content['shipping_contact']:
                 shipping_contact = content['shipping_contact']
             else:
@@ -1001,7 +1001,7 @@ def request_quote(content, client="webshop"):
         return {'success': True, 'message': 'Quotation created', 'internal_message': 'OK', 'reference': qtn_doc.name}
     except Exception as err:
         msg = f"Failed to create quotation for account {content['contact']}: {err}"
-        frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.request_quote")
+        frappe.log_error(title="webshop.request_quote", message=f"{msg}\n\n\n{traceback.format_exc()}")
         return {'success': False, 'internal_message': 'Failed to create quotation', 'message': msg, 'reference': None}
 
 
@@ -1219,7 +1219,7 @@ def get_item_prices(content, client="webshop"):
             so.validate()
         except Exception as err:
             msg = f"Error getting item prices for customer {content['customer']}: {err}. Check ERP Error Log for details."
-            frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.get_item_prices")
+            frappe.log_error(title="webshop.get_item_prices", message=f"{msg}\n\n\n{traceback.format_exc()}")
             return {'success': False, 'message': 'Failed to get item prices', 'internal_message': msg, 'quotation': None}
         # pick prices
         item_prices = []
@@ -1243,7 +1243,7 @@ def apply_discount(quotation, sales_order):
     elif sales_order.total == quotation.total:
         sales_order.discount_amount = quotation.discount_amount
     else:
-        frappe.log_error(f"Unable to apply discount on {sales_order.name}. Mismatch between quotation and sales order: {sales_order.total=} != {quotation.total=}", "webshop.apply_discount")
+        frappe.log_error(title="webshop.apply_discount", message=f"Unable to apply discount on {sales_order.name}. Mismatch between quotation and sales order: {sales_order.total=} != {quotation.total=}")
     return sales_order
 
 
@@ -1303,7 +1303,7 @@ def place_order(content, client="webshop"):
                 # swap customer and replace billing address
                 if is_drop_shipment:
                     err = "Not implemented: dropshipment conflicts with distributor workflow"
-                    frappe.log_error(err, "webshop.place_order")
+                    frappe.log_error(title="webshop.place_order", message=err)
                     return {'success': False, 'internal_message': err, 'message': 'Failed to create Sales Order', 'reference': None}
                 order_customer = customer
                 customer = frappe.get_doc("Customer", distributor.distributor)
@@ -1422,10 +1422,10 @@ def place_order(content, client="webshop"):
                     applicable_legacy_credit_accounts.append(account.name)
 
         if len(applicable_legacy_credit_accounts) > 1:
-            frappe.log_error(f"WARNING: Found {len(applicable_legacy_credit_accounts)} applicable legacy credit accounts "
-                             f"for Customer {customer.name}, Company {company} and product type {so_doc.product_type}, "
-                             f"going to add them all on Sales Order {so_doc.name}: {applicable_legacy_credit_accounts}",
-                             "webshop.place_order")
+            frappe.log_error(title="webshop.place_order",
+                             message=f"WARNING: Found {len(applicable_legacy_credit_accounts)} applicable legacy credit accounts "
+                                     f"for Customer {customer.name}, Company {company} and product type {so_doc.product_type}, "
+                                     f"going to add them all on Sales Order {so_doc.name}: {applicable_legacy_credit_accounts}")
         for alca in applicable_legacy_credit_accounts:
             so_doc.append('credit_accounts', {
                 'credit_account': alca
@@ -1546,7 +1546,7 @@ def place_order(content, client="webshop"):
 
     except Exception as err:
         msg = f"Error placing order {content['web_order_id'] if 'web_order_id' in content else None} for account {contact.name}: {err}. Check ERP Error Log for details."
-        frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.place_order")
+        frappe.log_error(title="webshop.place_order", message=f"{msg}\n\n\n{traceback.format_exc()}")
         return {'success': False, 'message': 'Failed to place order', 'internal_message': msg, 'reference': None}
 
     # set shipping item for oligo orders to express shipping if the order total exceeds the threshold
@@ -1612,7 +1612,7 @@ def place_order(content, client="webshop"):
         }
     except Exception as err:
         msg = f"Error placing order {content['web_order_id'] if 'web_order_id' in content else None} for account {contact.name}: {err}. Check ERP Error Log for details."
-        frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.place_order")
+        frappe.log_error(title="webshop.place_order", message=f"{msg}\n\n\n{traceback.format_exc()}")
         return {'success': False, 'message': 'Failed to place order', 'internal_message': msg, 'reference': None}
 
 
@@ -1715,7 +1715,7 @@ def place_dropship_order(sales_order, intercompany_customer_name, supplier_compa
         return dropship_order.name
 
     except Exception as err:
-        frappe.log_error(f"{err}\n\n{customer}\n{supplier_company}\n{sales_order}\nOriginal Order: {original_order.name}/{original_order.web_order_id}\n\n{traceback.format_exc()}", "webshop.place_dropship_order")
+        frappe.log_error(title="webshop.place_dropship_order", message=f"{err}\n\n{customer}\n{supplier_company}\n{sales_order}\nOriginal Order: {original_order.name}/{original_order.web_order_id}\n\n{traceback.format_exc()}")
 
         return None
 
@@ -1744,7 +1744,7 @@ def order_quote(quotation_id, client="webshop"):
         #sales_order.submit()
     except Exception as err:
         msg = f"Error creating Sales Order for Quotation {quotation_id}: {err}. Check ERP Error Log for details."
-        frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.order_quote")
+        frappe.log_error(title="webshop.order_quote", message=f"{msg}\n\n\n{traceback.format_exc()}")
         return {'success': False, 'message': 'Failed to create Sales Order', 'internal_message': msg, 'reference': None}
     else:
         return {'success': True, 'message': None, 'internal_message': None, 'reference': sales_order.name}
@@ -1921,7 +1921,7 @@ def update_newsletter_state(person_id, newsletter_state, client="webshop"):
             return {'success': True, 'message': None, 'internal_message': None}
         except Exception as err:
             msg = f"Error updating newsletter state for {person_id}: {err}. Check ERP Error Log for details."
-            frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.update_newsletter_state")
+            frappe.log_error(title="webshop.update_newsletter_state", message=f"{msg}\n\n\n{traceback.format_exc()}")
             return {'success': False, 'message': 'Failed to update newsletter state', 'internal_message': msg}
     else:
         return {'success': False, 'message': "Failed to update newsletter state", 'internal_message': "Person ID not found"}
@@ -1951,7 +1951,7 @@ def update_punchout_details(person_id, punchout_shop, punchout_buyer, punchout_i
             return {'success': True, 'message': None, 'internal_message': None}
         except Exception as err:
             msg = f"Error updating punchout details for {person_id}: {err}. Check ERP Error Log for details."
-            frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.update_punchout_details")
+            frappe.log_error(title="webshop.update_punchout_details", message=f"{msg}\n\n\n{traceback.format_exc()}")
             return {'success': False, 'message': 'Failed to update punchout details', 'internal_message': msg}
     else:
         return {'success': False, 'message': "Failed to update punchout details", 'internal_message': "Person ID not found"}
@@ -1971,7 +1971,7 @@ def update_address_gps(person_id, gps_lat, gps_long, client="webshop"):
             return {'success': True, 'message': None, 'internal_message': None}
         except Exception as err:
             msg = f"Error updating GPS data for {person_id}: {err}. Check ERP Error Log for details."
-            frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.update_address_gps")
+            frappe.log_error(title="webshop.update_address_gps", message=f"{msg}\n\n\n{traceback.format_exc()}")
             return {'success': False, 'message': 'Failed to update GPS data', 'internal_message': msg}
     else:
         return {'success': False, 'message': "Failed to update GPS data", 'internal_message': "Person ID not found"}
@@ -2033,7 +2033,7 @@ def create_payment(sales_order, stripe_reference, client="webshop"):
         sinv.submit()
     except Exception as err:
         msg = f"Error creating Sales Invoice for Sales Order {sales_order}: {err}. Check ERP Error Log."
-        frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.create_payment")
+        frappe.log_error(title="webshop.create_payment", message=f"{msg}\n\n\n{traceback.format_exc()}")
         return {'success': False, 'message': 'Failed to create sales invoice', 'internal_message': msg}
     frappe.db.commit()
 
@@ -2055,7 +2055,7 @@ def create_payment(sales_order, stripe_reference, client="webshop"):
         pe.submit()
     except Exception as err:
         msg = f"Error creating Payment Entry for Sales Invoice {sinv.name} of Sales Order {sales_order}: {err}. Check ERP Error Log for details."
-        frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.create_payment")
+        frappe.log_error(title="webshop.create_payment", message=f"{msg}\n\n\n{traceback.format_exc()}")
         return {'success': False, 'message': "Failed to create payment", 'internal_message': msg}
     frappe.db.commit()
 
@@ -2066,7 +2066,7 @@ def create_payment(sales_order, stripe_reference, client="webshop"):
         so_doc.save()
     except Exception as err:
         msg = f"Error updating Sales Order {sales_order} after payment: {err}. Check ERP Error Log for details."
-        frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.create_payment")
+        frappe.log_error(title="webshop.create_payment", message=f"{msg}\n\n\n{traceback.format_exc()}")
         return {'success': False, 'message': msg, 'internal_message': 'Failed to update Sales Order.'}
     frappe.db.commit()
 
@@ -2287,7 +2287,7 @@ def cancel_order(sales_order, web_order_id):
             new_comment.insert(ignore_permissions=True)
         elif len(dropship_orders) > 1:
             msg = f"Multiple intercompany Sales Orders found for Sales Order {sales_order_doc.name}. Please check manually if all linked Sales Orders are cancelled. Linked Sales Orders: {', '.join([o['name'] for o in dropship_orders])}."
-            frappe.log_error(msg, "webshop.cancel_order")
+            frappe.log_error(title="webshop.cancel_order", message=msg)
 
         return {
             'success': True,
@@ -2299,7 +2299,7 @@ def cancel_order(sales_order, web_order_id):
         }
     except Exception as err:
         msg = f"Error cancelling Sales Order '{sales_order}' with Web Order ID '{web_order_id}': {err}. Check ERP Error Log for details."
-        frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.cancel_order")
+        frappe.log_error(title="webshop.cancel_order", message=f"{msg}\n\n\n{traceback.format_exc()}")
         return {
             'success': False,
             'message': "Failed to cancel Sales Order.",
@@ -2326,7 +2326,7 @@ def get_quotation_pdf(quotation_id):
         return {'success': True, 'message': 'OK', 'internal_message': 'OK', 'base64string': encoded_string}
     except Exception as err:
         msg = f"Error creating PDF for Quotation '{quotation_id}': {err}. Check ERP Error Log for details."
-        frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.get_quotation_pdf")
+        frappe.log_error(title="webshop.get_quotation_pdf", message=f"{msg}\n\n\n{traceback.format_exc()}")
         return {'success': False, 'message': "Failed to create PDF.", 'internal_message': msg, 'base64string': None}
 
 
@@ -2448,7 +2448,7 @@ def get_webshop_addresses(webshop_account):
         }
     except Exception as err:
         msg = f"Error getting webshop addresses for webshop_account '{webshop_account}': {err}. Check ERP Error Log for details."
-        frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.get_webshop_addresses")
+        frappe.log_error(title="webshop.get_webshop_addresses", message=f"{msg}\n\n\n{traceback.format_exc()}")
         return {
             'success': False,
             'message': "Failed to get webshop addresses.",
@@ -2575,7 +2575,7 @@ def create_webshop_address(webshop_account, webshop_address):
             address_id = address_exists_response.get('addresses')[0].get('address_id')
             webshop_address['contact']['address'] = address_id
             webshop_address['address']['name'] = address_id
-            frappe.log_error(f"Webshop account {webshop_account}: Link existing Address: {address_id}\n{webshop_address['contact']['address']=}\n{webshop_address['address']['name']=}", "webshop.create_webshop_address")
+            frappe.log_error(title="webshop.create_webshop_address", message=f"Webshop account {webshop_account}: Link existing Address: {address_id}\n{webshop_address['contact']['address']=}\n{webshop_address['address']['name']=}")
         else:
             address_id = create_address(webshop_address)
 
@@ -2602,7 +2602,7 @@ def create_webshop_address(webshop_account, webshop_address):
         }
     except Exception as err:
         msg = f"Error creating webshop address with contact_id '{webshop_address['contact']['name']}' for webshop_account '{webshop_account}': {err}. Check ERP Error Log for details."
-        frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.create_webshop_address")
+        frappe.log_error(title="webshop.create_webshop_address", message=f"{msg}\n\n\n{traceback.format_exc()}")
         return {
             'success': False,
             'message': "Failed to create webshop address.",
@@ -2756,13 +2756,13 @@ def increase_version(name):
         parts = name.split('-')
         if len(parts) != 2:
             msg = f"Unable to increase version of ID '{name}'. Most likely it contains more than one dash ('-')."
-            frappe.log_error(msg, 'webshop.increase_version')
+            frappe.log_error(title='webshop.increase_version', message=msg)
             frappe.throw(msg)
         try:
             version = int(parts[-1])
         except Exception as err:
             msg = f"Unable to increase version of ID '{name}'. The part after the last dash is not convertible to an integer ({err})."
-            frappe.log_error(msg, 'webshop.increase_version')
+            frappe.log_error(title='webshop.increase_version', message=msg)
             frappe.throw(msg)
         else:
             return parts[0] + '-' + str(version + 1)
@@ -2937,7 +2937,7 @@ def update_webshop_address(webshop_account, webshop_address):
         }
     except Exception as err:
         msg = f"Error updating webshop address with contact_id '{webshop_address['contact']['name']}' for webshop_account '{webshop_account}': {err}. Check ERP Error Log for details."
-        frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.update_webshop_address")
+        frappe.log_error(title="webshop.update_webshop_address", message=f"{msg}\n\n\n{traceback.format_exc()}")
         return {
             'success': False,
             'message': "Failed to update webshop address.",
@@ -3004,7 +3004,7 @@ def delete_webshop_address(webshop_account, contact_id):
         }
     except Exception as err:
         msg = f"Error deleting webshop address with contact_id '{contact_id}' for webshop_account '{webshop_account}': {err}. Check ERP Error Log for details."
-        frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.delete_webshop_address")
+        frappe.log_error(title="webshop.delete_webshop_address", message=f"{msg}\n\n\n{traceback.format_exc()}")
         return {
             'success': False,
             'message': "Failed to delete webshop address.",
@@ -3049,7 +3049,7 @@ def set_default_webshop_address(webshop_account, address_type, contact_id):
         }
     except Exception as err:
         msg = f"Error setting default webshop address for webshop_account '{webshop_account}' with contact_id '{contact_id}': {err}. Check ERP Error Log for details."
-        frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.set_default_webshop_address")
+        frappe.log_error(title="webshop.set_default_webshop_address", message=f"{msg}\n\n\n{traceback.format_exc()}")
         return {
             'success': False,
             'message': "Failed to set default webshop address.",
@@ -3153,7 +3153,7 @@ def get_account_details(webshop_account):
         }
     except Exception as err:
         msg = f"Error getting account details for webshop_account '{webshop_account}': {err}. Check ERP Error Log for details."
-        frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.get_account_details")
+        frappe.log_error(title="webshop.get_account_details", message=f"{msg}\n\n\n{traceback.format_exc()}")
         return {
             'success': False,
             'message': "Failed to get account details.",
@@ -3216,7 +3216,7 @@ def update_account_settings(webshop_account, account_settings):
         }
     except Exception as err:
         msg = f"Error updating account details for webshop_account '{webshop_account}': {err}. Check ERP Error Log for details."
-        frappe.log_error(f"Unable to update account details for webshop_account '{webshop_account}'\n\n{traceback.format_exc()}", "webshop.update_account_settings")
+        frappe.log_error(title="webshop.update_account_settings", message=f"Unable to update account details for webshop_account '{webshop_account}'\n\n{traceback.format_exc()}")
         return {
             'success': False,
             'message': "Failed to update account details.",
@@ -3237,13 +3237,13 @@ def change_default_billing_address(webshop_account_id, new_invoice_to_contact_id
         if row.is_default_billing:
             if found:
                 msg = f"Webshop Address {webshop_address_doc.name} has more than one default billing Contact. Please contact IT App."
-                frappe.log_error(msg, 'webshop.change_default_billing_address')
+                frappe.log_error(title='webshop.change_default_billing_address', message=msg)
                 frappe.throw(msg)
             row.contact = new_invoice_to_contact_id
             found = True
     if not found:
         msg = f"Webshop Address {webshop_address_doc.name} has no default billing Contact. Please contact IT App."
-        frappe.log_error(msg, 'webshop.change_default_billing_address')
+        frappe.log_error(title='webshop.change_default_billing_address', message=msg)
         frappe.throw(msg)
 
     webshop_address_doc.save()
@@ -3408,7 +3408,7 @@ def get_price_list_doc(contact):
             "internal_message": f"Fetched Price List for Contact '{contact}'."
         }
     except Exception as e:
-        frappe.log_error(frappe.get_traceback(), "webshop.get_price_list_doc")
+        frappe.log_error(title="webshop.get_price_list_doc", message=frappe.get_traceback())
         return {
             "success": False,
             "file": None,
