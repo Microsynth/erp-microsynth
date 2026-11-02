@@ -10,7 +10,8 @@ load-plugins=pylint.extensions.docparams
 # - node_modules: frontend dependencies (not Python code)
 # - public: static assets (e.g., JS, CSS)
 # - .pytype: output from Pytype (type checker)
-ignore=migrations,test_sites,node_modules,public,.pytype
+# - .venv: Python virtual environment
+ignore=migrations,test_sites,node_modules,public,.pytype,.venv
 
 # Whitelist the `frappe` package as an extension module.
 # This helps avoid false positives due to dynamic attribute access.
