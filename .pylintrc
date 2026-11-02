@@ -25,7 +25,7 @@ extension-pkg-whitelist=frappe
 enable=
     cyclic-import,                  # cyclic imports between files
     used-before-assignment,         # Variable used before being assigned a value
-    possibly-used-before-assignment,# Variable may be used before assignment on some code paths
+    possibly-used-before-assignment, # Variable may be used before assignment on some code paths
     undefined-all-variable,         # Name in __all__ is not defined in the module
     unpacking-non-sequence,         # Unpacking a value that is not a sequence
     unexpected-keyword-arg,         # Call passes a keyword the function does not accept

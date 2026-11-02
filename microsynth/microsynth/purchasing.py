@@ -287,8 +287,7 @@ def create_po_document_for_items(material_request_rows, total_quantity_by_item_c
 
     Returns: (po_doc, used_supplier_quotations, purchase_warnings)
     """
-    if supplier_doc.order_contact:
-        order_contact_doc = frappe.get_doc('Contact', supplier_doc.order_contact)
+    order_contact_doc = frappe.get_doc('Contact', supplier_doc.order_contact) if supplier_doc.order_contact else None
     po_doc = frappe.get_doc({
         'doctype': 'Purchase Order',
         'supplier': supplier_doc.name,

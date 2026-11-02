@@ -407,6 +407,7 @@ def get_data(filters):
         """, filters, as_dict=True)
     else:
         frappe.throw(_("Invalid mode"))
+        return []
 
     for row in data:
         user = row.get("requested_by")

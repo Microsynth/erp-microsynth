@@ -125,14 +125,13 @@ def import_analytical_procedures(input_file_path, expected_line_length=16):
 
             # fetch QM Process
             qm_processes = frappe.get_all('QM Process', filters=[['name', 'LIKE', f'{process}%']], fields=['name'])
-            if len(qm_processes) == 1:
-                qm_process = qm_processes[0]['name']
-            elif len(qm_processes) == 0:
+            if len(qm_processes) == 0:
                 print(f"Found no QM Process for process '{process}'. Going to continue with the next Analytical Procedure.")
                 continue
             elif len(qm_processes) > 1:
                 print(f"Found the following {len(qm_processes)} QM Processes for process '{process}': {qm_processes}. Going to continue with the next Analytical Procedure.")
                 continue
+            qm_process = qm_processes[0]['name']
 
             # create a new QM Analyte if necessary
             if not frappe.db.exists('QM Analyte', analyte):

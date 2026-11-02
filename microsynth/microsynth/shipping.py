@@ -119,8 +119,8 @@ def get_shipping_item(items):
 def create_receiver_address_lines(customer_name, contact, address):
     '''creates a list of strings that represent the sequence of address lines of the receiver'''
 
-    if contact: contact_doc = frappe.get_doc("Contact", contact)
-    if address: address_doc = frappe.get_doc("Address", address)
+    contact_doc = frappe.get_doc("Contact", contact) if contact else None
+    address_doc = frappe.get_doc("Address", address) if address else None
 
     rec_adr_lines = []
     if address and address_doc.overwrite_company:

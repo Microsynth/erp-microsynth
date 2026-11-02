@@ -1256,6 +1256,7 @@ def place_order(content, client="webshop"):
     if type(content) == str:
         content = json.loads(content)
     is_drop_shipment = False
+    drop_shipment_manufacturer = None
     # validate input
     if not frappe.db.exists("Customer", content['customer']):
         return {'success': False, 'internal_message': f"Customer '{content['customer']}' not found", 'message': 'Failed to create Sales Order', 'reference': None}
@@ -2822,13 +2823,10 @@ def update_webshop_address(webshop_account, webshop_address):
             raise NotImplementedError("No implementation for Address Type Billing so far.")
 
         # check if the print fields of the webshop_address differ from the existing webshop_address in the webshop_address_doc
-        for a in webshop_address_doc.addresses:
-            if a.contact == contact_id:
-                existing_contact = frappe.get_doc("Contact", contact_id)
-                existing_address = frappe.get_doc("Address", existing_contact.address) if existing_contact.address else None
-
+        existing_contact = frappe.get_doc("Contact", contact_id)
         if existing_contact is None:
             frappe.throw(f"Contact with ID '{contact_id}' not found in the ERP. Cannot update webshop address.")
+        existing_address = frappe.get_doc("Address", existing_contact.address) if existing_contact.address else None
 
         # Find out if we can update the existing Contact and Address or create a new one.
         update_existing_contact_address = False

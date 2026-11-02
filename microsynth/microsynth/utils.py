@@ -1176,7 +1176,6 @@ def get_debtor_account(company, currency, country):
     run
     bench execute microsynth.microsynth.utils.get_debtor_account --kwargs "{'company': 'Microsynth AG', 'currency': 'CHF', 'country' : 'Switzerland' }"
     """
-
     company_country = frappe.get_value("Company", company, "country")
 
     if company == "Microsynth AG":
@@ -1223,6 +1222,9 @@ def get_debtor_account(company, currency, country):
             account = 1101
         else:
             account = 1100
+    else:
+        frappe.log_error(title="utils.get_debtor_account", message=f"No debtor account mapping defined for {company=}, {currency=}, {country=}.")
+        return None
 
     return account
 

@@ -284,9 +284,9 @@ def async_create_invoices(mode, company, customer, is_monthly_collective_run=Fal
         insufficient_credit_warnings = {}
 
         for dn in all_invoiceable:
+            opened_sales_order = None
             try:
                 # Check if Sales Order is Closed.
-                opened_sales_order = None
                 so_id, dn_doc = fetch_sales_order_id(dn.get('delivery_note'))
                 so_status = frappe.get_value("Sales Order", so_id, "status")
                 if so_status == 'Closed':
@@ -1159,8 +1159,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
 
     settings = frappe.get_doc("Microsynth Settings", "Microsynth Settings")
 
-    if sales_invoice.is_punchout:
-        punchout_shop = frappe.get_doc("Punchout Shop", sales_invoice.punchout_shop)
+    punchout_shop = frappe.get_doc("Punchout Shop", sales_invoice.punchout_shop) if sales_invoice.is_punchout else None
 
     # define billing address
     if sales_invoice.is_punchout and punchout_shop.has_static_billing_address:
@@ -1768,8 +1767,7 @@ def transmit_sales_invoice(sales_invoice_id):
 
         settings = frappe.get_doc("Microsynth Settings", "Microsynth Settings")
 
-        if sales_invoice.is_punchout:
-            punchout_billing_contact_id = frappe.get_value("Punchout Shop", sales_invoice.punchout_shop, "billing_contact")
+        punchout_billing_contact_id = frappe.get_value("Punchout Shop", sales_invoice.punchout_shop, "billing_contact") if sales_invoice.is_punchout else None
 
         # TODO: Use punchout shop contact only, if the flag "has_static_billing_address" is activated
         if sales_invoice.is_punchout and punchout_billing_contact_id:
