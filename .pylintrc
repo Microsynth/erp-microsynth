@@ -24,6 +24,12 @@ extension-pkg-whitelist=frappe
 # All others will be disabled by the "disable=all" setting below.
 enable=
     cyclic-import,                  # cyclic imports between files
+    used-before-assignment,         # Variable used before being assigned a value
+    possibly-used-before-assignment,# Variable may be used before assignment on some code paths
+    undefined-all-variable,         # Name in __all__ is not defined in the module
+    unpacking-non-sequence,         # Unpacking a value that is not a sequence
+    unexpected-keyword-arg,         # Call passes a keyword the function does not accept
+    assignment-from-no-return,      # Assigning the result of a function with no return value
     undefined-variable,             # Use of variables that haven't been defined
     unused-import,                  # Imported but unused modules
     unused-variable,                # Variables declared but not used
@@ -35,6 +41,10 @@ enable=
     exec-used,                      # Use of `exec()` (discouraged security risk)
     eval-used,                      # Use of `eval()` (discouraged and insecure)
     redefined-builtin,              # Overwriting built-in names (e.g., `list`, `dict`)
+    bad-except-order,               # Exception handler catches a superclass before its subclass
+    forgotten-debug-statement,      # Debug breakpoint left in code (breakpoint() or pdb.set_trace())
+    logging-too-few-args,           # Logging format string has more placeholders than arguments
+    logging-too-many-args,          # Logging call provides more arguments than the format string uses
     return-in-init,                 # Returning a value from `__init__` method (should be `None`, silently ignored)
     unreachable,                    # Code that will never be executed (e.g., after a return statement)
     cell-var-from-loop,             # Using a variable from an outer scope in a nested function
