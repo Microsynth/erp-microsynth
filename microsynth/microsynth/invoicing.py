@@ -23,7 +23,7 @@ import frappe
 from frappe import _
 from frappe.utils.pdf import get_pdf
 from frappe.utils.background_jobs import enqueue
-from frappe.utils import cint, get_url_to_form, flt
+from frappe.utils import cint, get_url_to_form, flt, getdate
 from frappe.core.doctype.communication.email import make
 from frappe.desk.form.load import get_attachments
 
@@ -622,7 +622,7 @@ def make_invoice(delivery_note):
     else:
         goodwill_days = 5
     # for payment reminders: set goodwill period
-    sales_invoice.exclude_from_payment_reminder_until = datetime.strptime(sales_invoice.due_date, "%Y-%m-%d") + timedelta(days=goodwill_days)
+    sales_invoice.exclude_from_payment_reminder_until = getdate(sales_invoice.due_date) + timedelta(days=goodwill_days)
     sales_invoice.submit()
     # in case of customer credit, this will be covered by the sales_invoice:on_submit hook
 
@@ -706,7 +706,7 @@ def make_punchout_invoice(delivery_note):
     else:
         goodwill_days = 5
     # for payment reminders: set goodwill period
-    sales_invoice.exclude_from_payment_reminder_until = datetime.strptime(sales_invoice.due_date, "%Y-%m-%d") + timedelta(days=goodwill_days)
+    sales_invoice.exclude_from_payment_reminder_until = getdate(sales_invoice.due_date) + timedelta(days=goodwill_days)
 
     sales_invoice.submit()
     frappe.db.commit()
@@ -788,7 +788,7 @@ def make_collective_invoice(delivery_notes):
     else:
         goodwill_days = 5
     # for payment reminders: set goodwill period
-    sales_invoice.exclude_from_payment_reminder_until = datetime.strptime(sales_invoice.due_date, "%Y-%m-%d") + timedelta(days=goodwill_days)
+    sales_invoice.exclude_from_payment_reminder_until = getdate(sales_invoice.due_date) + timedelta(days=goodwill_days)
 
     sales_invoice.submit()
 
@@ -1666,7 +1666,7 @@ def create_si_from_sos_and_dns(sales_order_ids, customer, default_company, debug
         else:
             goodwill_days = 5
         # for payment reminders: set goodwill period
-        sales_invoice.exclude_from_payment_reminder_until = datetime.strptime(sales_invoice.due_date, "%Y-%m-%d") + timedelta(days=goodwill_days)
+        sales_invoice.exclude_from_payment_reminder_until = getdate(sales_invoice.due_date) + timedelta(days=goodwill_days)
         if debug:
             print("[create_si_from_sos_and_dns] Final SI rows and their cost centers:")
             for it in sales_invoice.items:
@@ -1716,7 +1716,7 @@ def create_si_from_so(so_id, debug=False):
         else:
             goodwill_days = 5
         # for payment reminders: set goodwill period
-        end_customer_si.exclude_from_payment_reminder_until = datetime.strptime(end_customer_si.due_date, "%Y-%m-%d") + timedelta(days=goodwill_days)
+        end_customer_si.exclude_from_payment_reminder_until = getdate(end_customer_si.due_date) + timedelta(days=goodwill_days)
 
         if debug:
             print("[create_si_from_so] Final SI rows and their cost centers:")
