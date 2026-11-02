@@ -340,7 +340,7 @@ def download_delivery_note(dn):
     """
     Download the delivery note as a PDF.
     """
-    from frappe.utils.pdf import get_pdf
+    # from frappe.utils.pdf import get_pdf
 
     # # Option 1: manual rendering with microsynth/templates/pages/print.html
     # #           TODO: there is an issue with code duplication of the CSS styles between
@@ -351,7 +351,6 @@ def download_delivery_note(dn):
     # raw_html = frappe.get_value('Print Format', 'Delivery Note', 'html')
     # # create html
     # css_html = f"<style>{css}</style>{raw_html}"
-
 
     # rendered_html = frappe.render_template(
     #     css_html,
