@@ -443,7 +443,7 @@ function set_company_read_only(frm) {
             } else {
                 frm.set_df_property('company', 'read_only', 0);
             }
-            if (customer.default_company && frm.doc.company !== customer.default_company) {
+            if (frm.doc.__islocal && customer.default_company && frm.doc.company !== customer.default_company) {
                 frm.set_value('company', customer.default_company);
             }
             frm.refresh_field('company');
