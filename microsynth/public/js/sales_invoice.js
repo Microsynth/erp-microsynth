@@ -1130,21 +1130,38 @@ function change_customer_company(frm) {
                 return;
             }
             dialog.hide();
-            frappe.dom.freeze(__('Updating...'));
 
-            frappe.call({
-                'method': 'microsynth.microsynth.invoicing.change_customer_company',
-                'args': {
-                    'sales_invoice_name': frm.doc.name,
-                    'new_customer': values.new_customer,
-                    'new_company': values.new_company
-                },
-                'callback': function () {
-                    frm.reload_doc();
-                }
-            }).always(function () {
-                frappe.dom.unfreeze();
-            });
+            const update_invoice = (sales_invoice_name) => {
+                frappe.call({
+                    'method': 'microsynth.microsynth.invoicing.change_customer_company',
+                    'args': {
+                        'sales_invoice_name': sales_invoice_name,
+                        'new_customer': values.new_customer,
+                        'new_company': values.new_company
+                    },
+                    'freeze': true,
+                    'freeze_message': __('Updating...'),
+                    'callback': function (r) {
+                        if (!r.exc) {
+                            frm.reload_doc();
+                        }
+                    }
+                });
+            };
+
+            if (frm.doc.__islocal) {
+                frm.save(null, function (r) {
+                    if (r.exc) return;
+                    const saved_invoice = r.docs && r.docs[0];
+                    if (!saved_invoice || !saved_invoice.name) {
+                        frappe.msgprint(__('Could not determine the saved Sales Invoice name.'));
+                        return;
+                    }
+                    update_invoice(saved_invoice.name);
+                });
+            } else {
+                update_invoice(frm.doc.name);
+            }
         },
         'secondary_action_label': __('No'),
         'secondary_action'() {
