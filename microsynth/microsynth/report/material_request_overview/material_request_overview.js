@@ -276,7 +276,7 @@ function create_purchase_order(filters, report) {
 
     if (draftMaterialRequests.length > 0) {
         const draftLinks = draftMaterialRequests
-            .map(name => `<li><a href="#Form/Material Request/${encodeURIComponent(name)}" target="_blank">${frappe.utils.escape_html(name)}</a></li>`)
+            .map(name => `<li><a href="/app/material-request/${encodeURIComponent(name)}" target="_blank">${frappe.utils.escape_html(name)}</a></li>`)
             .join('');
 
         frappe.msgprint({
