@@ -19,58 +19,62 @@ frappe.ui.form.on('Price List', {
             });
         }
     },
-    before_save: function(frm) {
-        if (frm._skip_open_doc_check) {
+    before_save: async function(frm) {
+        if (frm.doc.enabled !== 0 || frm.doc.__unsaved !== 1) {
             return;
         }
-        // Only act when disabling
-        if (frm.doc.enabled === 0 && frm.doc.__unsaved === 1) {
-            frappe.call({
-                "method": "microsynth.microsynth.utils.get_open_documents_for_price_list",
-                "args": {
-                    "price_list_id": frm.doc.name
-                },
-                "freeze": true,
-                "freeze_message": "Checking open sales documents ...",
-                "callback": function(r) {
-                    const data = r.message || {};
-                    let has_open_docs = false;
-                    let msg = "";
+        const response = await frappe.call({
+            "method": "microsynth.microsynth.utils.get_open_documents_for_price_list",
+            "args": {
+                "price_list_id": frm.doc.name
+            },
+            "freeze": true,
+            "freeze_message": __("Checking open sales documents ...")
+        });
+        const data = response.message || {};
+        let has_open_docs = false;
+        let msg = "";
 
-                    Object.keys(data).forEach(function(doctype) {
-                        if (data[doctype].length) {
-                            has_open_docs = true;
-                            msg += `<b>${doctype}</b><ul>`;
-                            data[doctype].forEach(function(d) {
-                                msg += `<li>${d.name}</li>`;
-                            });
-                            msg += "</ul>";
-                        }
-                    });
-                    if (has_open_docs) {
-                        frappe.validated = false;
-
-                        frappe.confirm(
-                            `<p>Do you want to <b>keep</b> this Price List <b>enabled</b>?</p>
-                            <p>Click <b>No</b> to disable it anyway (at your <b>own risk</b>).</p>
-                            <p>This Price List is used on the following open sales documents:</p>${msg}`
-                            ,
-                            // NO → disable anyway
-                            function() {
-                                frm._skip_open_doc_check = true;
-                                frappe.validated = true;
-                                frm.save();
-                            },
-                            // YES → keep enabled
-                            function() {
-                                frm._skip_open_doc_check = true;
-                                frm.set_value("enabled", 1);
-                                frm.save();
-                            }
-                        );
-                    }
-                }
-            });
+        Object.keys(data).forEach(function(doctype) {
+            if (data[doctype].length) {
+                has_open_docs = true;
+                msg += `<b>${doctype}</b><ul>`;
+                data[doctype].forEach(function(document) {
+                    msg += `<li>${document.name}</li>`;
+                });
+                msg += "</ul>";
+            }
+        });
+        if (!has_open_docs) {
+            return;
         }
+
+        await new Promise(function(resolve, reject) {
+            let choice_made = false;
+            const finish = function(keep_enabled) {
+                if (choice_made) {
+                    return;
+                }
+                choice_made = true;
+                dialog.hide();
+                Promise.resolve()
+                    .then(() => keep_enabled ? frm.set_value("enabled", 1) : undefined)
+                    .then(resolve, reject);
+            };
+            const dialog = new frappe.ui.Dialog({
+                title: __("Keep Price List enabled?"),
+                primary_action_label: __("Yes"),
+                primary_action: () => finish(true),
+                secondary_action_label: __("No"),
+                secondary_action: () => finish(false),
+                onhide: () => finish(true)
+            });
+            dialog.$body.append(
+                `<p>${__("This Price List is used by open sales documents. Keep it enabled?")}</p>
+                <p>${__("Yes: keep enabled. No: disable anyway.")}</p>${msg}`
+            );
+            dialog.confirm_dialog = true;
+            dialog.show();
+        });
     }
 });
