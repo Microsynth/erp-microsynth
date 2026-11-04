@@ -46,7 +46,7 @@ frappe.ui.form.on('Payment Proposal', {
                             }
                         });
                     } else {
-                        frappe.show_alert("The XML version has already been set to " + desired_version + ", please use the blue button 'Download bank file'.");
+                        frappe.show_alert("The XML version has already been set to " + desired_version + ", please use the black button 'Download bank file'.");
                     }
                 });
             });
