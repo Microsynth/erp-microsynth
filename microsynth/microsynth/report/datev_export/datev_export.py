@@ -141,7 +141,7 @@ def get_data(filters, short=False):
 def async_pdf_export(filters):
     if type(filters) == str:
         filters = json.loads(filters)
-    frappe.enqueue(method=pdf_export, queue='long', timeout=600, is_async=True, filters=filters)
+    frappe.enqueue(method=pdf_export, queue='long', timeout=1800, is_async=True, filters=filters)
 
 
 def pdf_export(filters):
@@ -184,7 +184,7 @@ def async_xml_export(filters):
     if type(filters) == str:
         filters = json.loads(filters)
 
-    frappe.enqueue(method=xml_export, queue='long', timeout=600, is_async=True, filters=filters)
+    frappe.enqueue(method=xml_export, queue='long', timeout=1800, is_async=True, filters=filters)
 
 
 def xml_export(filters):
@@ -227,7 +227,7 @@ def async_package_export(filters):
     if type(filters) == str:
         filters = json.loads(filters)
 
-    frappe.enqueue(method=package_export, queue='long', timeout=600, is_async=True, filters=filters)
+    frappe.enqueue(method=package_export, queue='long', timeout=1800, is_async=True, filters=filters)
 
 
 def create_pdf(path, dt, dn, print_format):

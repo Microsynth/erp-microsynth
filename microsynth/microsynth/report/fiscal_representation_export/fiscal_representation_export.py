@@ -113,7 +113,7 @@ def async_package_export(filters):
     if type(filters) == str:
         filters = json.loads(filters)
 
-    frappe.enqueue(method=package_export, queue='long', timeout=120, is_async=True, filters=filters)
+    frappe.enqueue(method=package_export, queue='long', timeout=1800, is_async=True, filters=filters)
 
 
 def package_export(filters):
