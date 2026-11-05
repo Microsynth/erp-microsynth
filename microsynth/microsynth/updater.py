@@ -45,6 +45,24 @@ def disable_email_accounts():
     frappe.db.commit()
 
 
+def disable_ebics_connections():
+    """
+    Disable all EBICS connections by setting enable_sync = 0
+    run
+    bench execute microsynth.microsynth.updater.disable_ebics_connections
+    """
+
+    print("Disabling EBICS connections...")
+    ebics_connections = frappe.get_all("ebics Connection",
+        fields=['name', 'enable_sync']
+    )
+    for connection in ebics_connections:
+        doc = frappe.get_doc("ebics Connection", connection['name'])
+        doc.enable_sync = 0
+        doc.save()
+    frappe.db.commit()
+
+
 def disable_hot_config_in_dev():
     """
     run
@@ -58,9 +76,9 @@ def disable_hot_config_in_dev():
     if "erp.microsynth.local" not in (frappe.conf.host_name or ""):
         print("This is a test/develop system: disabling productive values")
 
-        disable_email_accounts()
-
         disable_notifications()
+        disable_email_accounts()
+        # disable_ebics_connections()
 
         print("Deactivating hot export path...")
         config = frappe.get_doc("Microsynth Settings", "Microsynth Settings")
