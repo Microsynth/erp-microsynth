@@ -126,7 +126,7 @@ def package_export(filters):
     if not data:
         msg = f"No data found for the given filters: {filters}"
         print(msg)
-        frappe.log_error(msg, "fiscal_representation_export.package_export")
+        frappe.log_error(message=msg, title="fiscal_representation_export.package_export")
         return
     settings = frappe.get_doc("Microsynth Settings", "Microsynth Settings")
     date = datetime.now()

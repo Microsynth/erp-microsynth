@@ -24,7 +24,7 @@ def strip_str_to_allowed_chars(s, min_length, max_length, allowed_chars):
     if not s and min_length == 0:
         return out
     elif not s:
-        #frappe.log_error(f"Got no value for s", "datev_export.strip_str_to_allowed_chars")
+        #frappe.log_error(message=f"Got no value for s", title="datev_export.strip_str_to_allowed_chars")
         return out
     # append each valid character
     for c in s:
@@ -292,7 +292,7 @@ def download_pdf(path, dt, dn, allow_attachment_repair=True):
 
         source_file = os.path.join(frappe.utils.get_bench_path(), "sites", frappe.utils.get_site_path()[2:], source_path[1:])
         if "\"" in source_file:
-            frappe.log_error(f"This file name is less than suboptimal: {dt} {dn}: {source_file}", "datev_export.download_pdf file issue")
+            frappe.log_error(message=f"This file name is less than suboptimal: {dt} {dn}: {source_file}", title="datev_export.download_pdf file issue")
         os.system("""cp "{0}" "{1}" """.format(source_file, content_file_name))
     else:
         # no attachment found - in case of a sales invoice, this can be created and then iterated (if allowed - prevent loop)

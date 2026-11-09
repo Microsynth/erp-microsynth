@@ -39,7 +39,7 @@ def get_unused_labels(contacts, items):
         return {'success': True, 'message': 'OK', 'internal_message': 'OK', 'labels': labels}
     except Exception as err:
         msg = f"Error fetching unused labels for contacts {contacts} and items {items}: {err}. Check ERP Error Log for details."
-        frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.get_unused_labels")
+        frappe.log_error(message=f"{msg}\n\n\n{traceback.format_exc()}", title="webshop.get_unused_labels")
         return {'success': False, 'message': "Failed to get unused labels", 'internal_message': msg, 'labels': None}
 
 
@@ -87,7 +87,7 @@ def get_label_status(labels):
                 ;"""
             sequencing_labels = frappe.db.sql(sql_query, as_dict=True)
             if len(sequencing_labels) > 1:
-                frappe.log_error(f"Found {len(sequencing_labels)} labels for the given barcode {label['barcode']}{item_string}.", "webshop.get_label_status")
+                frappe.log_error(message=f"Found {len(sequencing_labels)} labels for the given barcode {label['barcode']}{item_string}.", title="webshop.get_label_status")
                 messages_to_return.append({
                     'query': label,
                     'label': None,
@@ -96,7 +96,7 @@ def get_label_status(labels):
                 })
                 continue
             elif len(sequencing_labels) == 0:
-                #frappe.log_error(f"Found no label for the given barcode {label['barcode']}{item_string}.", "webshop.get_label_status")
+                #frappe.log_error(message=f"Found no label for the given barcode {label['barcode']}{item_string}.", title="webshop.get_label_status")
                 messages_to_return.append({
                     'query': label,
                     'label': None,
@@ -113,7 +113,7 @@ def get_label_status(labels):
                 })
         return {'success': True, 'messages': messages_to_return}
     except Exception as err:
-        frappe.log_error(f"{labels=}\n{err}", "webshop.get_label_status")
+        frappe.log_error(message=f"{labels=}\n{err}", title="webshop.get_label_status")
         return {'success': False, 'messages': [{'query': None, 'label': None, 'message': err}]}
 
 
@@ -141,7 +141,7 @@ def get_label_ranges():
                 })
     except Exception as err:
         msg = f"Error fetching label ranges: {err}. Check ERP Error Log for details."
-        frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.get_label_ranges")
+        frappe.log_error(message=f"{msg}\n\n\n{traceback.format_exc()}", title="webshop.get_label_ranges")
         return {'success': False, 'message': "Failed to get label ranges.", 'internal_message': msg, 'ranges': None}
     return {'success': True, 'message': 'OK', 'internal_message': 'OK', 'ranges': ranges_to_return}
 
@@ -232,7 +232,7 @@ def get_registered_label_ranges(contacts):
         return {'success': True, 'message': 'OK', 'internal_message': 'OK', 'ranges': ranges}
     except Exception as err:
         msg = f"Error fetching registered label ranges for contacts {contacts}: {err}. Check ERP Error Log for details."
-        frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.get_registered_label_ranges")
+        frappe.log_error(message=f"{msg}\n\n\n{traceback.format_exc()}", title="webshop.get_registered_label_ranges")
         return {'success': False, 'message': "Failed to get registered label ranges.", 'internal_message': msg, 'ranges': None}
 
 
@@ -372,7 +372,7 @@ def register_labels(registered_to, item, barcode_start_range, barcode_end_range)
                 'internal_message': "The given barcode_start_range must be smaller or equal than the given barcode_end_range.",
                 'ranges': None
             }
-        frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.register_labels")
+        frappe.log_error(message=f"{msg}\n\n\n{traceback.format_exc()}", title="webshop.register_labels")
         return {'success': False, 'message': "Failed to register labels.", 'internal_message': msg, 'ranges': None}
 
 
@@ -398,7 +398,7 @@ def unregister_labels(registered_to, item, barcode_start_range, barcode_end_rang
         return {'success': True, 'message': 'OK', 'internal_message': 'OK'}
     except Exception as err:
         msg = f"Error unregistering labels for registered_to {registered_to}, item {item}, barcode_start_range {barcode_start_range}, barcode_end_range {barcode_end_range}: {err}. Check ERP Error Log for details."
-        frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.unregister_labels")
+        frappe.log_error(message=f"{msg}\n\n\n{traceback.format_exc()}", title="webshop.unregister_labels")
         return {'success': False, 'message': "Failed to unregister labels.", 'internal_message': msg}
 
 

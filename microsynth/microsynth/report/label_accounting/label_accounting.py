@@ -59,7 +59,7 @@ def get_rate(company_item_dest, average_selling_prices):
         if len(rates) != 1:
             msg = f"{len(rates)=}: There seems to be none or multiple Item Prices with {filters=} -> Unable to take rate for Label Accounting"
             if len(rates) > 1:
-                frappe.log_error(msg, 'label_accounting.get_data')
+                frappe.log_error(message=msg, title='label_accounting.get_data')
             print(msg)
             return None
         if float(rates[0].price_list_rate) < 0.01:
@@ -194,7 +194,7 @@ def get_data(filters):
 
             if label_sum != d.count:
                 msg = f"Mismatch in the number of Labels without rate and company (no Sales Order): {d['count']=} but {sum=}", 'label_accounting.get_data'
-                frappe.log_error(msg)
+                frappe.log_error(message=msg, title="label_accounting.get_data")
                 print(msg)
             continue
 
@@ -211,7 +211,7 @@ def get_data(filters):
                     destination = 'CH'
                 else:
                     # This should never happen
-                    frappe.log_error(f"The Territory {d['territory']} could not be matched to any destination (CH, DE, Europe, ROW).\n{d=}\n{filters=}", "label_accounting.get_data")
+                    frappe.log_error(message=f"The Territory {d['territory']} could not be matched to any destination (CH, DE, Europe, ROW).\n{d=}\n{filters=}", title="label_accounting.get_data")
                     destination = None
             company_item_dest = (d['company'], d['item_code'], destination)
         else:

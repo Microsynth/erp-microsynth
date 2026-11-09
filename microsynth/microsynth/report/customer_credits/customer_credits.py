@@ -102,7 +102,7 @@ def get_data(filters, short=False, add_print_format=True):
             if validate_credit_account_customer(account, customer=customer_id):
                 credit_accounts.append(account)
             else:
-                frappe.log_error(f"The selected Credit Account {account} does not belong to the selected Customer {customer_id}.", "Customer Credits Report")
+                frappe.log_error(message=f"The selected Credit Account {account} does not belong to the selected Customer {customer_id}.", title="Customer Credits Report")
 
         if len(credit_accounts) == 0:
             frappe.throw(f"None of the selected Credit Accounts ({', '.join(credit_accounts)}) belong to the selected Customer {customer_id}. Cannot generate report.", "Customer Credits Report")
@@ -257,7 +257,7 @@ def get_data(filters, short=False, add_print_format=True):
             print_format['header'] = letter_head.content
             print_format['customer_address'] = frappe.render_template("microsynth/templates/includes/address.html", {'contact': customer.invoice_to, 'address': address, 'customer_name': customer.customer_name })
             print_format['footer'] = letter_head.footer
-            #frappe.log_error(print_format['footer'], "print_format['footer']")
+            #frappe.log_error(message=print_format['footer'], title="print_format['footer']")
             print_format['currency'] = filters.get('currency') or customer.default_currency or data[0]['currency']
             remaining_credit = 0
             for row in data:
@@ -520,7 +520,7 @@ def download_balance_sheet_pdf(credit_account_id, from_date, to_date):
         "closing_balance": data.get("closing_balance"),
         "transactions": data.get("transactions")
     }
-    #frappe.log_error(context, "Balance Sheet Context")
+    #frappe.log_error(message=context, title="Balance Sheet Context")
 
     # Load print format definition
     print_format_doc = frappe.get_doc("Print Format", "Credit Account Balance Sheet")

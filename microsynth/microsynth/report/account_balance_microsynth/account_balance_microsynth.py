@@ -28,7 +28,7 @@ def get_data(filters=None):
         """, as_dict=True)
 
         if len(entry) != 1:
-            frappe.log_error(f"Found {len(entry)} GL Entries with different currencies for Account '{account}' but expected exactly one.", "account_balance_microsynth")
+            frappe.log_error(message=f"Found {len(entry)} GL Entries with different currencies for Account '{account}' but expected exactly one.", title="account_balance_microsynth")
 
         total_credit_rounded = round(entry[0]['total_credit'], 2)
         total_debit_rounded = round(entry[0]['total_debit'], 2)

@@ -132,7 +132,7 @@ def write_assignment_file(data):
     assignment_file = "{path}/{sales_order}.tab".format(path = path, sales_order=data["sales_order"])
     if os.path.exists(assignment_file):
         message = "<b>Sequencing label assignment file already exists:</b><br>" + assignment_file
-        frappe.log_error(message, "Open label orders.write_assignment_file")
+        frappe.log_error(message=message, title="Open label orders.write_assignment_file")
         frappe.throw(message)
     else:
         file = open(assignment_file, "w")
@@ -258,7 +258,7 @@ def pick_labels(sales_order, from_barcode, to_barcode, number_length, user=None)
             printed = True
         except subprocess.CalledProcessError as err:
             print_error = str(err)
-            frappe.log_error(f"Printing of Delivery Note {dn.name} failed: {str(err)}", "open_label_orders.pick_labels")
+            frappe.log_error(message=f"Printing of Delivery Note {dn.name} failed: {str(err)}", title="open_label_orders.pick_labels")
     elif not printer:
         print_error = "No document printer configured"
     else:

@@ -194,7 +194,7 @@ def populate_from_reference(price_list, user, item_group=None):
     print("Number of data sets: {0}".format(len(data)))
     reference_price_list = get_reference_price_list(filters['price_list'])
     if not reference_price_list:
-        frappe.log_error(f"Price List '{price_list}' has no reference Price List. Unable to apply 'Populate from reference'.", "pricing_configurator.populate_from_reference")
+        frappe.log_error(message=f"Price List '{price_list}' has no reference Price List. Unable to apply 'Populate from reference'.", title="pricing_configurator.populate_from_reference")
         return
     general_discount = frappe.get_value("Price List", price_list, "general_discount")
     changes = "item_code;min_qty;old_rate;new_rate"
@@ -258,7 +258,7 @@ def populate_with_factor(price_list, user, item_group=None, factor=1.0):
     data = get_data(filters)
     reference_price_list = get_reference_price_list(filters['price_list'])
     if not reference_price_list:
-        frappe.log_error(f"Price List '{price_list}' has no reference Price List. Unable to apply 'Populate with factor'.", "pricing_configurator.populate_with_factor")
+        frappe.log_error(message=f"Price List '{price_list}' has no reference Price List. Unable to apply 'Populate with factor'.", title="pricing_configurator.populate_with_factor")
         return
     changes = "item_code;min_qty;old_rate;new_rate"
     # set new prices
@@ -458,7 +458,7 @@ def change_general_discount(price_list_name, new_general_discount, user):
         if abs(reference_rate) < 0.0001:  # is possible and happens
             continue  # nothing to do and cannot divide by zero to calculate discount
         if reference_rate <= -0.0001:
-            frappe.log_error(f"negative reference rate {reference_rate} for {item_price=}", "pricing_configurator.change_general_discount")
+            frappe.log_error(message=f"negative reference rate {reference_rate} for {item_price=}", title="pricing_configurator.change_general_discount")
             continue
         if frappe.get_value('Item', item_price.item_code, 'disabled'):
             warnings += f"Item <b>{item_price['item_code']}: {item_price['item_name']}</b> is disabled.<br>"

@@ -182,7 +182,7 @@ def get_credit_accounts(webshop_account, workgroup_members):
         }
     except Exception as err:
         msg = f"Error getting Credit Accounts for webshop_account '{webshop_account}': {err}. Check ERP Error Log for details."
-        frappe.log_error(f"{msg}\n\n{traceback.format_exc()}", "webshop.get_credit_accounts")
+        frappe.log_error(message=f"{msg}\n\n{traceback.format_exc()}", title="webshop.get_credit_accounts")
         return {
             "success": False,
             "message": "Failed to get Credit Accounts.",
@@ -228,7 +228,7 @@ def create_credit_account(webshop_account, name, description, company, product_t
         }
     except Exception as err:
         msg = f"Error creating Credit Account for webshop_account '{webshop_account}': {err}. Check ERP Error Log for details."
-        frappe.log_error(f"{msg}\n\n{traceback.format_exc()}", "webshop.create_credit_account")
+        frappe.log_error(message=f"{msg}\n\n{traceback.format_exc()}", title="webshop.create_credit_account")
         return {
             "success": False,
             "message": "Failed to create Credit Account.",
@@ -313,7 +313,7 @@ def update_credit_account(credit_account):
         }
     except Exception as err:
         msg = f"Error updating Credit Account '{credit_account.get('account_id')}': {err}. Check ERP Error Log for details."
-        frappe.log_error(f"{msg}\n\n{traceback.format_exc()}", "webshop.update_credit_account")
+        frappe.log_error(message=f"{msg}\n\n{traceback.format_exc()}", title="webshop.update_credit_account")
         return {
             "success": False,
             "message": "Error updating Credit Account",
@@ -439,7 +439,7 @@ def create_deposit_invoice(webshop_account, account_id, amount, currency, descri
         }
     except Exception as err:
         msg = f"Error creating deposit invoice for Credit Account '{account_id}':\r\n{err}"
-        frappe.log_error(f"{msg}\n\n{traceback.format_exc()}", "webshop.create_deposit_invoice")
+        frappe.log_error(message=f"{msg}\n\n{traceback.format_exc()}", title="webshop.create_deposit_invoice")
         return {
             "success": False,
             "message": "Failed to create deposit invoice.",
@@ -561,7 +561,7 @@ def get_transactions(account_id):
         }
     except Exception as err:
         msg = f"Error fetching Credit Account '{account_id}': {err}"
-        frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.get_transactions")
+        frappe.log_error(message=f"{msg}\n\n\n{traceback.format_exc()}", title="webshop.get_transactions")
         return {
             "success": False,
             "message": "Failed to fetch Credit Account data.",
@@ -595,7 +595,7 @@ def get_balance_sheet_pdf(account_id):
             "message": "OK"
         }
     except Exception as err:
-        frappe.log_error(frappe.get_traceback(), "webshop.get_balance_sheet_pdf")
+        frappe.log_error(message=frappe.get_traceback(), title="webshop.get_balance_sheet_pdf")
         return {
             "success": False,
             "file": None,

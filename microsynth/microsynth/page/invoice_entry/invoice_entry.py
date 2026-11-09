@@ -185,7 +185,7 @@ def save_document(doc):
                 due_date_object = add_days(d.posting_date, days)
                 due_date = due_date_object.strftime("%Y-%m-%d")
             else:
-                frappe.log_error(f"Payment Terms Template '{d.payment_terms_template}' has no Payment Terms. Please check due_date on Purchase Invoice {doc.get('name')}", "invoice_entry.save_document")
+                frappe.log_error(message=f"Payment Terms Template '{d.payment_terms_template}' has no Payment Terms. Please check due_date on Purchase Invoice {doc.get('name')}", title="invoice_entry.save_document")
 
     # check due date restrictions: not in the past and not more than ten months in the future
     due_date_object = datetime.strptime(due_date, "%Y-%m-%d").date()

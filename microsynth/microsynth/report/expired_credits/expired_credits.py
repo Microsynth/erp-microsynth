@@ -214,7 +214,7 @@ def cancel_internal_deposit_invoice(sales_invoice_id):
             # return the first found reversing JV name
             result['reversing_journal_entry'] = jvs[0]['name']
     except Exception as e:
-        frappe.log_error(traceback.format_exc(), "expired_credits.cancel_internal_deposit_invoice:reverse_credit_error")
+        frappe.log_error(message=traceback.format_exc(), title="expired_credits.cancel_internal_deposit_invoice:reverse_credit_error")
         result['errors'].append(f"Failed to reverse credit for Sales Invoice {sales_invoice_id}: {e}")
 
     return result
@@ -288,7 +288,7 @@ def cancel_credit_account(credit_account_id):
             else:
                 results['processed_invoices'].append({'sales_invoice': invoice_name, 'credit_note': res.get('credit_note')})
         except Exception as e:
-            frappe.log_error(traceback.format_exc(), "expired_credits.cancel_credit_account:process_invoice_error")
+            frappe.log_error(message=traceback.format_exc(), title="expired_credits.cancel_credit_account:process_invoice_error")
             results['errors'].append({invoice_name: str(e)})
 
     # After attempting to cancel related invoices, disable the Credit Account
@@ -296,7 +296,7 @@ def cancel_credit_account(credit_account_id):
         credit_account_doc.status = 'Disabled'
         credit_account_doc.save()
     except Exception as e:
-        frappe.log_error(traceback.format_exc(), "expired_credits.cancel_credit_account:disable_ca_error")
+        frappe.log_error(message=traceback.format_exc(), title="expired_credits.cancel_credit_account:disable_ca_error")
         results['errors'].append(f"Failed to disable Credit Account: {e}")
 
     return results

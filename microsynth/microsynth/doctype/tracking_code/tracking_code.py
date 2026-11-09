@@ -30,13 +30,13 @@ def create_tracking_code(web_order_id, tracking_code):
             sales_orders = intercompany_sales_orders
         else:
             msg = f"Found {len(sales_orders)} submitted Sales Orders with Web Order ID '{web_order_id}': {sales_orders=}\n\n{len(intercompany_sales_orders)} of them are intercompany."
-            frappe.log_error(msg, "tracking_code.check_tracking_code")
+            frappe.log_error(message=msg, title="tracking_code.check_tracking_code")
             frappe.throw(msg)
 
     if len(sales_orders) > 0:
         if len(sales_orders) > 1:
             msg = f"Found {len(sales_orders)} submitted Sales Orders with Web Order ID '{web_order_id}': {sales_orders=}"
-            frappe.log_error(msg, "tracking_code.create_tracking_code")
+            frappe.log_error(message=msg, title="tracking_code.create_tracking_code")
             frappe.throw(msg)
         sales_order = frappe.get_doc("Sales Order", sales_orders[0]['name'])
 
@@ -105,12 +105,12 @@ def check_tracking_code(web_order_id, tracking_code):
             sales_orders = intercompany_sales_orders
         else:
             msg = f"Found {len(sales_orders)} submitted Sales Orders with Web Order ID '{web_order_id}': {sales_orders=}\n\n{len(intercompany_sales_orders)} of them are intercompany."
-            frappe.log_error(msg, "tracking_code.check_tracking_code")
+            frappe.log_error(message=msg, title="tracking_code.check_tracking_code")
             return {'success': False, 'is_critical': True, 'message': msg}
     if len(sales_orders) > 0:
         if len(sales_orders) > 1:
             msg = f"Found {len(sales_orders)} submitted Sales Orders with Web Order ID '{web_order_id}': {sales_orders=}"
-            frappe.log_error(msg, "tracking_code.check_tracking_code")
+            frappe.log_error(message=msg, title="tracking_code.check_tracking_code")
             return {'success': False, 'is_critical': True, 'message': msg}
         tracking_codes = frappe.get_all("Tracking Code", filters={'sales_order': sales_orders[0]['name']}, fields=['name', 'sales_order', 'tracking_code'])
         if len(tracking_codes) > 0:
@@ -138,7 +138,7 @@ def check_tracking_code(web_order_id, tracking_code):
             regex_str = '^1Z[0-9A-Z]{16}$'
         else:
             msg = f"Unable to check tracking code '{tracking_code}', because of unknown Shipping Item {shipping_item}."
-            frappe.log_error(msg, "tracking_code.check_tracking_code")
+            frappe.log_error(message=msg, title="tracking_code.check_tracking_code")
             return {'success': False, 'is_critical': False, 'message': msg}
         pattern = re.compile(regex_str)
         if pattern.match(tracking_code):
@@ -188,7 +188,7 @@ def parse_dhl_file(file_id, expected_line_length=15):
             try:
                 delivery_datetime = datetime.strptime(datetime_str, '%d/%m/%Y %H:%M')
             except Exception as e:
-                frappe.log_error(f"File path: {file_path}\nError: {e}", "parse_dhl_file")
+                frappe.log_error(message=f"File path: {file_path}\nError: {e}", title="parse_dhl_file")
                 continue
             error = add_delivery_date_to_tracking_code(tracking_number, delivery_datetime)
             if error:
@@ -340,7 +340,7 @@ def parse_ems_file(file_id, expected_line_length=36):
                 delivery_datetime = datetime.fromisoformat(datetime_str)
                 delivery_datetime = delivery_datetime.replace(tzinfo=None)
             except Exception as e:
-                frappe.log_error(f"File path: {file_path}\nError: {e}", "parse_ems_file")
+                frappe.log_error(message=f"File path: {file_path}\nError: {e}", title="parse_ems_file")
                 continue
             error = add_delivery_date_to_tracking_code(tracking_number, delivery_datetime)
             if error:

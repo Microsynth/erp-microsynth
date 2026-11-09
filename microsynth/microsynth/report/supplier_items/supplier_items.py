@@ -339,7 +339,7 @@ def update_supplier_item(data):
                 price.save()
         elif len(item_prices) > 1:
             # Should not happen
-            frappe.log_error(f"Multiple Item Price entries found for Item {item_code} with min_qty 1 in currency {data.get('currency')} on Price List {price_list}. Cannot update price.", "Supplier Items Report")
+            frappe.log_error(message=f"Multiple Item Price entries found for Item {item_code} with min_qty 1 in currency {data.get('currency')} on Price List {price_list}. Cannot update price.", title="Supplier Items Report")
             pass
         else:
             # Create price if none exists (optional)

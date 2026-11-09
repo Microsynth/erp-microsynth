@@ -123,6 +123,6 @@ def send_rejection_emails(template, subject, bcc, applicants):
             doc.save()
 
         except Exception:
-            frappe.log_error(frappe.get_traceback(), "Error sending rejection email")
+            frappe.log_error(message=frappe.get_traceback(), title="Error sending rejection email")
 
     return "Emails sent and statuses updated"
