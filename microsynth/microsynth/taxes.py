@@ -23,7 +23,7 @@ def find_tax_template(company, customer, shipping_address, category):
         if default and len(default) > 0:
             return default[0]['name']
         else:
-            frappe.log_error(f"Could not find default tax template for company '{company}'\ncustomer '{customer}' has customer_type='Individual'", "taxes.find_tax_template")
+            frappe.log_error(message=f"Could not find default tax template for company '{company}'\ncustomer '{customer}' has customer_type='Individual'", title="taxes.find_tax_template")
             return None
     else:
         country = frappe.get_value("Address", shipping_address, "country")
@@ -42,7 +42,7 @@ def find_tax_template(company, customer, shipping_address, category):
         if len(find_tax_record) > 0:
             return find_tax_record[0]['sales_taxes_template']
         else:
-            frappe.log_error(f"Could not find sales tax template entry in the Tax Matrix for Customer '{customer}'\n{company=}, {country=}, {category=}, {eu_pattern=}", "taxes.find_tax_template")
+            frappe.log_error(message=f"Could not find sales tax template entry in the Tax Matrix for Customer '{customer}'\n{company=}, {country=}, {category=}, {eu_pattern=}", title="taxes.find_tax_template")
             return None
 
 
@@ -61,7 +61,7 @@ def find_purchase_tax_template(sales_tax_template, company):
     if len(purchase_tax_records) > 0:
         return purchase_tax_records[0]['purchase_tax_template']
     else:
-        frappe.log_error(f"Could not find purchase tax template entry in the Tax Matrix for Sales Tax Template '{sales_tax_template}' targetting {company=}", "taxes.find_purchase_tax_template")
+        frappe.log_error(message=f"Could not find purchase tax template entry in the Tax Matrix for Sales Tax Template '{sales_tax_template}' targetting {company=}", title="taxes.find_purchase_tax_template")
         return None
 
 
@@ -121,7 +121,7 @@ def set_alternative_tax_template(self, event):
             tax_template = self.taxes_and_charges,
             date = self.posting_date)
     else:
-        frappe.log_error (f"Cannot process doctype '{self.doctype}'", "taxes.set_alternative_tax_template")
+        frappe.log_error (message=f"Cannot process doctype '{self.doctype}'", title="taxes.set_alternative_tax_template")
         return
 
     tax_template = frappe.get_doc("Sales Taxes and Charges Template", template_name)
@@ -247,7 +247,7 @@ def write_pdf(doc, path):
     except Exception as e:
         msg = f"PDF generation failed for {doc.doctype} {doc.name}: {str(e)}"
         print(msg)
-        frappe.log_error(msg, "AT VAT Export")
+        frappe.log_error(message=msg, title="AT VAT Export")
 
 
 def write_summary_csv(rows, export_path, filename):
@@ -320,7 +320,7 @@ def at_vat_package_export(declaration_name, debug=False):
                 print(f"XML file written: {xml_filepath}")
     except Exception as e:
         msg = f"Failed to generate or write XML: {str(e)}"
-        frappe.log_error(msg, "AT VAT Export")
+        frappe.log_error(message=msg, title="AT VAT Export")
         if debug:
             print(msg)
         frappe.throw(msg)
@@ -338,7 +338,7 @@ def at_vat_package_export(declaration_name, debug=False):
             print(f"PDF file written: {pdf_filepath}")
     except Exception as e:
         msg = f"Failed to generate or write PDF: {str(e)}"
-        frappe.log_error(msg, "AT VAT Export")
+        frappe.log_error(message=msg, title="AT VAT Export")
         if debug:
             print(msg)
         frappe.throw(msg)
@@ -352,7 +352,7 @@ def at_vat_package_export(declaration_name, debug=False):
 
     if not (start_date and end_date):
         msg = f"Missing start_date or end_date in AT VAT Declaration"
-        frappe.log_error(msg, "AT VAT Export")
+        frappe.log_error(message=msg, title="AT VAT Export")
         if debug:
             print(msg)
         frappe.throw(msg)
@@ -393,7 +393,7 @@ def at_vat_package_export(declaration_name, debug=False):
                 print(f"\n\nFinal query for code {code}:\n{query}")
         except ValueError as e:
             msg = f"Placeholder error in query for code {code}: {str(e)}"
-            frappe.log_error(msg, "AT VAT Export")
+            frappe.log_error(message=msg, title="AT VAT Export")
             if debug:
                 print(msg)
             continue
@@ -411,7 +411,7 @@ def at_vat_package_export(declaration_name, debug=False):
                 print(f"\n{len(results)} query results for code {code}.")
         except Exception as e:
             msg = f"SQL error executing wrapped query for code {code}: {str(e)}"
-            frappe.log_error(msg, "AT VAT Export")
+            frappe.log_error(message=msg, title="AT VAT Export")
             if debug:
                 print(msg)
             continue
@@ -442,7 +442,7 @@ def at_vat_package_export(declaration_name, debug=False):
                 write_summary_csv(query_document_map.values(), export_path, filename)
             except Exception as e:
                 msg = f"Failed to write summary CSV for code {code}: {str(e)}"
-                frappe.log_error(msg, "AT VAT Export")
+                frappe.log_error(message=msg, title="AT VAT Export")
                 if debug:
                     print(msg)
             if debug:
@@ -459,7 +459,7 @@ def at_vat_package_export(declaration_name, debug=False):
         write_summary_csv(summary_document_map.values(), export_path, filename)
     except Exception as e:
         msg = f"Failed to write summary CSV: {str(e)}"
-        frappe.log_error(msg, "AT VAT Export")
+        frappe.log_error(message=msg, title="AT VAT Export")
         if debug:
             print(msg)
     if debug:
@@ -476,7 +476,7 @@ def at_vat_package_export(declaration_name, debug=False):
                 print(f"{export_count}/{list_length}. Exported {doctype} {name} to PDF.")
         except Exception as e:
             msg = f"Failed to export {doctype} {name}: {str(e)}"
-            frappe.log_error(msg, "AT VAT Export")
+            frappe.log_error(message=msg, title="AT VAT Export")
             if debug:
                 print(msg)
 

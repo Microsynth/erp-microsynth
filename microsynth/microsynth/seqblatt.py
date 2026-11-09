@@ -276,7 +276,7 @@ def process_label_status_change(labels, target_status, required_current_statuses
 
     except Exception as err:
         msg = f"Error setting labels to '{target_status}':\n{labels=}\n\n {err}\n\n{disabled_customers=}"
-        frappe.log_error(f"{msg}\n\n{traceback.format_exc()}", f"process_label_status_change")
+        frappe.log_error(message=f"{msg}\n\n{traceback.format_exc()}", title=f"process_label_status_change")
         return {'success': False, 'message': msg, 'labels': None}
 
 
@@ -377,7 +377,7 @@ def validate_sales_order(sales_order):
         """, as_dict=True)
 
     if len(delivery_notes) > 0:
-        # frappe.log_error("Order '{0}' has already Delivery Notes. Cannot create a delivery note.".format(sales_order), "utils.validate_sales_order")
+        # frappe.log_error(message="Order '{0}' has already Delivery Notes. Cannot create a delivery note.".format(sales_order), title="utils.validate_sales_order")
         return False
 
     return True
@@ -447,7 +447,7 @@ def check_sales_order_completion():
                 customer = frappe.get_doc("Customer", customer_name)
 
                 if customer.disabled:
-                    frappe.log_error("Customer '{0}' of order '{1}' is disabled. Cannot create a delivery note.".format(customer.name, sales_order), "Production: sales order complete")
+                    frappe.log_error(message="Customer '{0}' of order '{1}' is disabled. Cannot create a delivery note.".format(customer.name, sales_order), title="Production: sales order complete")
                     return
 
                 ## create delivery note (leave on draft: submitted in a batch process later on)
@@ -463,9 +463,9 @@ def check_sales_order_completion():
                 frappe.db.commit()
 
         except Exception as err:
-            frappe.log_error(f"Cannot create a Delivery Note for Sales Order '{sales_order['name']}': \n{err}\n{traceback.format_exc()}", "seqblatt.check_sales_order_completion")
+            frappe.log_error(message=f"Cannot create a Delivery Note for Sales Order '{sales_order['name']}': \n{err}\n{traceback.format_exc()}", title="seqblatt.check_sales_order_completion")
     #elapsed_time = timedelta(seconds=(datetime.now() - start_ts).total_seconds())
-    #frappe.log_error(f"{datetime.now()}: Finished seqblatt.check_sales_order_completion after {elapsed_time} hh:mm:ss for {len(open_sequencing_sales_orders)} open_sequencing_sales_orders.", "monitoring check_sales_order_completion")
+    #frappe.log_error(message=f"{datetime.now()}: Finished seqblatt.check_sales_order_completion after {elapsed_time} hh:mm:ss for {len(open_sequencing_sales_orders)} open_sequencing_sales_orders.", title="monitoring check_sales_order_completion")
     return
 
 
@@ -482,7 +482,7 @@ def check_submit_delivery_note(delivery_note):
         if delivery_note.docstatus != 0:
             msg = f"Delivery Note '{delivery_note.name}' is not in Draft. docstatus: {delivery_note.docstatus}"
             print(msg)
-            frappe.log_error(msg, "seqblatt.check_submit_delivery_note")
+            frappe.log_error(message=msg, title="seqblatt.check_submit_delivery_note")
 
         sales_orders = []
         for i in delivery_note.items:
@@ -495,7 +495,7 @@ def check_submit_delivery_note(delivery_note):
         if len(sales_orders) != 1:
             msg = "Delivery Note '{0}' is derived from none or multiple sales orders".format(delivery_note.name)
             print(msg)
-            frappe.log_error(msg, "seqblatt.check_submit_delivery_note")
+            frappe.log_error(message=msg, title="seqblatt.check_submit_delivery_note")
             return
 
         # Check that the delivery note was created at least 7 days ago
@@ -541,7 +541,7 @@ def check_submit_delivery_note(delivery_note):
         delivery_note.submit()
 
     except Exception as err:
-        frappe.log_error("Cannot process Delivery Note '{0}': \n{1}".format(delivery_note.name, err), "seqblatt.check_submit_delivery_note")
+        frappe.log_error(message="Cannot process Delivery Note '{0}': \n{1}".format(delivery_note.name, err), title="seqblatt.check_submit_delivery_note")
 
 
 def submit_delivery_notes():
@@ -649,7 +649,7 @@ def close_partly_delivered_paid_orders(product_type='Sequencing', days=0, dry_ru
         if not so_doc.web_order_id:
             msg = f"Sales Order {so_doc.name} has no Web Order ID. Please check to close it manually."
             print(msg)
-            frappe.log_error(msg, "seqblatt.close_partly_delivered_paid_orders")
+            frappe.log_error(message=msg, title="seqblatt.close_partly_delivered_paid_orders")
             continue
         # check that there is exactly one submitted Delivery Note with a matching Web Order ID
         delivery_notes = frappe.db.sql(f"""
@@ -675,18 +675,18 @@ def close_partly_delivered_paid_orders(product_type='Sequencing', days=0, dry_ru
                     except Exception as err:
                         msg = f"Unable to close Sales Order {so_doc.name} due to the following error:\n{err}"
                         print(msg)
-                        frappe.log_error(msg, "seqblatt.close_partly_delivered_paid_orders")
+                        frappe.log_error(message=msg, title="seqblatt.close_partly_delivered_paid_orders")
                     else:
                         print(f"{i+1}/{len(sales_orders)}: Tagged and closed {so_doc.name} created {so_doc.creation}")
                         counter += 1
             else:
                 msg = f"Sales Order {so_doc.name} has the following {len(delivery_notes)} submitted Delivery Notes: {delivery_notes}"
                 print(msg)
-                frappe.log_error(msg, "seqblatt.close_partly_delivered_paid_orders")
+                frappe.log_error(message=msg, title="seqblatt.close_partly_delivered_paid_orders")
         else:
             msg = f"Found no Delivery Note for Sales Order {so_doc.name} with Web Order ID '{so_doc.web_order_id}'."
             print(msg)
-            frappe.log_error(msg, "seqblatt.close_partly_delivered_paid_orders")
+            frappe.log_error(message=msg, title="seqblatt.close_partly_delivered_paid_orders")
 
     if dry_run:
         print(f"\nWould have closed {counter} Sales Orders.")
@@ -767,7 +767,7 @@ def get_shipping_addresses(webshop_accounts):
     bench execute microsynth.microsynth.seqblatt.get_shipping_addresses --kwargs "{'webshop_accounts': ['215856', '215857']}"
     """
     from microsynth.microsynth.api.seqblatt import get_shipping_addresses
-    frappe.log_error(f"Called 'seqblatt.get_shipping_addresses' by {frappe.session.user}. Please change to 'api.seqblatt.get_shipping_addresses'.", "seqblatt.get_shipping_addresses")
+    frappe.log_error(message=f"Called 'seqblatt.get_shipping_addresses' by {frappe.session.user}. Please change to 'api.seqblatt.get_shipping_addresses'.", title="seqblatt.get_shipping_addresses")
     return get_shipping_addresses(webshop_accounts)
 
 
@@ -809,5 +809,5 @@ def get_unused_easy_run_label_ranges():
     bench execute microsynth.microsynth.seqblatt.get_unused_easy_run_label_ranges
     """
     from microsynth.microsynth.api.seqblatt import get_unused_easy_run_label_ranges
-    frappe.log_error(f"Called 'seqblatt.get_unused_easy_run_label_ranges' by {frappe.session.user}. Please change to 'api.seqblatt.get_unused_easy_run_label_ranges'.", "seqblatt.get_unused_easy_run_label_ranges")
+    frappe.log_error(message=f"Called 'seqblatt.get_unused_easy_run_label_ranges' by {frappe.session.user}. Please change to 'api.seqblatt.get_unused_easy_run_label_ranges'.", title="seqblatt.get_unused_easy_run_label_ranges")
     return get_unused_easy_run_label_ranges()

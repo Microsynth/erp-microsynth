@@ -24,7 +24,7 @@ def make_quotation(contact_name):
         msg = f"WARNING: Contact.links has length {len(contact.links)} for Contact {contact_name} "\
             f"and Quotation {doc.name}. Took contact.links[0].link_name for Quotation.party_name "\
             f"but might be wrong. Please check Contact {contact_name} and Quotation {doc.name}."
-        frappe.log_error(msg, 'microsynth.quotation.make_quotation')
+        frappe.log_error(message=msg, title='microsynth.quotation.make_quotation')
 
     doc.contact_person = contact_name
     doc.contact_display = contact.full_name
@@ -128,7 +128,7 @@ def link_quotation_to_order(sales_order, quotation):
             })
             new_comment.insert(ignore_permissions=True)
         except Exception as err:
-            frappe.log_error(err, "quotation.link_quotation_to_order")
+            frappe.log_error(message=err, title="quotation.link_quotation_to_order")
 
     sales_channel = "Contract Research" if _sales_manager_is_contract_research(qtn.sales_manager) else "Sales"
     so_doc.sales_channel = sales_channel

@@ -57,7 +57,7 @@ def issue_material(company, user, items):
     """
     # TODO: Deprecate this function and move to api.stock.issue_material
     from microsynth.microsynth.api.stock import issue_material
-    frappe.log_error(f"Called deprecated 'stock.issue_material' by {frappe.session.user}. Please change to 'api.stock.issue_material'.", "stock.issue_material")
+    frappe.log_error(message=f"Called deprecated 'stock.issue_material' by {frappe.session.user}. Please change to 'api.stock.issue_material'.", title="stock.issue_material")
     return issue_material(company, user, items)
 
 

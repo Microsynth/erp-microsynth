@@ -35,11 +35,11 @@ def get_customer(person_id):
         if len(content['entities']) == 0:
             return None
         elif len(content['entities']) > 1:
-            frappe.log_error( _("Requested SLIMS customer for person_id {0} returned multiple results").format(person_id), _("SLIMS") )
+            frappe.log_error(message=_("Requested SLIMS customer for person_id {0} returned multiple results").format(person_id), title=_("SLIMS"))
         # return the first hit
         return content['entities'][0]['pk']
     else:
-        frappe.log_error( _("SLIMS error {0} - {1} on get customer {2}").format(res.status_code, res.text, person_id), _("SLIMS") )
+        frappe.log_error(message=_("SLIMS error {0} - {1} on get customer {2}").format(res.status_code, res.text, person_id), title=_("SLIMS"))
         return None
 
 def create_update_slims_customer(person_id):
@@ -123,7 +123,7 @@ def create_update_slims_customer(person_id):
 
             # parse feedback
             if res.status_code != 200:
-                frappe.log_error( _("SLIMS error {0} - {1} on create/update customer with person_id {2}").format(res.status_code, res.text, person_id), _("SLIMS") )
+                frappe.log_error(message=_("SLIMS error {0} - {1} on create/update customer with person_id {2}").format(res.status_code, res.text, person_id), title=_("SLIMS"))
         else:
             print("is billing contact")
     else:

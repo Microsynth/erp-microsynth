@@ -523,7 +523,7 @@ def parse_delivery_datetime(response_json: dict):
                         return datetime.strptime(date_str + time_str, "%Y%m%d%H%M%S")
     except Exception as e:
         msg = f"Error parsing delivery datetime: {e}\nRaw response:\n{json.dumps(response_json, indent=2)}"
-        frappe.log_error(msg, title="UPS Delivery Date Parsing Error")
+        frappe.log_error(message=msg, title="UPS Delivery Date Parsing Error")
         print(msg)
     return None
 
