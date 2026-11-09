@@ -176,7 +176,7 @@ def allocate_credits(sales_invoice_doc):
                 # Substract allocated amount of credit_entry from Additional Discount Amount before deleting already existing credit entries
                 sales_invoice_doc.discount_amount -= credit_entry.allocated_amount
                 if sales_invoice_doc.discount_amount < 0:
-                    frappe.log_error(f"Negative Additional Discount Amount on Sales Invoice '{sales_invoice_doc.name}'", "credits.allocate_credits")
+                    frappe.log_error(message=f"Negative Additional Discount Amount on Sales Invoice '{sales_invoice_doc.name}'", title="credits.allocate_credits")
             # Delete already existing customer credit entries on the Sales Invoice
             sales_invoice_doc.customer_credits = []
             sales_invoice_doc.save()
@@ -315,7 +315,8 @@ def book_promo_credit_sales_invoice(sales_invoice_id, company, promo_item_code="
 
     if not expense_account:
         frappe.log_error(
-            f"Item {promo_item_code} has no Default Expense Account for company {company}. "
+            title="credits.book_promo_credit_sales_invoice",
+            message=f"Item {promo_item_code} has no Default Expense Account for company {company}. "
             f"Unable to create a Journal Entry for Sales Invoice {sales_invoice_id} automatically."
         )
         return sales_invoice_id
@@ -531,7 +532,7 @@ def cancel_credit_journal_entry(sales_invoice, event=None):
 
     if len(journal_entries) != 1:
         msg = "Cannot cancel credit Journal Entry for Sales Invoice {0}:\nNone or multiple Journal Entries found".format(sales_invoice.name)
-        frappe.log_error(msg, "credits.cancel_credit_journal_entry")
+        frappe.log_error(message=msg, title="credits.cancel_credit_journal_entry")
         print(msg)
         return None
 
@@ -1028,7 +1029,7 @@ def create_so_and_deposit_invoice(quotation_id, credit_account):
         return {"sales_invoice": si.name}
 
     except Exception as e:
-        frappe.log_error(frappe.get_traceback(), "create_so_and_deposit_invoice")
+        frappe.log_error(message=frappe.get_traceback(), title="create_so_and_deposit_invoice")
         raise e
 
 
@@ -1069,7 +1070,7 @@ def fetch_delivery_note_order_date(delivery_note_doc):
         return frappe.get_value("Sales Order", sales_order_ids.pop(), "transaction_date")
     else:
         msg = f"Delivery Note {delivery_note_doc.name} has {len(sales_order_ids)} linked Sales Orders. Cannot determine order date for promo credit conditions check."
-        frappe.log_error(msg, "fetch_delivery_note_order_date")
+        frappe.log_error(message=msg, title="fetch_delivery_note_order_date")
         print(msg)
         return None
 
@@ -1177,7 +1178,7 @@ def create_promo_credit(delivery_note_doc, promo_credit_amount, promo_credit_set
         return sales_invoice_id
     else:
         msg = f"Failed to create deposit invoice for promotional credit for Delivery Note {delivery_note_doc.name}: {result.get('internal_message')}"
-        frappe.log_error(msg, "create_promo_credit")
+        frappe.log_error(message=msg, title="create_promo_credit")
         print(msg)
         return None
 
@@ -1213,7 +1214,7 @@ def check_and_create_promo_credit(delivery_note):
             recipient_email = frappe.get_value("Contact", dn_doc.contact_person, "email_id")
             if not recipient_email:
                 msg = f"Contact Person {dn_doc.contact_person} for Delivery Note {dn_doc.name} has no email address. Cannot send promo credit notification email."
-                frappe.log_error(msg, "check_and_create_promo_credit")
+                frappe.log_error(message=msg, title="check_and_create_promo_credit")
                 print(msg)
             else:
                 #print(f"Sending promo credit notification email to {recipient_email} for Delivery Note {dn_doc.name} and Sales Invoice {sales_invoice_id}:\n{rendered_content}")
@@ -1251,7 +1252,7 @@ def check_and_create_promo_credits(delivery_notes):
                 "message": result.get("message")
             })
         except Exception as e:
-            frappe.log_error(frappe.get_traceback(), "check_and_create_promo_credits")
+            frappe.log_error(message=frappe.get_traceback(), title="check_and_create_promo_credits")
             results.append({
                 "delivery_note": dn,
                 "success": False,
@@ -1266,7 +1267,7 @@ def delivery_note_on_submit(delivery_note, event):
             return
         check_and_create_promo_credit(delivery_note)
     except Exception as e:
-        frappe.log_error(frappe.get_traceback(), "delivery_note_on_submit")
+        frappe.log_error(message=frappe.get_traceback(), title="delivery_note_on_submit")
         print(f"Error in delivery_note_on_submit for Delivery Note {delivery_note.name}: {str(e)}")
 
 
@@ -1378,9 +1379,9 @@ def send_credit_account_balance_warning(credit_account, forecast_balance, email_
     recipient = frappe.get_value("Contact", credit_account.get("contact_person"), "email_id")
     if not recipient:
         frappe.log_error(
-            f"Could not send low balance warning for Credit Account '{credit_account.get('name')}': "
+            message=f"Could not send low balance warning for Credit Account '{credit_account.get('name')}': "
             f"Contact '{credit_account.get('contact_person')}' has no email_id.",
-            "credits.send_credit_account_balance_warning",
+            title="credits.send_credit_account_balance_warning",
         )
         return False
 
@@ -1412,7 +1413,7 @@ def send_credit_account_balance_warning(credit_account, forecast_balance, email_
                     "fcontent": base64.b64decode(encoded_content),
                 }]
     except Exception:
-        frappe.log_error(frappe.get_traceback(), "credits.send_credit_account_balance_warning.attach_balance_sheet")
+        frappe.log_error(message=frappe.get_traceback(), title="credits.send_credit_account_balance_warning.attach_balance_sheet")
 
     send_email_from_template(
         email_template,
@@ -1479,7 +1480,7 @@ def report_credit_account_low_balance_warnings(email_template_name="Credit Accou
                 })
         except Exception as err:
             msg = f"Error while processing Credit Account '{credit_account.get('name')}': {err}"
-            frappe.log_error(f"{msg}\n\n{frappe.get_traceback()}", "credits.report_credit_account_low_balance_warnings")
+            frappe.log_error(message=f"{msg}\n\n{frappe.get_traceback()}", title="credits.report_credit_account_low_balance_warnings")
             skipped.append({
                 "credit_account": credit_account.get("name"),
                 "reason": str(err),

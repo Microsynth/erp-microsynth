@@ -602,7 +602,7 @@ def update_customer(customer_data):
                 if country:
                     country_default_company = frappe.get_value("Country", country, "default_company")
                     if company_to_set != country_default_company:
-                        frappe.log_error(f"Warning: Customer {customer.name}: Company {company_to_set} to set does not match the default Company {country_default_company} of country {country}", "migration.update_customer")
+                        frappe.log_error(message=f"Warning: Customer {customer.name}: Company {company_to_set} to set does not match the default Company {country_default_company} of country {country}", title="migration.update_customer")
                 customer.default_company = company_to_set
         if 'punchout_shop_id' in customer_data:
             customer.punchout_buyer = customer_data['punchout_shop_id']
@@ -881,7 +881,7 @@ def update_contact(contact_data):
         return contact.name
     except Exception as err:
         print("Failed to save contact: {0}".format(err))
-        frappe.log_error("Failed to save contact: {0}".format(err))
+        frappe.log_error(message="Failed to save contact: {0}".format(err), title="migration.update_contact")
         return None
 
 
@@ -889,7 +889,7 @@ def update_address(address_data, is_deleted=False, customer_id=None):
     """
     Processes data to update an address record
     """
-    #frappe.log_error(address_data)
+    #frappe.log_error(message=address_data)
     if not 'person_id' in address_data:
         return None
     if not 'address_line1' in address_data:
@@ -962,7 +962,7 @@ def update_address(address_data, is_deleted=False, customer_id=None):
         return address.name
     except Exception as err:
         print("Failed to save address: {0}".format(err))
-        frappe.log_error("Failed to save address: {0}".format(err))
+        frappe.log_error(message="Failed to save address: {0}".format(err), title="migration.update_address")
         return None
 
 
@@ -1738,17 +1738,17 @@ def create_credit_import_sales_invoice(company, customer, currency, total, produ
     from microsynth.microsynth.utils import get_alternative_account
 
     if flt(total) <= 0:
-        # frappe.log_error("Total credit for Customer '{0}' is '{1}'".format(customer, total), "create_credit_import_sales_invoice")
+        # frappe.log_error(message="Total credit for Customer '{0}' is '{1}'".format(customer, total), title="create_credit_import_sales_invoice")
         return
 
     customer = frappe.get_doc("Customer", customer)
 
     if customer.disabled:
-        frappe.log_error("Cannot import credit for customer '{0}' because the customer is disabled".format(customer.name), "create_credit_import_sales_invoice")
+        frappe.log_error(message="Cannot import credit for customer '{0}' because the customer is disabled".format(customer.name), title="create_credit_import_sales_invoice")
         return
 
     if customer.default_currency != currency:
-        frappe.log_error("Cannot import credit for customer '{0}' because currency of credit acccount does not match the customer default currency".format(customer.name), "create_credit_import_sales_invoice")
+        frappe.log_error(message="Cannot import credit for customer '{0}' because currency of credit acccount does not match the customer default currency".format(customer.name), title="create_credit_import_sales_invoice")
         return
 
     # select naming series
@@ -2134,7 +2134,7 @@ def set_debtors():
         try:
             set_debtor_accounts(c.name)
         except Exception as err:
-            frappe.log_error("Could not set debtors for customer '{0}'\n{1}".format(c.name, err), "migration.set_debtors")
+            frappe.log_error(message="Could not set debtors for customer '{0}'\n{1}".format(c.name, err), title="migration.set_debtors")
 
         i += 1
     return
@@ -2163,7 +2163,7 @@ def set_territory_for_customers():
             set_territory(c.name)
             frappe.db.commit()
         except Exception as err:
-            frappe.log_error("Could not set territory for customer '{0}'\n{1}".format(c.name, err), "migration.set_territory_for_customers")
+            frappe.log_error(message="Could not set territory for customer '{0}'\n{1}".format(c.name, err), title="migration.set_territory_for_customers")
 
         i += 1
     return
@@ -3031,7 +3031,7 @@ def close_invoiced_draft_delivery_notes():
         except Exception as err:
             msg = "Failed to close delivery note {0}:\n{1}\n{2}".format(dn, err, traceback.format_exc())
             print(msg)
-            frappe.log_error(msg, "close_invoiced_draft_delivery_notes")
+            frappe.log_error(message=msg, title="close_invoiced_draft_delivery_notes")
         i += 1
 
 
@@ -4211,7 +4211,7 @@ def check_tax_ids():
             if shipping_address is None:
                 msg = f"Customer '{customer['name']}' has no shipping address."
                 print(msg)
-                frappe.log_error(msg, "migration.check_tax_ids")
+                frappe.log_error(message=msg, title="migration.check_tax_ids")
                 continue
             country = frappe.get_value("Address", shipping_address, "Country")
             if not country in ['Austria', 'Belgium', 'Bulgaria', 'Cyprus', 'Czech Republic', 'Germany', 'Denmark', 'Estonia', 'Greece',
@@ -6920,7 +6920,7 @@ def link_legacy_credit_accounts_to_sales_orders(verbose=False):
             linked_count += 1
             print(f"INFO: Linked Legacy Credit Account(s) {eligible_set} on open Sales Order {so['name']}.")
         except Exception as err:
-            #frappe.log_error(f"Error linking {credit_account} to {so['name']}: {err}", "link_legacy_credit_accounts_to_sales_orders")
+            #frappe.log_error(message=f"Error linking {credit_account} to {so['name']}: {err}", title="link_legacy_credit_accounts_to_sales_orders")
             print(f"WARNING: Failed linking {credit_account} to open Sales Order {so['name']}, going to force it: {err}")
 
             # FORCE INSERT child rows without triggering validation

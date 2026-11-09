@@ -140,10 +140,10 @@ def make_collective_invoices(delivery_notes):
 
         # validation:
         if len(set(customers)) != 1:
-            frappe.log_error("The provided Delivery Notes do not have a single customer.\nDelivery Notes: {0}\nCustomers: {1}".format(delivery_notes, customers), "invocing.make_collective_invoices")
+            frappe.log_error(message="The provided Delivery Notes do not have a single customer.\nDelivery Notes: {0}\nCustomers: {1}".format(delivery_notes, customers), title="invocing.make_collective_invoices")
             return invoices
         if len(set(companies)) != 1:
-            frappe.log_error("The provided Delivery Notes are not from a single company.\nDelivery Notes: {0}\nCompanies: {1}".format(delivery_notes, companies), "invocing.make_collective_invoices")
+            frappe.log_error(message="The provided Delivery Notes are not from a single company.\nDelivery Notes: {0}\nCompanies: {1}".format(delivery_notes, companies), title="invocing.make_collective_invoices")
             return invoices
 
         customer = customers[0]
@@ -174,7 +174,7 @@ def make_collective_invoices(delivery_notes):
                                 filtered_dns.append(d)
                                 credit = credit - total
                             else:
-                                frappe.log_error("Delivery Note '{0}': \nInsufficient credit for customer {1}".format(d, customer), "invocing.async_create_invoices")
+                                frappe.log_error(message="Delivery Note '{0}': \nInsufficient credit for customer {1}".format(d, customer), title="invocing.async_create_invoices")
                         else:
                             # there is no credit account
                             filtered_dns.append(d)
@@ -219,14 +219,14 @@ def fetch_sales_order_id(delivery_note_id):
 
     if len(sales_order_ids) > 1:
         msg = f"Delivery Note '{delivery_note_id}': Multiple Sales Orders found: {', '.join(list(sales_order_ids))}"
-        # frappe.log_error(msg, "invoicing.fetch_sales_orders")
+        # frappe.log_error(message=msg, title="invoicing.fetch_sales_orders")
         frappe.throw(msg)
     elif len(sales_order_ids) == 1:
         so_id = next(iter(sales_order_ids))
         return so_id, dn_doc
     else:
         msg = f"Delivery Note '{delivery_note_id}': No Sales Order found.", "invoicing.async_create_invoices"
-        # frappe.log_error(msg, "invoicing.fetch_sales_orders")
+        # frappe.log_error(message=msg, title="invoicing.fetch_sales_orders")
         frappe.throw(msg)
 
 
@@ -323,7 +323,7 @@ def async_create_invoices(mode, company, customer, is_monthly_collective_run=Fal
                                     rendered_subject = frappe.render_template(email_template.subject, {'delivery_note_id': dn_doc.name})
                                     rendered_message = frappe.render_template(email_template.response, {'delivery_note_id': dn_doc.name, 'reason': reason})
                                     send_email_from_template(email_template, rendered_message, rendered_subject)
-                                    #frappe.log_error(f"{reason} Going to skip invoicing. Send an automatic email.", "invoicing.async_create_invoices")
+                                    #frappe.log_error(message=f"{reason} Going to skip invoicing. Send an automatic email.", title="invoicing.async_create_invoices")
                     else:
                         # send and log an error and skip invoicing
                         reason = f"Sales Order {so_id} of Delivery Note {dn_doc.name} is Closed and the Delivery Note does not contain Item {' or '.join(allowed_items)} that would allow invoicing anyway."
@@ -331,7 +331,7 @@ def async_create_invoices(mode, company, customer, is_monthly_collective_run=Fal
                         rendered_subject = frappe.render_template(email_template.subject, {'delivery_note_id': dn_doc.name})
                         rendered_message = frappe.render_template(email_template.response, {'delivery_note_id': dn_doc.name, 'reason': reason})
                         send_email_from_template(email_template, rendered_message, rendered_subject)
-                        #frappe.log_error(f"{reason} Going to skip invoicing. Send an automatic email.", "invoicing.async_create_invoices")
+                        #frappe.log_error(message=f"{reason} Going to skip invoicing. Send an automatic email.", title="invoicing.async_create_invoices")
                         continue
 
                 # # TODO: implement for other export categories
@@ -345,7 +345,7 @@ def async_create_invoices(mode, company, customer, is_monthly_collective_run=Fal
 
                 if cint(dn.get('is_punchout') == 1) and mode != "Electronic":  # should never be true anymore due to filtering out punchout Delivery Notes above
                     # All punchout invoices must be send electronically
-                    frappe.log_error("Cannot invoice {0}: \nPunchout invoices must be send electronically".format(delivery_note_id), "invoicing.async_create_invoices")
+                    frappe.log_error(message="Cannot invoice {0}: \nPunchout invoices must be send electronically".format(delivery_note_id), title="invoicing.async_create_invoices")
                     continue
 
                 # process punchout orders separately
@@ -377,7 +377,7 @@ def async_create_invoices(mode, company, customer, is_monthly_collective_run=Fal
                             rendered_subject = frappe.render_template(email_template.subject, {'delivery_note_id': delivery_note_id})
                             rendered_message = frappe.render_template(email_template.response, {'delivery_note_id': delivery_note_id, 'reason': reason})
                             send_email_from_template(email_template, rendered_message, rendered_subject)
-                            #frappe.log_error(f"{reason} Going to skip invoicing. Send an automatic email.", "invoicing.async_create_invoices")
+                            #frappe.log_error(message=f"{reason} Going to skip invoicing. Send an automatic email.", title="invoicing.async_create_invoices")
                             skip_dn = True
                             break
                     if skip_dn:
@@ -401,7 +401,7 @@ def async_create_invoices(mode, company, customer, is_monthly_collective_run=Fal
                         if dn.get('product_type') and ca_product_types:
                             if dn.get('product_type') not in ca_product_types:
                                 msg = f"WARNING: Delivery Note '{delivery_note_id}': Credit Account '{credit_account_id}' is not applicable for product type '{dn.get('product_type')}'. Please check manually."
-                                frappe.log_error(msg, "invoicing.async_create_invoices")
+                                frappe.log_error(message=msg, title="invoicing.async_create_invoices")
                             credit += get_credit_account_balance(credit_account_id)
 
                     total = frappe.get_value("Delivery Note", delivery_note_id, "total")
@@ -445,7 +445,7 @@ def async_create_invoices(mode, company, customer, is_monthly_collective_run=Fal
 
             except Exception as err:
                 message = f"Cannot invoice {dn.get('delivery_note')}: \n{err}\n{traceback.format_exc()}"
-                frappe.log_error(message, "invoicing.async_create_invoices")
+                frappe.log_error(message=message, title="invoicing.async_create_invoices")
                 #print(message)
             finally:
                 if opened_sales_order:
@@ -490,7 +490,7 @@ def async_create_invoices(mode, company, customer, is_monthly_collective_run=Fal
                     rendered_message = frappe.render_template(email_template.response, values_to_render)
                     send_email_from_template(email_template, rendered_message, rendered_subject)
                 except Exception as e:
-                    frappe.log_error(f"Unable to send an email about insufficient Customer Credits to Customer '{dn_customer}' due to the following error:\n{e}\n\n{warnings=}")
+                    frappe.log_error(message=f"Unable to send an email about insufficient Customer Credits to Customer '{dn_customer}' due to the following error:\n{e}\n\n{warnings=}", title="")
 
     elif mode == "CarloErba":
         invoices = make_carlo_erba_invoices(company = company)
@@ -504,7 +504,7 @@ def async_create_invoices(mode, company, customer, is_monthly_collective_run=Fal
         for dn in all_invoiceable:
             # TODO process other invoicing methods
             if dn.get('invoicing_method') not in  ["Email", "Post", "Intercompany", "Chorus", "X-Rechnung", "Peppol", "Scientist"]:
-                frappe.log_error("Cannot invoice {0}: \nThe invoicing method '{1}' is not implemented for collective billing".format(dn.get('delivery_note'), dn.get('invoicing_method')), "invoicing.async_create_invoices")
+                frappe.log_error(message="Cannot invoice {0}: \nThe invoicing method '{1}' is not implemented for collective billing".format(dn.get('delivery_note'), dn.get('invoicing_method')), title="invoicing.async_create_invoices")
                 continue
 
             if (cint(dn.get('collective_billing')) == 1 and
@@ -530,7 +530,7 @@ def async_create_invoices(mode, company, customer, is_monthly_collective_run=Fal
                     transmit_sales_invoice(invoice)
 
             except Exception as err:
-                frappe.log_error("Cannot create collective invoice for customer {0}: \n{1}".format(c, err), "invoicing.async_create_invoices")
+                frappe.log_error(message="Cannot create collective invoice for customer {0}: \n{1}".format(c, err), title="invoicing.async_create_invoices")
     else:
         frappe.throw("Unknown mode '{0}' for async_create_invoices".format(mode))
 
@@ -666,7 +666,7 @@ def make_punchout_invoice(delivery_note):
     if len(sales_orders) == 1:
         sales_order = frappe.get_doc("Sales Order", sales_orders[0])
     else:
-        frappe.log_error("The delivery note '{0}' originates from none or multiple sales orders".format(delivery_note.name), "invoicing.make_punchout_invoice")
+        frappe.log_error(message="The delivery note '{0}' originates from none or multiple sales orders".format(delivery_note.name), title="invoicing.make_punchout_invoice")
         return None
 
     # set the punchout shop
@@ -675,7 +675,7 @@ def make_punchout_invoice(delivery_note):
     elif sales_order.punchout_shop is not None:
         punchout_shop = frappe.get_doc("Punchout Shop", sales_order.punchout_shop)
     else:
-        frappe.log_error("Cannot invoice delivery note '{0}': Punchout Shop is not defined".format(delivery_note.name), "invoicing.make_punchout_invoice")
+        frappe.log_error(message="Cannot invoice delivery note '{0}': Punchout Shop is not defined".format(delivery_note.name), title="invoicing.make_punchout_invoice")
         return None
 
     sales_invoice_content = make_sales_invoice(delivery_note.name)
@@ -750,7 +750,7 @@ def make_collective_invoice(delivery_notes):
             cleaned_delivery_notes.append(dn)
 
     if len(cleaned_delivery_notes) == 0:
-        # frappe.log_error(f"No delivery note to invoice found:\n{delivery_notes}", "invoicing.make_collective_invoice")
+        # frappe.log_error(message=f"No delivery note to invoice found:\n{delivery_notes}", title="invoicing.make_collective_invoice")
         return None
 
     # create invoice from first delivery note
@@ -868,13 +868,13 @@ def get_microsynth_zugferd_xml(sales_invoice, verify=True):
         if verify:
             try:
                 if not xml_check_xsd(xml=xml.encode('utf-8')):
-                    frappe.log_error( _("XML validation failed for {0}").format(sales_invoice), "Microsynth ZUGFeRD")
+                    frappe.log_error(message=_("XML validation failed for {0}").format(sales_invoice), title="Microsynth ZUGFeRD")
                     return None
             except Exception as err:
-                frappe.log_error("XML validation error ({2}): {0}\n{1}".format(err, xml, sales_invoice), "Microsynth ZUGFeRD XSD validation")
+                frappe.log_error(message="XML validation error ({2}): {0}\n{1}".format(err, xml, sales_invoice), title="Microsynth ZUGFeRD XSD validation")
         return xml
     except Exception as err:
-        frappe.log_error("Failure during XML generation for {1}: {0}".format(err, sales_invoice), "Microsynth ZUGFeRD")
+        frappe.log_error(message="Failure during XML generation for {1}: {0}".format(err, sales_invoice), title="Microsynth ZUGFeRD")
         return None
 
 
@@ -900,7 +900,7 @@ def get_microsynth_zugferd_pdf(docname, verify=True, format=None, doc=None, doct
             # failed to generate xml, fallback
             return get_pdf(html)
     except Exception as err:
-        frappe.log_error("Unable to create zugferdPDF for {2}: {0}\n{1}".format(err, xml, docname), "Microsynth ZUGFeRD")
+        frappe.log_error(message="Unable to create zugferdPDF for {2}: {0}\n{1}".format(err, xml, docname), title="Microsynth ZUGFeRD")
         # fallback to normal pdf
         return get_pdf(html)
 
@@ -1519,7 +1519,7 @@ def create_si_content_from_so(so_id, debug=False):
         print(f"[create_si_from_so] Found {len(dns)} matching DNs for PO={so_id}")
     if len(dns) != 1:
         msg = f"There are {len(dns)} submitted Delivery Notes with PO {so_id}, but expected exactly one."
-        frappe.log_error(msg, "invoicing.transmit_sales_invoice")
+        frappe.log_error(message=msg, title="invoicing.transmit_sales_invoice")
         if debug: print(f"[create_si_from_so] ERROR: {msg}")
         return None
     dn_doc = frappe.get_doc("Delivery Note", dns[0]['name'])
@@ -1537,25 +1537,25 @@ def create_si_content_from_so(so_id, debug=False):
             print("[create_si_from_so] Mismatch in row counts → adjusting SI to match DN")
         end_customer_si = adjust_si_to_dn(dn_doc, end_customer_si, debug=debug)
         if discount_amount > 0:
-            frappe.log_error(f"Sales Order {so_id} has a discount amount of {discount_amount} and Oligos/Samples/Items counts do NOT match between SO and DN. "
+            frappe.log_error(message=f"Sales Order {so_id} has a discount amount of {discount_amount} and Oligos/Samples/Items counts do NOT match between SO and DN. "
                             f"This case is not implemented in create_si_content_from_so and might lead to an incorrect Sales Invoice total. "
-                            f"Please check the created Sales Invoice carefully.", "invoicing.create_si_content_from_so")
+                        f"Please check the created Sales Invoice carefully.", title="invoicing.create_si_content_from_so")
     elif discount_amount > 0:
         end_customer_si.discount_amount = (end_customer_si.discount_amount or 0) + discount_amount
         end_customer_si.base_discount_amount = (
             end_customer_si.discount_amount * (end_customer_si.conversion_rate or 1)
         )
         end_customer_si.calculate_taxes_and_totals()  # necessary?
-        # frappe.log_error(f"Sales Order {so_id} has a discount amount of {discount_amount} and Oligos/Samples/Items counts match between SO and DN. "
+        # frappe.log_error(message=f"Sales Order {so_id} has a discount amount of {discount_amount} and Oligos/Samples/Items counts match between SO and DN. "
         #                  f"The discount amount is added to the Sales Invoice {end_customer_si.name}. Please check the created Sales Invoice carefully.",
-        #                  "invoicing.create_si_from_so")
+        #                  title="invoicing.create_si_from_so")
     if debug:
         print(f"[create_si_from_so] SI total={end_customer_si.total}, DN total={dn_doc.total}")
     # safety check
     if flt(end_customer_si.total, 2) > flt(dn_doc.total, 2):
         frappe.log_error(
-            f"Total (before discount) of Sales Invoice {end_customer_si.name} ({end_customer_si.total}) is greater than total (before discount) of Delivery Note {dn_doc.name} ({dn_doc.total}).",
-            "invoicing.transmit_sales_invoice"
+            message=f"Total (before discount) of Sales Invoice {end_customer_si.name} ({end_customer_si.total}) is greater than total (before discount) of Delivery Note {dn_doc.name} ({dn_doc.total}).",
+            title="invoicing.transmit_sales_invoice"
         )
         if debug:
             print("[create_si_from_so] ERROR: SI total exceeds DN total")
@@ -1612,10 +1612,10 @@ def merge_si_contents(source_si_content, target_si_content):
             })
     # check discount_amount
     if source_si_doc.discount_amount > 0:
-        frappe.log_error(f"Source Sales Invoice has a discount amount of {source_si_doc.discount_amount}. "
+        frappe.log_error(message=f"Source Sales Invoice has a discount amount of {source_si_doc.discount_amount}. "
                          f"The discount amount is added to the target Sales Invoice. "
                          f"Please check the created Sales Invoice carefully."
-                         f"\n\n{source_si_doc.as_dict()}\n\n{target_si_doc.as_dict()}", "invoicing.merge_si_contents")
+                         f"\n\n{source_si_doc.as_dict()}\n\n{target_si_doc.as_dict()}", title="invoicing.merge_si_contents")
         target_si_doc.discount_amount = (target_si_doc.discount_amount or 0) + source_si_doc.discount_amount
         target_si_doc.base_discount_amount = (
             target_si_doc.discount_amount * (target_si_doc.conversion_rate or 1)
@@ -1644,7 +1644,7 @@ def create_si_from_sos_and_dns(sales_order_ids, customer, default_company, debug
         sales_invoice_content = create_si_content_from_so(sales_order_ids[0], debug=debug)
         if not sales_invoice_content:
             msg = f"Could not create sales invoice content from first Sales Order {sales_order_ids[0]}."
-            frappe.log_error(msg, "invoicing.create_si_from_sos_and_dns")
+            frappe.log_error(message=msg, title="invoicing.create_si_from_sos_and_dns")
             if debug: print(f"[create_si_from_sos_and_dns] ERROR: {msg}")
             return None
         if len(sales_order_ids) > 1:
@@ -1660,7 +1660,7 @@ def create_si_from_sos_and_dns(sales_order_ids, customer, default_company, debug
 
         if not sales_invoice_content:
             msg = f"Could not create sales invoice content from given Sales Orders {sales_order_ids} and Delivery Notes {[dn.delivery_note for dn in dns]}."
-            frappe.log_error(msg, "invoicing.create_si_from_sos_and_dns")
+            frappe.log_error(message=msg, title="invoicing.create_si_from_sos_and_dns")
             if debug: print(f"[create_si_from_sos_and_dns] ERROR: {msg}")
             return None
         # compile document
@@ -1672,7 +1672,7 @@ def create_si_from_sos_and_dns(sales_order_ids, customer, default_company, debug
             sales_invoice = sales_invoice_content
         if not sales_invoice:
             msg = f"Could not create sales invoice document from content {sales_invoice_content.as_dict()} for Sales Orders {sales_order_ids} and Delivery Notes {[dn.delivery_note for dn in dns]}."
-            frappe.log_error(msg, "invoicing.create_si_from_sos_and_dns")
+            frappe.log_error(message=msg, title="invoicing.create_si_from_sos_and_dns")
             if debug: print(f"[create_si_from_sos_and_dns] ERROR: {msg}")
             return None
         if not sales_invoice.invoice_to:
@@ -1705,7 +1705,7 @@ def create_si_from_sos_and_dns(sales_order_ids, customer, default_company, debug
     except Exception as e:
         msg = f"An error occurred while creating SI from SOs {sales_order_ids} and DNs {[dn.delivery_note for dn in dns]}: {str(e)}\n{traceback.format_exc()}"
         if debug: print(f"[create_si_from_sos_and_dns] ERROR: {msg}")
-        frappe.log_error(msg, "invoicing.create_si_from_sos_and_dns")
+        frappe.log_error(message=msg, title="invoicing.create_si_from_sos_and_dns")
         return None
 
 
@@ -1723,13 +1723,13 @@ def create_si_from_so(so_id, debug=False):
         if not end_customer_si:
             msg = f"Failed to create SI content from SO {so_id}."
             if debug: print(f"[create_si_from_so] ERROR: {msg}")
-            frappe.log_error(msg, "invoicing.create_si_from_so")
+            frappe.log_error(message=msg, title="invoicing.create_si_from_so")
             return None
 
         if not end_customer_si.items:
             msg = f"Cannot create Sales Invoice from Sales Order {so_id} because there are no items to invoice."
             if debug: print(f"[create_si_from_so] ERROR: {msg}")
-            frappe.log_error(msg, "invoicing.create_si_from_so")
+            frappe.log_error(message=msg, title="invoicing.create_si_from_so")
             return None
 
         if debug:
@@ -1757,7 +1757,7 @@ def create_si_from_so(so_id, debug=False):
     except Exception as e:
         msg = f"An error occurred while creating SI from SO {so_id}: {str(e)}\n{traceback.format_exc()}"
         if debug: print(f"[create_si_from_so] ERROR: {msg}")
-        frappe.log_error(msg, "invoicing.create_si_from_so")
+        frappe.log_error(message=msg, title="invoicing.create_si_from_so")
         return None
 
 
@@ -1784,13 +1784,13 @@ def transmit_sales_invoice(sales_invoice_id):
         sales_invoice = frappe.get_doc("Sales Invoice", sales_invoice_id)
 
         if not sales_invoice:
-            frappe.log_error(f"Sales Invoice '{sales_invoice_id}' not found", "invoicing.transmit_sales_invoice")
+            frappe.log_error(message=f"Sales Invoice '{sales_invoice_id}' not found", title="invoicing.transmit_sales_invoice")
             return
 
         customer = frappe.get_doc("Customer", sales_invoice.customer)
 
         if not customer:
-            frappe.log_error(f"Customer '{sales_invoice.customer}' not found", "invoicing.transmit_sales_invoice")
+            frappe.log_error(message=f"Customer '{sales_invoice.customer}' not found", title="invoicing.transmit_sales_invoice")
             return
 
         settings = frappe.get_doc("Microsynth Settings", "Microsynth Settings")
@@ -1805,14 +1805,14 @@ def transmit_sales_invoice(sales_invoice_id):
         elif customer.invoice_to:
             invoice_contact = frappe.get_doc("Contact", customer.invoice_to)
         else:
-            frappe.log_error(f"Found no Invoice To Contact for Sales Invoice '{sales_invoice_id}'.", "invoicing.transmit_sales_invoice")
+            frappe.log_error(message=f"Found no Invoice To Contact for Sales Invoice '{sales_invoice_id}'.", title="invoicing.transmit_sales_invoice")
             return
 
         # The invoice was already sent. Do not send again.
         if sales_invoice.invoice_sent_on:
             msg = f"Sales Invoice '{sales_invoice_id}' has Invoice sent on '{sales_invoice.invoice_sent_on}'. Going to not transmit it (again). Please check manually."
             print(msg)
-            frappe.log_error(msg, "invoicing.transmit_sales_invoice")
+            frappe.log_error(message=msg, title="invoicing.transmit_sales_invoice")
             return
 
         # Do not send any invoice if the items are free of charge
@@ -1878,7 +1878,7 @@ def transmit_sales_invoice(sales_invoice_id):
                 si_url_string = f"<a href={get_url_to_form('Sales Invoice', sales_invoice.name)}>{sales_invoice.name}</a>"
                 rendered_content = frappe.render_template(email_template.response, {'sales_invoice_id': si_url_string, 'contact_id': invoice_contact.name})
                 send_email_from_template(email_template, rendered_content, rendered_subject)
-                #frappe.log_error(rendered_subject, "Sending invoice email failed")
+                #frappe.log_error(message=rendered_subject, title="Sending invoice email failed")
                 return
 
             if sales_invoice.company == "Microsynth AG":
@@ -1948,14 +1948,14 @@ Your administration team<br><br>{footer}"
             attachments = get_attachments("Sales Invoice", sales_invoice.name)
             if not attachments or len(attachments) == 0:
                 msg = f"No attachment found for Sales Invoice '{sales_invoice.name}'. Cannot print invoice."
-                frappe.log_error(msg, "invoicing.transmit_sales_invoice")
+                frappe.log_error(message=msg, title="invoicing.transmit_sales_invoice")
                 frappe.throw(msg)
             fid = None
             for a in attachments:
                 fid = a['name']
             if not fid:
                 msg = f"No attachment found for Sales Invoice '{sales_invoice.name}'. Cannot print invoice."
-                frappe.log_error(msg, "invoicing.transmit_sales_invoice")
+                frappe.log_error(message=msg, title="invoicing.transmit_sales_invoice")
                 frappe.throw(msg)
             frappe.db.commit()
 
@@ -1963,14 +1963,14 @@ Your administration team<br><br>{footer}"
             path = get_physical_path(fid)
             if not path:
                 msg = f"Could not get physical path for attachment with file ID '{fid}' of Sales Invoice '{sales_invoice.name}'. Cannot print invoice."
-                frappe.log_error(msg, "invoicing.transmit_sales_invoice")
+                frappe.log_error(message=msg, title="invoicing.transmit_sales_invoice")
                 frappe.throw(msg)
             PRINTER = frappe.get_value("Microsynth Settings", "Microsynth Settings", "invoice_printer")
             command = ["lp", path, "-d" ] + PRINTER.split(" ")
             try:
                 subprocess.run(command)
             except subprocess.CalledProcessError as e:
-                frappe.log_error(f"Printing {sales_invoice_id} failed: {str(e)}", "invoicing.transmit_sales_invoice")
+                frappe.log_error(message=f"Printing {sales_invoice_id} failed: {str(e)}", title="invoicing.transmit_sales_invoice")
 
         elif mode == "ARIBA":
             cxml_data = create_dict_of_invoice_info_for_cxml(sales_invoice, mode)
@@ -2066,7 +2066,7 @@ Your administration team<br><br>{footer}"
             if purchase_invoice:
                 create_intercompany_booking(purchase_invoice)
             else:
-                frappe.log_error(f"Failed to create Purchase Invoice from Sales Invoice {sales_invoice.name} for intercompany transfer. No intercompany booking created on the purchase invoice side.", "invoicing.transmit_sales_invoice")
+                frappe.log_error(message=f"Failed to create Purchase Invoice from Sales Invoice {sales_invoice.name} for intercompany transfer. No intercompany booking created on the purchase invoice side.", title="invoicing.transmit_sales_invoice")
 
             # create and transmit SI-LYO
             # find DN-BAL (po_no of DN-BAL should be ID of SO-LYO)
@@ -2091,13 +2091,13 @@ Your administration team<br><br>{footer}"
                 dn = delivery_notes.get(dn_id)
                 po_no = ((dn.get("po_no") if dn else "") or "").strip()
                 if not po_no:
-                    frappe.log_error(f"Sales Invoice {sales_invoice_id}: Intercompany Delivery Note {dn_id} has no PO.", "invoicing.transmit_sales_invoice")
+                    frappe.log_error(message=f"Sales Invoice {sales_invoice_id}: Intercompany Delivery Note {dn_id} has no PO.", title="invoicing.transmit_sales_invoice")
                     continue
                 if not po_no.startswith("SO-"):
-                    frappe.log_error(f"Sales Invoice {sales_invoice_id}: PO '{po_no}' of intercompany Delivery Note {dn_id} seems to not be a Sales Order ID.", "invoicing.transmit_sales_invoice")
+                    frappe.log_error(message=f"Sales Invoice {sales_invoice_id}: PO '{po_no}' of intercompany Delivery Note {dn_id} seems to not be a Sales Order ID.", title="invoicing.transmit_sales_invoice")
                     continue
                 if not frappe.db.exists("Sales Order", po_no):
-                    frappe.log_error(f"Sales Invoice {sales_invoice_id}: Intercompany Delivery Note {dn_id} has PO '{po_no}', but there is no Sales Order '{po_no}'.", "invoicing.transmit_sales_invoice")
+                    frappe.log_error(message=f"Sales Invoice {sales_invoice_id}: Intercompany Delivery Note {dn_id} has PO '{po_no}', but there is no Sales Order '{po_no}'.", title="invoicing.transmit_sales_invoice")
                     continue
                 po_nos.add(po_no)
 
@@ -2175,7 +2175,7 @@ Your administration team<br><br>{footer}"
                     rendered_content = frappe.render_template(email_template.response, {'sales_invoice_id': sales_invoice.name, 'sales_order_id': so_id})
                     send_email_from_template(email_template, rendered_content, rendered_subject)
                     msg = f"Intercompany Sales Invoice {sales_invoice.name}: Sales Order {so_id} has status {so_data['status']}, docstatus {so_data['docstatus']} and hold_invoice = {so_data['hold_invoice']}. Unable to create a Sales Invoice.\n\nSend an email to {email_template.recipients}."
-                    #frappe.log_error(msg, "invoicing.transmit_sales_invoice")
+                    #frappe.log_error(message=msg, title="invoicing.transmit_sales_invoice")
                     continue
 
                 # Check if the SO-LYO has already been invoiced with an SI-LYO. If yes, skip creation of another SI-LYO for this SO-LYO and log an error.
@@ -2183,7 +2183,7 @@ Your administration team<br><br>{footer}"
                 if so_per_billed > 0:
                     skipped_so_ids.add(so_id)
                     msg = f"Intercompany Sales Invoice {sales_invoice.name}: Sales Order {so_id} has already been (partially) billed ({so_per_billed}%). Not going to create another Sales Invoice for this Sales Order. Please check manually."
-                    frappe.log_error(msg, "invoicing.transmit_sales_invoice")
+                    frappe.log_error(message=msg, title="invoicing.transmit_sales_invoice")
                     continue
 
                 # Check if end customer of SO-LYO has collective billing.
@@ -2242,8 +2242,8 @@ Your administration team<br><br>{footer}"
         rendered_subject = frappe.render_template(email_template.subject, {'sales_invoice_id': sales_invoice_id})
         rendered_content = frappe.render_template(email_template.response, {'sales_invoice_id': sales_invoice_id, 'err': err})
         send_email_from_template(email_template, rendered_content, rendered_subject)
-        #frappe.log_error(f"Cannot transmit sales invoice {sales_invoice_id}:\n{err}\n{traceback.format_exc()}\n\n{rendered_content}",
-        #                 "invoicing.transmit_sales_invoice")
+        #frappe.log_error(message=f"Cannot transmit sales invoice {sales_invoice_id}:\n{err}\n{traceback.format_exc()}\n\n{rendered_content}",
+        #                 title="invoicing.transmit_sales_invoice")
     return
 
 
@@ -2423,7 +2423,7 @@ def transmit_carlo_erba_invoices(sales_invoices):
         if len(orders) == 1:
             order_name = orders[0]
         else:
-            frappe.log_error("Cannot transmit invoice {0}: \nNone or multiple orders: {1}".format(invoice_name, orders), "invoicing.transmit_carlo_erba_invoices")
+            frappe.log_error(message="Cannot transmit invoice {0}: \nNone or multiple orders: {1}".format(invoice_name, orders), title="invoicing.transmit_carlo_erba_invoices")
             continue
 
         # Header
@@ -2634,7 +2634,7 @@ def create_intercompany_booking(invoice):
 
     """
     if not invoice or invoice.doctype not in ["Sales Invoice", "Purchase Invoice"]:
-        frappe.log_error(f"Invalid argument: create_intercompany_booking called with invalid or missing invoice ({invoice}).", "invoicing.create_intercompany_booking")
+        frappe.log_error(message=f"Invalid argument: create_intercompany_booking called with invalid or missing invoice ({invoice}).", title="invoicing.create_intercompany_booking")
         return
     jv = frappe.get_doc({
         'doctype': "Journal Entry",
@@ -2648,11 +2648,11 @@ def create_intercompany_booking(invoice):
     if invoice.doctype == "Sales Invoice":
         intercompany_account = get_intermediate_account(invoice.company, "Customer", invoice.customer)
         if not intercompany_account:
-            frappe.log_error(f"Unable to find intercompany account for {invoice.company} to {invoice.customer} for {invoice.name}.", "invoicing.create_intercompany_booking")
+            frappe.log_error(message=f"Unable to find intercompany account for {invoice.company} to {invoice.customer} for {invoice.name}.", title="invoicing.create_intercompany_booking")
             return
         if frappe.get_value("Account", intercompany_account, "account_currency") != \
             frappe.get_value("Account", invoice.debit_to, "account_currency"):
-            frappe.log_error(f"Debtor and intercompany account currency does not match for {invoice.name}.", "invoicing.create_intercompany_booking")
+            frappe.log_error(message=f"Debtor and intercompany account currency does not match for {invoice.name}.", title="invoicing.create_intercompany_booking")
             return
 
         jv.append("accounts", {
@@ -2675,11 +2675,11 @@ def create_intercompany_booking(invoice):
     elif invoice.doctype == "Purchase Invoice":
         intercompany_account = get_intermediate_account(invoice.company, "Supplier", invoice.supplier)
         if not intercompany_account:
-            frappe.log_error(f"Unable to find intercompany account for {invoice.company} to {invoice.supplier} for {invoice.name}.", "invoicing.create_intercompany_booking")
+            frappe.log_error(message=f"Unable to find intercompany account for {invoice.company} to {invoice.supplier} for {invoice.name}.", title="invoicing.create_intercompany_booking")
             return
         if frappe.get_value("Account", intercompany_account, "account_currency") != \
             frappe.get_value("Account", invoice.credit_to, "account_currency"):
-            frappe.log_error(f"Creditor and intercompany account currency does not match for {invoice.name}.", "invoicing.create_intercompany_booking")
+            frappe.log_error(message=f"Creditor and intercompany account currency does not match for {invoice.name}.", title="invoicing.create_intercompany_booking")
             return
 
         jv.append("accounts", {
@@ -2700,7 +2700,7 @@ def create_intercompany_booking(invoice):
         })
 
     else:
-        frappe.log_error(f"Invalid argument: intercompany booking for doctype {invoice.doctype} ({invoice.name}).", "invoicing.create_intercompany_booking")
+        frappe.log_error(message=f"Invalid argument: intercompany booking for doctype {invoice.doctype} ({invoice.name}).", title="invoicing.create_intercompany_booking")
         return
     jv.insert(ignore_permissions=True)
     jv.submit()
@@ -2710,7 +2710,7 @@ def create_intercompany_booking(invoice):
 
 @frappe.whitelist()
 def download_invoice_pdf(si):
-    frappe.log_error(f"Downloading PDF for Sales Invoice {si} - this function should be deprecated", "invoicing.download_invoice_pdf")
+    frappe.log_error(message=f"Downloading PDF for Sales Invoice {si} - this function should be deprecated", title="invoicing.download_invoice_pdf")
     si_doc = frappe.get_doc("Sales Invoice", si)
     css = frappe.get_value('Print Format', 'Sales Invoice', 'css')
     raw_html = frappe.get_value('Print Format', 'Sales Invoice', 'html')
@@ -2931,7 +2931,7 @@ def create_cn_and_invoice_draft(sales_invoice_id):
         except frappe.DuplicateEntryError as e:
             # TODO: Avoid the Credit Note beeing already inserted before creating the draft invoice.
             msg = f"Please cancel Credit Note {credit_note_id}: Duplicate entry error while creating draft invoice for Sales Invoice {sales_invoice_id}: {str(e)}"
-            frappe.log_error(msg, "create_cn_and_invoice_draft")
+            frappe.log_error(message=msg, title="create_cn_and_invoice_draft")
             frappe.throw(msg)
         invoice_draft_doc = frappe.get_doc("Sales Invoice", invoice_draft_id)
 
@@ -3012,7 +3012,7 @@ def reopen_closed_sales_orders_for_invoice_save(sales_order_ids):
                 sales_order_doc.update_status("To Bill")
                 reopened_sales_orders.append(sales_order_id)
         except Exception:
-            frappe.log_error(frappe.get_traceback(), "Error reopening Sales Order")
+            frappe.log_error(message=frappe.get_traceback(), title="Error reopening Sales Order")
             continue
     return {"reopened_sales_orders": reopened_sales_orders}
 
@@ -3037,7 +3037,7 @@ def close_reopened_sales_orders_for_invoice_save(sales_order_ids):
                 sales_order_doc.update_status("Closed")
                 closed_sales_orders.append(sales_order_id)
         except Exception:
-            frappe.log_error(frappe.get_traceback(), "Error closing Sales Order")
+            frappe.log_error(message=frappe.get_traceback(), title="Error closing Sales Order")
             continue
     return {"closed_sales_orders": closed_sales_orders}
 
@@ -3118,7 +3118,7 @@ def change_customer_company(sales_invoice_name, new_customer, new_company):
     doc.save()
 
     if doc.contact_person and doc.contact_person != original_contact_person:
-        frappe.log_error(f"Contact Person {original_contact_person} was overwritten to {doc.contact_person} when changing customer/company for Sales Invoice {sales_invoice_name}. Restoring original contact person.", "invoicing.change_customer_company")
+        frappe.log_error(message=f"Contact Person {original_contact_person} was overwritten to {doc.contact_person} when changing customer/company for Sales Invoice {sales_invoice_name}. Restoring original contact person.", title="invoicing.change_customer_company")
         doc.contact_person = original_contact_person
         doc.save()
 
