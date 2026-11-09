@@ -90,7 +90,7 @@ class QMInstrument(Document):
                 if len(valid_docs) == 1:
                     relating_docs.append(valid_docs[0]['name'])
                 elif len(valid_docs) > 1:
-                    frappe.log_error(f"There seem to be {len(valid_docs)} Valid versions of QM Document LIKE '{without_version}%'.", "qm_document.get_overview")
+                    frappe.log_error(message=f"There seem to be {len(valid_docs)} Valid versions of QM Document LIKE '{without_version}%'.", title="qm_document.get_overview")
                 else:
                     # no valid version -> take the highest version
                     all_versions = frappe.db.sql(f"""
@@ -103,7 +103,7 @@ class QMInstrument(Document):
                     if len(all_versions) > 0:
                         relating_docs.append(all_versions[0]['name'])
                     else:
-                        #frappe.log_error(f"There seem to be no QM Documents LIKE '{without_version}%' with docstatus 1.", "qm_document.get_overview")
+                        #frappe.log_error(message=f"There seem to be no QM Documents LIKE '{without_version}%' with docstatus 1.", title="qm_document.get_overview")
                         continue
         return relating_docs
 

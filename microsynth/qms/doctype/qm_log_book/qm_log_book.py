@@ -177,7 +177,7 @@ def print_instrument_certification_label(qm_log_book_entry_id):
         }
         content = frappe.render_template("microsynth/templates/includes/instrument_certification_label_brady.html", label_data)
         if printer:
-            #frappe.log_error(f"DEBUG: Printing label for QM Log Book Entry '{qm_log_book_entry_id}' on printer '{printer.name}' with IP {printer.ip} and port {printer.port}. Content:\n{content}\n\n{raw_next_due_date=}, {next_due_date=}", "labels.print_instrument_certification_label")
+            #frappe.log_error(message=f"DEBUG: Printing label for QM Log Book Entry '{qm_log_book_entry_id}' on printer '{printer.name}' with IP {printer.ip} and port {printer.port}. Content:\n{content}\n\n{raw_next_due_date=}, {next_due_date=}", title="labels.print_instrument_certification_label")
             print_raw(printer.ip, printer.port, content + "\n")  # Added newline to ensure the printer processes the content
             return {
                 "success": True,
@@ -190,7 +190,7 @@ def print_instrument_certification_label(qm_log_book_entry_id):
             }
     except Exception as err:
         msg = f"Error printing {qm_log_book_doc.entry_type} label for QM Instrument '{qm_instrument_id}': {err}"
-        frappe.log_error(f"{msg}\n{traceback.format_exc()}", "labels.print_instrument_certification_label")
+        frappe.log_error(message=f"{msg}\n{traceback.format_exc()}", title="labels.print_instrument_certification_label")
         return {
             "success": False,
             "message": f"Error printing {qm_log_book_doc.entry_type} label for QM Instrument '{qm_instrument_id}': {err}"
@@ -427,7 +427,7 @@ def import_log_book_entries(verbose=False):
 
         except Exception as e:
             msg = f"{fname}: {str(e)}"
-            frappe.log_error(msg, "QM Log Book Import")
+            frappe.log_error(message=msg, title="QM Log Book Import")
             if verbose:
                 print(msg)
             _move_to_error_folder(fname, msg)

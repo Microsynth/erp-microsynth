@@ -93,7 +93,7 @@ def update_status(action, status):
                 msg = f"The QM Action {action.name} of your {action.document_type} {action.document_name} was completed by {frappe.session.user}."
                 notify_refdoc_creator(action, msg)
             except Exception as err:
-                frappe.log_error(f"Unable to notify the creator of the source document of QM Action {action.name} upon Completion:\n{err}", "qm_action.update_status")
+                frappe.log_error(message=f"Unable to notify the creator of the source document of QM Action {action.name} upon Completion:\n{err}", title="qm_action.update_status")
         action.status = status
         action.save()
         frappe.db.commit()

@@ -490,7 +490,7 @@ def async_create_invoices(mode, company, customer, is_monthly_collective_run=Fal
                     rendered_message = frappe.render_template(email_template.response, values_to_render)
                     send_email_from_template(email_template, rendered_message, rendered_subject)
                 except Exception as e:
-                    frappe.log_error(message=f"Unable to send an email about insufficient Customer Credits to Customer '{dn_customer}' due to the following error:\n{e}\n\n{warnings=}", title="")
+                    frappe.log_error(message=f"Unable to send an email about insufficient Customer Credits to Customer '{dn_customer}' due to the following error:\n{e}\n\n{warnings=}", title="invoicing.async_create_invoices")
 
     elif mode == "CarloErba":
         invoices = make_carlo_erba_invoices(company = company)

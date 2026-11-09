@@ -131,7 +131,7 @@ class QMDocument(Document):
                 if len(valid_docs) == 1:
                     relating_docs.append(valid_docs[0]['name'])
                 elif len(valid_docs) > 1:
-                    frappe.log_error(f"There seem to be {len(valid_docs)} Valid versions of QM Document LIKE '{without_version}%'.", "qm_document.get_overview")
+                    frappe.log_error(message=f"There seem to be {len(valid_docs)} Valid versions of QM Document LIKE '{without_version}%'.", title="qm_document.get_overview")
                 else:
                     # no valid version -> take the highest version
                     all_versions = frappe.db.sql(f"""
@@ -144,7 +144,7 @@ class QMDocument(Document):
                     if len(all_versions) > 0:
                         relating_docs.append(all_versions[0]['name'])
                     else:
-                        #frappe.log_error(f"There seem to be no QM Documents LIKE '{without_version}%' with docstatus 1.", "qm_document.get_overview")
+                        #frappe.log_error(message=f"There seem to be no QM Documents LIKE '{without_version}%' with docstatus 1.", title="qm_document.get_overview")
                         continue
 
         trained = frappe.db.sql("""
@@ -382,7 +382,7 @@ def notify_pvs_about_valid_status(qm_document):
         for pv in all_pvs:
             pvs.add(pv['process_owner'])
     if len(pvs) == 0:
-        frappe.log_error(f"Found no PV for QM Document '{qm_document.name}' with QM Process '{qm_document.qm_process}' and Company '{qm_document.company}'.", "qm_document.notify_pvs_about_valid_status")
+        frappe.log_error(message=f"Found no PV for QM Document '{qm_document.name}' with QM Process '{qm_document.qm_process}' and Company '{qm_document.company}'.", title="qm_document.notify_pvs_about_valid_status")
 
     url_string = f"<a href={get_url_to_form('QM Document', qm_document.name)}>{qm_document.name}</a>"
     send_status_notification(
@@ -455,7 +455,7 @@ def set_valid_document(qm_docname):
     for version in other_versions:
         if cint(version['version']) > cint(qm_doc.version):
             # should not happen anymore
-            frappe.log_error(f"Invalidated the later version {qm_doc.version} of the document {qm_doc.name}", "qm_document.set_valid_document")
+            frappe.log_error(message=f"Invalidated the later version {qm_doc.version} of the document {qm_doc.name}", title="qm_document.set_valid_document")
         qm_doc_other_version = frappe.get_doc("QM Document", version['name'])
         invalidate_document(qm_doc_other_version)
 

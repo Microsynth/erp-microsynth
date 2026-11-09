@@ -355,7 +355,7 @@ def get_cc_impact_assessments(qm_change):
             AND `tabQM Impact Assessment`.`document_name` = "{qm_change}"
             AND `tabQM Impact Assessment`.`status` != "Cancelled"
         ;""", as_dict=True)
-    #frappe.log_error(f"{qm_change=}\n{impact_assessments=}")
+    #frappe.log_error(message=f"{qm_change=}\n{impact_assessments=}", title="")
     #return []
     return impact_assessments
 

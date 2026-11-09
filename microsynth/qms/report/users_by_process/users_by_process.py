@@ -86,7 +86,7 @@ def get_users(qm_processes, companies=None):
             {qm_process_conditions}
             AND `tabUser Settings`.`disabled` = 0
         """
-    # frappe.log_error(f"{query=}")
+    # frappe.log_error(message=f"{query=}", title="")
     return frappe.db.sql(query, as_dict=True)
 
 
