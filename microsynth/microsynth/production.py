@@ -62,9 +62,9 @@ def oligo_status_changed(content=None):
                 first_oligo_name = oligos[0]['name']
                 for o in oligos[1:]:
                     if o['name'] != first_oligo_name:
-                        frappe.log_error(f"There are {len(oligos)} Oligos with Web ID {oligo['web_id']} in the ERP. " \
+                        frappe.log_error(message=f"There are {len(oligos)} Oligos with Web ID {oligo['web_id']} in the ERP. " \
                                          f"At least Oligo '{first_oligo_name}' and Oligo '{o['name']}' have the same Web ID {oligo['web_id']}. " \
-                                         f"Going to update the first one.", "Oligo duplicates in production.oligo_status_changed")
+                                         f"Going to update the first one.", title="Oligo duplicates in production.oligo_status_changed")
             # get oligo to update the status
             oligo_doc = frappe.get_doc("Oligo", oligos[0]['name'])
             if oligo_doc.status != oligo['status']:
@@ -77,14 +77,14 @@ def oligo_status_changed(content=None):
             if oligos[0]['sales_order'] and oligos[0]['sales_order'] not in affected_sales_orders:
                 affected_sales_orders.add(oligos[0]['sales_order'])
         else:
-            #frappe.log_error("Oligo status update: oligo {0} not found.".format(oligo['web_id']), "Production: oligo status update error")
+            #frappe.log_error(message="Oligo status update: oligo {0} not found.".format(oligo['web_id']), title="Production: oligo status update error")
             error_oligos.append(oligo['web_id'])
     frappe.db.commit()
     # check and process sales order (in case all is complete)
     if len(affected_sales_orders) > 0:
         check_sales_order_completion(affected_sales_orders)
     if len(error_oligos) > 0:
-        frappe.log_error(f"Oligo status update: The following oligos are not found: {error_oligos}", "Production: oligo status update error")
+        frappe.log_error(message=f"Oligo status update: The following oligos are not found: {error_oligos}", title="Production: oligo status update error")
     return {
         'success': len(error_oligos) == 0,
         'message': 'Processed {0} oligos from {1} orders (Errors: {2}))'.format(
@@ -194,7 +194,7 @@ def check_sales_order_completion(sales_orders, verbose=False):
                         msg += f"Cannot close the Sales Order '{po_no}'. Please check manually."
                         if verbose:
                             print(msg)
-                        frappe.log_error(msg, "check_sales_order_completion")
+                        frappe.log_error(message=msg, title="check_sales_order_completion")
                     else:
                         close_or_unclose_sales_orders("""["{0}"]""".format(po_no), "Closed")
                 continue
@@ -203,7 +203,7 @@ def check_sales_order_completion(sales_orders, verbose=False):
                 msg = f"All Oligos in {sales_order} are cancelled, but there is more than one Shipping Item left. Going to close the Sales Order. Please check manually."
                 if verbose:
                     print(msg)
-                frappe.log_error(msg, "check_sales_order_completion")
+                frappe.log_error(message=msg, title="check_sales_order_completion")
                 # Add a comment to the Sales Order
                 new_comment = frappe.get_doc({
                     'doctype': 'Comment',
@@ -246,7 +246,7 @@ def check_sales_order_completion(sales_orders, verbose=False):
                 msg = f"Error creating PDF for Delivery Note {dn.name} of Sales Order {sales_order}: {err}"
                 if verbose:
                     print(msg)
-                frappe.log_error(msg, "PDF creation failed (production API)")
+                frappe.log_error(message=msg, title="PDF creation failed (production API)")
 
 
 @frappe.whitelist()
@@ -311,7 +311,7 @@ def print_at_administration(doc):
     from erpnextswiss.erpnextswiss.attach_pdf import save_and_attach, create_folder
 
     if not hasattr(doc, 'doctype') or not hasattr(doc, 'name') or not hasattr(doc, 'title'):
-        frappe.log_error(f"'{str(doc)}' has no doctype or name or title. Unable to print.", "production.print_at_administration")
+        frappe.log_error(message=f"'{str(doc)}' has no doctype or name or title. Unable to print.", title="production.print_at_administration")
         return
     doctype = printformat = doc.doctype
     name = doc.name
@@ -331,7 +331,7 @@ def print_at_administration(doc):
     attachments = get_attachments(doctype, doc.name)
     fid = next((a["name"] for a in attachments if a["file_url"].endswith(".pdf")), None)
     if not fid:
-        frappe.log_error(f"No PDF attachment found for {doctype} {name}", "print_at_administration")
+        frappe.log_error(message=f"No PDF attachment found for {doctype} {name}", title="print_at_administration")
         return
     frappe.db.commit()
 
@@ -339,16 +339,16 @@ def print_at_administration(doc):
     path = get_physical_path(fid)
     PRINTER = frappe.get_value("Microsynth Settings", "Microsynth Settings", "invoice_printer")
     if not PRINTER:
-        frappe.log_error("No invoice_printer configured in Microsynth Settings", "print_at_administration")
+        frappe.log_error(message="No invoice_printer configured in Microsynth Settings", title="print_at_administration")
         return
     if not os.path.exists(path):
-        frappe.log_error(f"File not found at path: {path}", "print_at_administration")
+        frappe.log_error(message=f"File not found at path: {path}", title="print_at_administration")
         return
     try:
         command = ["lp", path, "-d" ] + PRINTER.split(" ")
         subprocess.run(command, check=True)
     except subprocess.CalledProcessError as e:
-        frappe.log_error(f"Printing {doc.name} failed: {str(e)}", "production.print_at_administration")
+        frappe.log_error(message=f"Printing {doc.name} failed: {str(e)}", title="production.print_at_administration")
 
 
 @frappe.whitelist()
@@ -395,18 +395,18 @@ def set_shipping_date(delivery_note):
 
     if len(sales_orders) != 1:
         msg = f"Found {len(sales_orders)} Sales Orders for Delivery Note {delivery_note.name}."
-        frappe.log_error(msg, "production.set_shipping_date")
+        frappe.log_error(message=msg, title="production.set_shipping_date")
         return
     [sales_order_id] = sales_orders  # tuple unpacking verifies the assumption that the set contains exactly one element (raising ValueError if it has too many or too few elements)
     tracking_codes = frappe.get_all("Tracking Code", filters={'sales_order': sales_order_id}, fields=['name', 'tracking_code', 'sales_order', 'shipping_date'])
     if len(tracking_codes) != 1:
         if len(tracking_codes) > 1:
             msg = f"Found {len(tracking_codes)} Tracking Codes for Sales Order {sales_order_id}. Going to not set the Shipping Date."
-            frappe.log_error(msg, "production.set_shipping_date")
+            frappe.log_error(message=msg, title="production.set_shipping_date")
         return
     if tracking_codes[0]['shipping_date']:
         msg = f"Tracking Code '{tracking_codes[0]['tracking_code']=}' has already Shipping Date {tracking_codes[0]['shipping_date']}."
-        frappe.log_error(msg, "production.set_shipping_date")
+        frappe.log_error(message=msg, title="production.set_shipping_date")
     else:
         tracking_code_doc = frappe.get_doc("Tracking Code", tracking_codes[0]['name'])
         tracking_code_doc.shipping_date = datetime.now()
@@ -453,7 +453,7 @@ def print_delivery_label(delivery_note):
             print_raw(settings.label_printer_ip, settings.label_printer_port, label_content)
         else:
             print(label_content)
-            frappe.log_error( "Please define Flusbox Settings: label printer ip/port; cannot print label", "Production:address_label" )
+            frappe.log_error(message="Please define Flusbox Settings: label printer ip/port; cannot print label", title="Production:address_label")
         return {'success': True, 'message': 'OK'}
     else:
         return {'success': False, 'message': "Delivery Note not found"}
@@ -657,7 +657,7 @@ def create_delivery_note_for_lost_oligos(sales_orders):
                 if len(oligos_to_deliver) == 0:
                     msg = f"It seems that all Oligos from {sales_order} are either canceled or already delivered, but not all Items (Sales Order has Status Overdue). Please create a Delivery Note with the missing Items manually or close the Sales Order."
                     print(msg)
-                    #frappe.log_error(msg, 'create_delivery_note_for_lost_oligos')
+                    #frappe.log_error(message=msg, title='create_delivery_note_for_lost_oligos')
                     continue
 
                 dn.oligos = oligos_to_deliver

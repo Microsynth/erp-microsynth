@@ -109,7 +109,7 @@ def get_next_purchasing_item_id():
         highest_code = 19999
     if highest_code >= 999999:
         msg = f"Item Code Limit reached ({item_codes[0]['name']}). Please contact IT App."
-        frappe.log_error(msg, "naming_series.get_next_purchasing_item_id")
+        frappe.log_error(message=msg, title="naming_series.get_next_purchasing_item_id")
         frappe.throw(msg)
     new_item_code = f"P{(highest_code+1):0{6}d}"
     return new_item_code

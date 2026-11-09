@@ -135,7 +135,7 @@ def parse_file(file_name, company, company_settings, debug=True):
             txt_path = path + "/" + pdf_name[:-4] + ".txt"
             with open(txt_path, 'w') as txt_file:
                 txt_file.write(msg)
-            frappe.log_error(msg, "Batch processing parse file error")
+            frappe.log_error(message=msg, title="Batch processing parse file error")
             if debug:
                 print(f"ERROR: Batch processing parse file error: {msg}")
             # Send an automatic email
@@ -143,7 +143,7 @@ def parse_file(file_name, company, company_settings, debug=True):
             rendered_content = frappe.render_template(email_template.response, {'file_name': file_name, 'err': f"{err}\n{traceback.format_exc()}"})
             send_email_from_template(email_template, rendered_content)
         except Exception as e:
-            frappe.log_error(f"Got the following error during error handling:\n{e}\n{traceback.format_exc()}", "Batch processing parse file error")
+            frappe.log_error(message=f"Got the following error during error handling:\n{e}\n{traceback.format_exc()}", title="Batch processing parse file error")
             if debug:
                 print(f"ERROR: Batch processing error handling: {e}")
 
@@ -155,7 +155,7 @@ def create_invoice(file_name, invoice, settings):
     if 'supplier' in invoice and invoice['supplier']:
         supplier_currency = frappe.get_value("Supplier", invoice['supplier'], "default_currency")
         if supplier_currency and invoice['currency'] != supplier_currency:
-            frappe.log_error(f"INFO: Supplier {invoice['supplier']} has Billing Currency {supplier_currency}. Going to set currency of purchase invoice from {invoice['currency']} to {supplier_currency}.")
+            frappe.log_error(message=f"INFO: Supplier {invoice['supplier']} has Billing Currency {supplier_currency}. Going to set currency of purchase invoice from {invoice['currency']} to {supplier_currency}.")
             invoice['currency'] = supplier_currency
 
     # create purchase invoice

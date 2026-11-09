@@ -22,5 +22,5 @@ def communication_on_insert(self, event):
                 frappe.db.commit()
 
     except Exception as err:
-        frappe.log_error(err, "Communication hook failed")
+        frappe.log_error(message=err, title="Communication hook failed")
     return

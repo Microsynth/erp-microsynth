@@ -57,7 +57,7 @@ def get_email_subject(prm):
         elif (prm.highest_level >= 2):
             subject = _("Microsynth Mahnung") + " " + subject_addition
         else:
-            frappe.log_error(f"Payment Reminder {prm.name} has highest level 0.", "payment_reminder.get_email_subject")
+            frappe.log_error(message=f"Payment Reminder {prm.name} has highest level 0.", title="payment_reminder.get_email_subject")
             subject = _("Microsynth Zahlungserinnerung") + subject_addition
     else:
         subject = _("Microsynth Payment Reminder") + " " + subject_addition
@@ -178,7 +178,7 @@ def print_payment_reminder(prm):
         import subprocess
         subprocess.run(command)
     except subprocess.CalledProcessError as e:
-        frappe.log_error(f"Printing of {prm.name} failed: {str(e)}", "payment_reminder.print_payment_reminder")
+        frappe.log_error(message=f"Printing of {prm.name} failed: {str(e)}", title="payment_reminder.print_payment_reminder")
 
 
 @frappe.whitelist()

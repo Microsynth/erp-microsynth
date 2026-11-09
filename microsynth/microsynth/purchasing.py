@@ -40,26 +40,26 @@ def create_pi_from_si(sales_invoice):
     # create matching purchase invoice
     pi_company = frappe.get_all("Intercompany Settings Company", filters={'customer': si.customer}, fields=['company'])
     if len(pi_company) == 0:
-        frappe.log_error(f"Company for customer {si.customer} is not available, but was requested in the intercompany invoicing of {sales_invoice}. Please check the Intercompany Settings.", "purchasing.create_pi_from_si")
+        frappe.log_error(message=f"Company for customer {si.customer} is not available, but was requested in the intercompany invoicing of {sales_invoice}. Please check the Intercompany Settings.", title="purchasing.create_pi_from_si")
         return None
     else:
         pi_company = pi_company[0]['company']
     if not frappe.db.exists("Company", pi_company):
-        frappe.log_error(f"Company {pi_company} is not available, but was requested in the intercompany invoicing of {sales_invoice}.", "purchasing.create_pi_from_si")
+        frappe.log_error(message=f"Company {pi_company} is not available, but was requested in the intercompany invoicing of {sales_invoice}.", title="purchasing.create_pi_from_si")
         return None
     suppliers = frappe.get_all("Supplier", filters={'supplier_name': si.company}, fields=['name'])
     if suppliers and len(suppliers) == 1:
         if len(suppliers) > 1:
-            frappe.log_error(f"Found {len(suppliers)} Supplier for Company {si.company} on Sales Invoice {si.name}. Going to take the first one.", "purchasing.create_pi_from_si")
+            frappe.log_error(message=f"Found {len(suppliers)} Supplier for Company {si.company} on Sales Invoice {si.name}. Going to take the first one.", title="purchasing.create_pi_from_si")
         pi_supplier = suppliers[0]['name']
     else:
-        frappe.log_error(f"Found no Supplier for Company {si.company} on Sales Invoice {si.name}. Going to return.", "purchasing.create_pi_from_si")
+        frappe.log_error(message=f"Found no Supplier for Company {si.company} on Sales Invoice {si.name}. Going to return.", title="purchasing.create_pi_from_si")
         return None
     pi_cost_center = frappe.get_value("Company", pi_company, "cost_center")
     # find tax template based on sales invoice taxes
     pi_tax_template = find_purchase_tax_template(si.taxes_and_charges, pi_company)
     if not pi_tax_template:
-        frappe.log_error(f"Cannot create purchase invoice, because no purchase tax template was found for {sales_invoice}. Going to return.", "purchasing.create_pi_from_si")
+        frappe.log_error(message=f"Cannot create purchase invoice, because no purchase tax template was found for {sales_invoice}. Going to return.", title="purchasing.create_pi_from_si")
         return None
 
     expense_account = frappe.get_all("Intercompany Settings Supplier",
@@ -71,7 +71,7 @@ def create_pi_from_si(sales_invoice):
 
     if len(expense_account) == 0 or not expense_account[0]['expense_account']:
         product_type_info = f"product type '{si.product_type}'" if si.product_type else "no product type"
-        frappe.log_error(f"Sales Invoice {sales_invoice}: No expense account was found for supplier {pi_supplier} and {product_type_info} for company {pi_company}. Using company default settings. Go and configure Intercompany Settings.", "purchasing.create_pi_from_si")
+        frappe.log_error(message=f"Sales Invoice {sales_invoice}: No expense account was found for supplier {pi_supplier} and {product_type_info} for company {pi_company}. Using company default settings. Go and configure Intercompany Settings.", title="purchasing.create_pi_from_si")
         expense_account = frappe.get_value("Company", pi_company, "default_expense_account")
     else:
         expense_account = expense_account[0]['expense_account']
@@ -510,7 +510,7 @@ def create_po_from_open_mr(filters):
 
     if unique_purchase_warnings:
         # TODO: How to best show warnings to user on the UI side?
-        frappe.log_error(f"Created Purchase Order {po_doc.name} from Material Requests. Used Supplier Quotations: {unique_used_supplier_quotations}. Warnings: {unique_purchase_warnings}", "purchasing.create_po_from_open_mr")
+        frappe.log_error(message=f"Created Purchase Order {po_doc.name} from Material Requests. Used Supplier Quotations: {unique_used_supplier_quotations}. Warnings: {unique_purchase_warnings}", title="purchasing.create_po_from_open_mr")
     return po_doc.name
 
 
@@ -753,7 +753,7 @@ def set_default_payable_accounts(supplier, event):
             continue
         if not frappe.db.exists("Account", account):
             msg = f"Account '{account}' does not exist. Please check if it was renamed."
-            frappe.log_error(msg, "set_default_payable_accounts")
+            frappe.log_error(message=msg, title="set_default_payable_accounts")
             frappe.throw(msg)
             continue
         entry_exists = False
@@ -1691,7 +1691,7 @@ def supplier_change_fetches(supplier_id, company):
         if len(tax_templates) == 1:
             default_tax_template = tax_templates[0]['name']
         else:
-            frappe.log_error(f"There are {len(tax_templates)} default Purchase Taxes and Charges Templates for Company {company}.", "purchasing.supplier_change_fetches")
+            frappe.log_error(message=f"There are {len(tax_templates)} default Purchase Taxes and Charges Templates for Company {company}.", title="purchasing.supplier_change_fetches")
     return {'taxes_and_charges': default_tax_template,
             'payment_terms_template': supplier_doc.payment_terms,
             'default_item_code': supplier_doc.default_item,
@@ -2014,7 +2014,7 @@ def has_available_advances(purchase_invoice_id):
         return len(advances) > 0
 
     except Exception as err:
-        frappe.log_error(f"{err}\n\n{frappe.get_traceback()}", "purchasing.has_available_advances")
+        frappe.log_error(message=f"{err}\n\n{frappe.get_traceback()}", title="purchasing.has_available_advances")
         return False
 
 
@@ -2262,7 +2262,7 @@ def create_material_request(item_code, qty, schedule_date, company, item_name=No
                              item_doc.supplier_items[0])
                 supplier = entry.supplier
                 supplier_currency = frappe.get_value("Supplier", supplier, "default_currency")
-                frappe.log_error(f"Item {item_code} has multiple suppliers but none marked as 'Verified' or without a status. Using supplier {supplier}.", "purchasing.create_material_request")
+                frappe.log_error(message=f"Item {item_code} has multiple suppliers but none marked as 'Verified' or without a status. Using supplier {supplier}.", title="purchasing.create_material_request")
         else:
             frappe.throw(f"Item {item_code} is not assigned to any Supplier, unable to create a Material Request. Please contact the purchasing department.")
     else:
@@ -2461,7 +2461,7 @@ def create_material_request_drafts_from_stock_overview(company="Microsynth AG", 
             "planned": planned,
             "skipped": skipped
         }
-        frappe.log_error(json.dumps(summary, indent=2), "purchasing.create_material_request_drafts_from_stock_overview")
+        frappe.log_error(message=json.dumps(summary, indent=2), title="purchasing.create_material_request_drafts_from_stock_overview")
         return summary
     finally:
         if frappe.session.user != previous_user:
@@ -2486,7 +2486,7 @@ def create_mr_from_item_request(item_request_id, item):
         ir.save()
         return mr_id
     except Exception as err:
-        frappe.log_error(f"{err}\n\n{frappe.get_traceback()}", "purchasing.create_mr_from_item_request")
+        frappe.log_error(message=f"{err}\n\n{frappe.get_traceback()}", title="purchasing.create_mr_from_item_request")
         frappe.throw(f"Error creating Material Request from Item Request {item_request_id}: {err}")
 
 
@@ -2514,7 +2514,7 @@ def check_unbatched_items(item_codes):
 
         if has_batch_no is None:
             # Item does not exist — optionally skip or log
-            frappe.log_error(f"Item not found: {item_code}", "Batch Validation")
+            frappe.log_error(message=f"Item not found: {item_code}", title="Batch Validation")
             continue  # or raise exception if strict
 
         if has_batch_no:

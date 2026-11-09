@@ -128,7 +128,7 @@ def update_contacts_from_new_orders(previous_days):
                 except Exception as e:
                     msg = f"Unable to save Contact {contact.name} due to the following error:\n{e}"
                     print(msg)
-                    frappe.log_error(msg, 'marketing.update_contacts_from_new_orders')
+                    frappe.log_error(message=msg, title='marketing.update_contacts_from_new_orders')
 
         updated_contact_persons.add(order['contact_person'])
         frappe.db.commit()
@@ -213,7 +213,7 @@ def update_customer_status(customers):
         except Exception as e:
             msg = f"Got the following error when querying Contacts of the Customer '{customer['name']}':\n{e}"
             print(msg)
-            frappe.log_error(msg, 'marketing.update_customer_status')
+            frappe.log_error(message=msg, title='marketing.update_customer_status')
             continue
 
         status = {'active': False, 'former': False}
@@ -249,7 +249,7 @@ def update_customer_status(customers):
                 except Exception as e:
                     msg = f"Unable to save Contact {contact.name} due to the following error:\n{e}"
                     print(msg)
-                    frappe.log_error(msg, 'marketing.update_customer_status')
+                    frappe.log_error(message=msg, title='marketing.update_customer_status')
 
         if idx % 200 == 0 and idx > 0:
             frappe.db.commit()
@@ -283,7 +283,7 @@ def update_contact_classification(sales_orders, contact_name):
         except Exception as e:
             msg = f"Unable to save Contact {contact_name} due to the following error:\n{e}"
             print(msg)
-            frappe.log_error(msg, 'marketing.initialize_contact_classification')
+            frappe.log_error(message=msg, title='marketing.initialize_contact_classification')
         frappe.db.commit()
 
 

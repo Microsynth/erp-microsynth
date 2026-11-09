@@ -264,7 +264,7 @@ def _validate_single_sample_report(analysis_report, analysis_report_doc, log_tit
         msg = f"Analysis Report '{analysis_report}' has no sample details, but the file naming is only defined for reports with exactly one sample."
     else:
         return True
-    frappe.log_error(msg, log_title)
+    frappe.log_error(message=msg, title=log_title)
     frappe.throw(msg)
     return False
 
@@ -349,7 +349,7 @@ def send_reports(recipient, cc_mails, analysis_reports):
             )
     except Exception as err:
         err_str = f'{recipient=}, {cc_mails=}, {analysis_reports=}:\nGot the following error: {err}\n{type(err).__name__}\n{traceback.format_exc()}'
-        frappe.log_error(err_str, 'lab_reporting.send_reports')
+        frappe.log_error(message=err_str, title='lab_reporting.send_reports')
         return {'success': False, 'message': err_str}
     return {'success': True, 'message': f"Successfully send Analysis Report(s) to '{recipient}'"}
 
@@ -480,7 +480,7 @@ def set_sample_labels_processed(samples):
             seq_label.save()
     except Exception as err:
         err_str = f'{samples=}:\nGot the following error: {err}\n{type(err).__name__}\n{traceback.format_exc()}'
-        frappe.log_error(err_str, 'lab_reporting.set_sample_labels_processed')
+        frappe.log_error(message=err_str, title='lab_reporting.set_sample_labels_processed')
         return {'success': False, 'message': err_str}
     return {'success': True, 'message': 'OK'}
 
@@ -573,7 +573,7 @@ def check_mycoplasma_sales_order_completion(verbose=False):
 
         except Exception as err:
             msg = f"Cannot create a Delivery Note for Sales Order '{sales_order['name']}': \n{err}\n\n{traceback.format_exc()}"
-            frappe.log_error(msg, "lab_reporting.check_mycoplasma_sales_order_completion")
+            frappe.log_error(message=msg, title="lab_reporting.check_mycoplasma_sales_order_completion")
             if verbose:
                 print(msg)
 
@@ -592,7 +592,7 @@ def check_submit_mycoplasma_delivery_note(delivery_note, verbose=False):
             msg = f"Delivery Note '{delivery_note.name}' is not in Draft. docstatus: {delivery_note.docstatus}"
             if verbose:
                 print(msg)
-            frappe.log_error(msg, "lab_reporting.check_submit_mycoplasma_delivery_note")
+            frappe.log_error(message=msg, title="lab_reporting.check_submit_mycoplasma_delivery_note")
             return
 
         sales_orders = []
@@ -608,7 +608,7 @@ def check_submit_mycoplasma_delivery_note(delivery_note, verbose=False):
             msg = f"Delivery Note '{delivery_note.name}' is derived from {len(sales_orders)} Sales Orders. Not going to submit it."
             if verbose:
                 print(msg)
-            frappe.log_error(msg, "lab_reporting.check_submit_mycoplasma_delivery_note")
+            frappe.log_error(message=msg, title="lab_reporting.check_submit_mycoplasma_delivery_note")
             return
 
         # Check that the delivery note was created at least 7 days ago
@@ -680,7 +680,7 @@ def check_submit_mycoplasma_delivery_note(delivery_note, verbose=False):
 
     except Exception as err:
         msg = f"Cannot process Delivery Note '{delivery_note.name}': \n{err}\n\n{traceback.format_exc()}"
-        frappe.log_error(msg, "lab_reporting.check_submit_mycoplasma_delivery_note")
+        frappe.log_error(message=msg, title="lab_reporting.check_submit_mycoplasma_delivery_note")
         if verbose:
             print(msg)
 

@@ -91,7 +91,7 @@ def get_sales_volume(contact):
         yearly_volume += monthly_volume
 
     if first_day_past_year is None or last_month_date is None:
-        frappe.log_error(f"first_day_past_year or last_month_date is None for {contact=}", "portfolio.get_sales_volume")
+        frappe.log_error(message=f"first_day_past_year or last_month_date is None for {contact=}", title="portfolio.get_sales_volume")
         return data
     data.append({
         'date': "{0} - {1}".format(first_day_past_year.strftime("%d.%m.%Y"), last_month_date.strftime("%d.%m.%Y")),
@@ -123,7 +123,7 @@ def get_yearly_order_sum(contact_id):
                         GROUP BY `currency`
                     """, as_dict=True)
         if len(data) > 1:
-            frappe.log_error(f"There seem to be {len(data)} different currencies on Sales Orders of Contact '{contact_id}' from {year}.", "portfolio.get_yearly_order_sum")
+            frappe.log_error(message=f"There seem to be {len(data)} different currencies on Sales Orders of Contact '{contact_id}' from {year}.", title="portfolio.get_yearly_order_sum")
             yearly_order_sum.append({
                 'amount': sum((entry.total or 0) for entry in data),
                 'currency': 'different'
@@ -172,7 +172,7 @@ def get_sales_qty(contact):
 
         yearly_volume += monthly_volume
     if first_day_past_year is None or last_month_date is None:
-        frappe.log_error(f"first_day_past_year or last_month_date is None for {contact=}", "portfolio.get_sales_qty")
+        frappe.log_error(message=f"first_day_past_year or last_month_date is None for {contact=}", title="portfolio.get_sales_qty")
         return data
     data.append({
         'date': "{0} - {1}".format(first_day_past_year.strftime("%d.%m.%Y"), last_month_date.strftime("%d.%m.%Y")),

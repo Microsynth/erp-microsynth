@@ -190,7 +190,7 @@ def import_job_applicants(verbose=False):
                 }).insert(ignore_permissions=True)
             except Exception as e:
                 msg = f"Failed to attach file `{file_path}` to {doc.doctype} {doc.name}: {str(e)}"
-                frappe.log_error(msg, "Job Applicant Import")
+                frappe.log_error(message=msg, title="Job Applicant Import")
                 frappe.get_doc({
                     'doctype': 'Comment',
                     'comment_type': 'Comment',
@@ -251,14 +251,14 @@ def import_job_applicants(verbose=False):
                 if verbose:
                     print(f"Missing mandatory fields in {fname}: {msg}")
                 _move_to_error_folder(fname, msg)
-                frappe.log_error(msg, "Job Applicant Import")
+                frappe.log_error(message=msg, title="Job Applicant Import")
                 continue
 
             if not frappe.db.exists("Job Opening", data.get("job_id")):
                 msg = f"Job Opening {data.get('job_id')} not found for {fname}"
                 if verbose:
                     print(msg)
-                frappe.log_error(msg, "Job Applicant Import")
+                frappe.log_error(message=msg, title="Job Applicant Import")
                 _move_to_error_folder(fname, msg)
                 continue
 
@@ -277,14 +277,14 @@ def import_job_applicants(verbose=False):
                     msg = f"Existing Job Applicant {applicant.name} has status '{applicant.status}' which is not 'Open'. Skipping update from {fname}."
                     if verbose:
                         print(msg)
-                    frappe.log_error(msg, "Job Applicant Import")
+                    frappe.log_error(message=msg, title="Job Applicant Import")
                     _move_to_error_folder(fname, msg)
                     continue
                 if applicant.assessments:
                     msg = f"Existing Job Applicant {applicant.name} has Assessments. Skipping update from {fname}."
                     if verbose:
                         print(msg)
-                    frappe.log_error(msg, "Job Applicant Import")
+                    frappe.log_error(message=msg, title="Job Applicant Import")
                     _move_to_error_folder(fname, msg)
                     continue
                 if applicant.applicant_name != new_applicant_name:
@@ -317,7 +317,7 @@ def import_job_applicants(verbose=False):
                 msg = f"Multiple existing Job Applicants found for email {data.get('email')} and Job ID {data.get('job_id')}: {[a.name for a in existing_applicants]}"
                 if verbose:
                     print(msg)
-                frappe.log_error(msg, "Job Applicant Import")
+                frappe.log_error(message=msg, title="Job Applicant Import")
                 _move_to_error_folder(fname, msg)
                 continue
 
@@ -362,7 +362,7 @@ def import_job_applicants(verbose=False):
                         msg = f"Missing PDF {pdf_name} for {fname}"
                         if verbose:
                             print(f"{msg} (expected at: {pdf_path})")
-                        frappe.log_error(msg, "Job Applicant Import")
+                        frappe.log_error(message=msg, title="Job Applicant Import")
                         _move_to_error_folder(fname, msg)
                         break
                     if verbose:
@@ -405,8 +405,8 @@ def import_job_applicants(verbose=False):
                 import traceback
                 traceback.print_exc()
             frappe.log_error(
-                f"Failed to process {fname}:\n" + frappe.get_traceback(),
-                "Job Applicant Import"
+                message=f"Failed to process {fname}:\n" + frappe.get_traceback(),
+                title="Job Applicant Import"
             )
             _move_to_error_folder(fname, frappe.get_traceback())
 

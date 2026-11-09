@@ -287,14 +287,14 @@ def change_reference_rate(reference_price_list_name, item_code, min_qty, referen
     except ValueError:
         msg = f"Cannot convert '{reference_rate}' or '{new_reference_rate}' to a float ({reference_price_list_name=}, {item_code=}, {min_qty=}). Going to return."
         print(msg)
-        frappe.log_error(msg, "pricing.change_reference_rate")
+        frappe.log_error(message=msg, title="pricing.change_reference_rate")
         return negative_discount_warnings
 
     current_reference_rate = get_rate_or_none(item_code, reference_price_list_name, min_qty)
     if current_reference_rate is None:
         msg = f"No reference rate found for {item_code=}, {reference_price_list_name=}, {min_qty=}. Going to return."
         print(msg)
-        frappe.log_error(msg, "pricing.change_reference_rate")
+        frappe.log_error(message=msg, title="pricing.change_reference_rate")
         return negative_discount_warnings
 
     if abs(reference_rate - new_reference_rate) < PRICE_EPSILON:
@@ -304,13 +304,13 @@ def change_reference_rate(reference_price_list_name, item_code, min_qty, referen
     if abs(current_reference_rate - reference_rate) > PRICE_EPSILON:
         msg = f"{current_reference_rate=} in the ERP is unequals given {reference_rate=} ({reference_price_list_name=}, {item_code=}, {min_qty=}). Going to return."
         print(msg)
-        frappe.log_error(msg, "pricing.change_reference_rate")
+        frappe.log_error(message=msg, title="pricing.change_reference_rate")
         return negative_discount_warnings
 
     if frappe.get_value('Item', item_code, 'disabled'):
         msg = f"Item {item_code} is disabled. Unable to change Item Prices with {min_qty=} for reference price list '{reference_price_list_name}'. Going to return."
         print(msg)
-        frappe.log_error(msg, "pricing.change_reference_rate")
+        frappe.log_error(message=msg, title="pricing.change_reference_rate")
         return negative_discount_warnings
 
     changes = "pricelist;old_rate;new_rate"
@@ -335,7 +335,7 @@ def change_reference_rate(reference_price_list_name, item_code, min_qty, referen
         if abs(reference_rate) < PRICE_EPSILON:  # reference_rate is too close to 0 to calculate the discount (division by 0 issue) -> apply General Discount
             #msg = f"Unable to change customer Price List rate for item {item_code} with {min_qty=} on Price List '{price_list['name']}' since {reference_rate=} is too close to 0 to divide by it for computing the current discount"
             #msg = f"WARNING: {reference_rate=} -> Customer Price List rate is set to 0"
-            #frappe.log_error(msg, 'pricing.change_reference_rate')
+            #frappe.log_error(message=msg, title='pricing.change_reference_rate')
             try:
                 general_discount = frappe.get_value("Price List", price_list['name'], "general_discount")
                 new_customer_rate = ((100 - general_discount) / 100) * new_reference_rate
@@ -344,7 +344,7 @@ def change_reference_rate(reference_price_list_name, item_code, min_qty, referen
             except Exception as e:
                 msg = f"Got the following exception when trying to save a new customer rate for item {item_code} with minimum quantity {min_qty} on Price List '{price_list['name']}':\n{e}"
                 print(msg)
-                frappe.log_error(msg, 'pricing.change_reference_rate')
+                frappe.log_error(message=msg, title='pricing.change_reference_rate')
             else:
                 changes += f"\n{price_list['name']};{customer_rate};{new_customer_rate}"
                 counter += 1
@@ -356,7 +356,7 @@ def change_reference_rate(reference_price_list_name, item_code, min_qty, referen
             # "customer_price_list;reference_price_list;item_code;min_qty;customer_rate;reference_rate;discount"
             negative_discount_warnings += f"{price_list['name']};{reference_price_list_name};{item_code};{min_qty};{customer_rate};{reference_rate};{round(discount, 2)}\n"
             #msg = f"WARNING: {discount=} < 0 for item {item_code} with {min_qty=} on Price List '{price_list['name']}' -> new Customer Price List rate will be higher than reference Price List rate"
-            #frappe.log_error(msg, 'pricing.change_reference_rate')
+            #frappe.log_error(message=msg, title='pricing.change_reference_rate')
             discount = 0
 
         new_customer_rate = ((100 - discount) / 100) * new_reference_rate
@@ -366,7 +366,7 @@ def change_reference_rate(reference_price_list_name, item_code, min_qty, referen
         except Exception as e:
             msg = f"Got the following exception when trying to save the new customer rate {new_customer_rate} for item {item_code} with minimum quantity {min_qty} on Price List '{price_list['name']}':\n{e}"
             print(msg)
-            frappe.log_error(msg, 'pricing.change_reference_rate')
+            frappe.log_error(message=msg, title='pricing.change_reference_rate')
         else:
             changes += f"\n{price_list['name']};{customer_rate};{new_customer_rate}"
             counter += 1
@@ -380,7 +380,7 @@ def change_reference_rate(reference_price_list_name, item_code, min_qty, referen
     if len(changes) > max_length:
         msg = f"{len(changes)=} -> string is going to be truncated to {max_length} characters. Please revise architecture. ({user=}; {price_list['name']=}; {reference_price_list_name=}; {item_code=}; {min_qty=}; {customer_rate=}; {reference_rate=};)"
         print(msg)
-        frappe.log_error(msg, 'pricing.change_reference_rate')
+        frappe.log_error(message=msg, title='pricing.change_reference_rate')
     item_price_log = frappe.get_doc({
         'doctype': 'Item Price Log',
         'price_list': reference_price_list_name,

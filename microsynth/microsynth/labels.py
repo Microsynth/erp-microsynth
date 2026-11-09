@@ -187,7 +187,7 @@ def print_shipping_label(sales_order_id):
         sales_order.save()
         frappe.db.commit()
     else:
-        frappe.log_error(f"Found no Brady printer for Company '{sales_order.company}' and Sales Order '{sales_order_id}'.", "labels.print_shipping_label")
+        frappe.log_error(message=f"Found no Brady printer for Company '{sales_order.company}' and Sales Order '{sales_order_id}'.", title="labels.print_shipping_label")
 
 
 @frappe.whitelist()
@@ -201,7 +201,7 @@ def print_contact_shipping_label(address_id, contact_id, customer_id):
         user_settings = frappe.get_doc("User Settings", frappe.session.user)
         sender_company = user_settings.qm_process_assignments[0].company
     except Exception as err:
-        frappe.log_error(f"{err}", "labels.print_contact_shipping_label")
+        frappe.log_error(message=f"{err}", title="labels.print_contact_shipping_label")
         sender_company = "Microsynth AG"
     letter_head = frappe.get_doc("Letter Head", sender_company)
     country = frappe.get_value("Address", address_id, "country")
@@ -221,7 +221,7 @@ def print_contact_shipping_label(address_id, contact_id, customer_id):
     if printer:
         print_raw(printer.ip, printer.port, content)
     else:
-        frappe.log_error(f"Found no Brady printer for Company '{sender_company}' and Address '{address_id}'.", "labels.print_contact_shipping_label")
+        frappe.log_error(message=f"Found no Brady printer for Company '{sender_company}' and Address '{address_id}'.", title="labels.print_contact_shipping_label")
 
 
 @frappe.whitelist()
@@ -252,10 +252,10 @@ def print_oligo_order_labels(sales_orders):
         except Exception as err:
             msg = "Error printing label for '{0}':\n{1}".format(sales_order.name, err)
             if str(err) != '[Errno 111] Connection refused':
-                frappe.log_error(msg, "print_oligo_order_labels")
+                frappe.log_error(message=msg, title="print_oligo_order_labels")
             frappe.throw(msg)
         if warning:
-            frappe.log_error(warning, "print_oligo_order_labels")
+            frappe.log_error(message=warning, title="print_oligo_order_labels")
             frappe.throw(warning)
     return
 
@@ -264,7 +264,7 @@ def notify_ups_batchfile_error(msg, title="create_ups_batch_file"):
     """
     Helper function to log and notify the administration about errors in the UPS batch file creation.
     """
-    #frappe.log_error(msg, title)
+    #frappe.log_error(message=msg, title=title)
     email_template = frappe.get_doc("Email Template", "UPS batch file creation error")
     rendered_content = frappe.render_template(email_template.response, {'message': msg})
     send_email_from_template(email_template, rendered_content)
@@ -369,7 +369,7 @@ def _prepare_ups_batch_lines(sales_orders):
             notify_ups_batchfile_error(f"contact_phone on Sales Order {sales_order.name} contains only unallowed characters: '{sales_order.contact_phone}', taking 0041717228333 instead", "create_ups_batch_file")
             phone = '0041717228333'  # default phone number
         if sales_order.contact_phone and phone and not phone.isdigit():
-            frappe.log_error(f"WARNING: Cleaned phone='{phone}' on Sales Order {sales_order.name} contains characters that are not digits. The original contact_phone was '{sales_order.contact_phone}'.", "create_ups_batch_file")
+            frappe.log_error(message=f"WARNING: Cleaned phone='{phone}' on Sales Order {sales_order.name} contains characters that are not digits. The original contact_phone was '{sales_order.contact_phone}'.", title="create_ups_batch_file")
         is_express = 'EXP' in label_data['shipping_service']
         weight = '"0,1"'
         customer_name = sanitize_text((address.overwrite_company or sales_order.order_customer_display or sales_order.customer_name).replace(',', '').replace('–', '-'))[:35]
@@ -531,7 +531,7 @@ def print_instrument_label(qm_instrument_id, acquisition_date):
             }
     except Exception as err:
         msg = f"Error printing label for QM Instrument '{qm_instrument_id}': {err}"
-        frappe.log_error(f"{msg}\n{traceback.format_exc()}", "labels.print_instrument_label")
+        frappe.log_error(message=f"{msg}\n{traceback.format_exc()}", title="labels.print_instrument_label")
         return {
             "success": False,
             "message": f"Error printing label for QM Instrument '{qm_instrument_id}': {err}"
@@ -585,7 +585,7 @@ def print_purchasing_labels(label_table, is_legacy=False, use_brady=True):
                     prepare_brady_rows(row, username, is_legacy, receipt_date)
                 # Render the label
                 content = frappe.render_template(purchase_label_template, {"row": row})
-                #frappe.log_error(f"DEBUG: Starting to print purchasing labels with label_table={label_table},\n\nis_legacy={is_legacy}, use_brady={use_brady}, label_printer_ip={label_printer_ip}, label_printer_port={label_printer_port},\npurchase_label_template={purchase_label_template}, username={username}, receipt_date={receipt_date},\n\ncontent={content}")
+                #frappe.log_error(message=f"DEBUG: Starting to print purchasing labels with label_table={label_table},\n\nis_legacy={is_legacy}, use_brady={use_brady}, label_printer_ip={label_printer_ip}, label_printer_port={label_printer_port},\npurchase_label_template={purchase_label_template}, username={username}, receipt_date={receipt_date},\n\ncontent={content}")
                 #return
                 # Send to printer
                 if use_brady:
@@ -595,7 +595,7 @@ def print_purchasing_labels(label_table, is_legacy=False, use_brady=True):
                     s.send(content.encode())
         s.close()
     except Exception as err:
-        frappe.log_error(frappe.get_traceback(), "print_purchasing_labels")
+        frappe.log_error(message=frappe.get_traceback(), title="print_purchasing_labels")
         frappe.throw(f"Error printing labels: {err}")
 
 
