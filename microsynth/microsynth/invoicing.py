@@ -1014,7 +1014,35 @@ def get_address_dict(customer, contact, address, country_codes):
 def create_position_list(sales_invoice, exclude_shipping):
     """
     Create a list of the invoice positions of a sales_invoice as a list of dictionaries.
+    Accept a Sales Invoice document or its name.
+
+    bench execute microsynth.microsynth.invoicing.create_position_list --kwargs "{'sales_invoice': 'SI-BAL-26026916', 'exclude_shipping': True}"
     """
+    if isinstance(sales_invoice, str):
+        sales_invoice = frappe.get_doc("Sales Invoice", sales_invoice)
+
+    def load_position_records(doctype, names, name_field):
+        names = list(dict.fromkeys(names))
+        if not names:
+            return {}, {}
+        records = frappe.get_all(doctype, filters={'name': ['in', names]},
+            fields=['name', 'web_id', name_field])
+        records_by_name = {record['name']: record for record in records}
+        for name in names:
+            if name not in records_by_name:
+                frappe.throw(f"{doctype} {name} not found", frappe.DoesNotExistError)
+        item_rows = frappe.get_all(f"{doctype} Item",
+            filters={'parent': ['in', names], 'parenttype': doctype, 'parentfield': 'items'},
+            fields=['parent', 'item_code', 'qty'], order_by='idx asc')
+        items_by_parent = {name: [] for name in names}
+        for row in item_rows:
+            items_by_parent[row['parent']].append(row)
+        return records_by_name, items_by_parent
+
+    oligos, oligo_items = load_position_records(
+        'Oligo', [row.oligo for row in sales_invoice.oligos], 'oligo_name')
+    samples, sample_items = load_position_records(
+        'Sample', [row.sample for row in sales_invoice.samples], 'sample_name')
     item_details = {}
 
     for item in sales_invoice.items:
@@ -1030,20 +1058,20 @@ def create_position_list(sales_invoice, exclude_shipping):
         position = {}
         number += 1
         rate_total = 0
-        oligo = frappe.get_doc("Oligo", o.oligo)
+        oligo = oligos[o.oligo]
 
-        for n in oligo.items:
-            if n.item_code in item_details:
-                rate_total += n.qty * item_details[n.item_code].rate
+        for row in oligo_items[o.oligo]:
+            if row['item_code'] in item_details:
+                rate_total += row['qty'] * item_details[row['item_code']].rate
 
-            if n.item_code not in used_items:
-                used_items[n.item_code] = n.qty
+            if row['item_code'] not in used_items:
+                used_items[row['item_code']] = row['qty']
             else:
-                used_items[n.item_code] = used_items[n.item_code] + n.qty
+                used_items[row['item_code']] = used_items[row['item_code']] + row['qty']
 
         position["number"] = number
-        position["item"] = "{0}-{1}".format(sales_invoice.web_order_id, oligo.web_id)
-        position["description"] = oligo.oligo_name
+        position["item"] = "{0}-{1}".format(sales_invoice.web_order_id, oligo['web_id'])
+        position["description"] = oligo['oligo_name']
         position["quantity"] = 1
         position["uom"] = "Pcs"
         position["rate"] = rate_total
@@ -1057,20 +1085,20 @@ def create_position_list(sales_invoice, exclude_shipping):
         position = {}
         number += 1
         rate_total = 0
-        sample = frappe.get_doc("Sample", s.sample)
+        sample = samples[s.sample]
 
-        for n in sample.items:
-            if n.item_code in item_details:
-                rate_total += n.qty * item_details[n.item_code].rate
+        for row in sample_items[s.sample]:
+            if row['item_code'] in item_details:
+                rate_total += row['qty'] * item_details[row['item_code']].rate
 
-            if n.item_code not in used_items:
-                used_items[n.item_code] = n.qty
+            if row['item_code'] not in used_items:
+                used_items[row['item_code']] = row['qty']
             else:
-                used_items[n.item_code] = used_items[n.item_code] + n.qty
+                used_items[row['item_code']] = used_items[row['item_code']] + row['qty']
 
         position["number"] = number
-        position["item"] = "{0}-{1}".format(sales_invoice.web_order_id, sample.web_id)
-        position["description"] = sample.sample_name
+        position["item"] = "{0}-{1}".format(sales_invoice.web_order_id, sample['web_id'])
+        position["description"] = sample['sample_name']
         position["quantity"] = 1
         position["uom"] = "Pcs"
         position["rate"] = rate_total
