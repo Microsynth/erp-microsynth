@@ -174,12 +174,12 @@ def get_billing_address(customer):
         customer = frappe.get_doc("Customer", customer)
     invoice_to_contact = customer.invoice_to
     if not invoice_to_contact:
-        #frappe.log_error(f"Customer '{customer.name}' has no Invoice To Contact.", "utils.get_billing_address")
+        #frappe.log_error(message=f"Customer '{customer.name}' has no Invoice To Contact.", title="utils.get_billing_address")
         return find_billing_address(customer.name)
     billing_address = frappe.get_value("Contact", invoice_to_contact, "address")
     if not billing_address:
         if invoice_to_contact.isnumeric():
-            frappe.log_error(f"Contact '{invoice_to_contact}' has no Address.", "utils.get_billing_address")
+            frappe.log_error(message=f"Contact '{invoice_to_contact}' has no Address.", title="utils.get_billing_address")
         return find_billing_address(customer.name)
     addresses = frappe.db.sql(f"""
             SELECT
@@ -240,7 +240,7 @@ def find_billing_address(customer_id):
     else:
         #frappe.throw("None or multiple billing addresses found for customer '{0}'".format(customer_id), "find_billing_address")
         if customer_id.isnumeric():
-            frappe.log_error(f"Found {len(addresses)} billing addresses for Customer '{customer_id}'", "find_billing_address")
+            frappe.log_error(message=f"Found {len(addresses)} billing addresses for Customer '{customer_id}'", title="find_billing_address")
         return None
 
 
@@ -378,10 +378,10 @@ def create_sample(sample):
             label = frappe.get_doc("Sequencing Label", matching_labels[0]["name"])
         else:
             # TODO: activate error logging, when labels are in the ERP
-            # frappe.log_error("Sequencing Label for sample with web id '{web_id}' not found: barcode number '{barcode}', item '{item}'".format(
+            # frappe.log_error(message="Sequencing Label for sample with web id '{web_id}' not found: barcode number '{barcode}', item '{item}'".format(
             #     web_id = sample['sample_web_id'],
             #     barcode = sample.get("sequencing_label"),
-            #     item =sample.get("label_item_code") ), "utils: create_sample")
+            #     item =sample.get("label_item_code") ), title="utils: create_sample")
             label = None
 
         # create sample
@@ -558,12 +558,12 @@ def get_country_express_shipping_item(country_name, currency):
             express_items.append(item)
 
     if len(express_items) == 0:
-        frappe.log_error(f"No preferred express item found for country '{country_name}' and currency {currency}", "utils.get_country_express_shipping_item")
+        frappe.log_error(message=f"No preferred express item found for country '{country_name}' and currency {currency}", title="utils.get_country_express_shipping_item")
         return None
     if len(express_items) > 0:
 
         if len(express_items) > 1:
-            frappe.log_error(f"Multiple preferred express shipping items found for country '{country_name}' and currency {currency}", "utils.get_country_express_shipping_item")
+            frappe.log_error(message=f"Multiple preferred express shipping items found for country '{country_name}' and currency {currency}", title="utils.get_country_express_shipping_item")
         return express_items[0]
 
 
@@ -583,7 +583,7 @@ def get_customer_express_shipping_item(customer_name):
         return None
     if len(express_items) > 0:
         if len(express_items) > 1:
-            frappe.log_error("Multiple preferred express shipping items found for customer '{0}'".format(customer_name), "utils.get_customer_express_shipping_item")
+            frappe.log_error(message="Multiple preferred express shipping items found for customer '{0}'".format(customer_name), title="utils.get_customer_express_shipping_item")
         return express_items[0]
 
 
@@ -629,19 +629,19 @@ def get_export_category(address_name):
     elif country == "Spain":
         postal_code = frappe.get_value('Address', address_name, 'pincode')
         if not postal_code:
-            frappe.log_error(f"Empty postal_code for {address_name=} in Spain.", "utils.get_export_category")
+            frappe.log_error(message=f"Empty postal_code for {address_name=} in Spain.", title="utils.get_export_category")
             return frappe.get_value('Country', country, 'export_code')
         try:
             # delete non-numeric characters
             numeric_postal_code = re.sub('\D', '', postal_code)
         except Exception as err:
-            frappe.log_error(f"Got the following error when trying to delete non-numeric characters from postal code '{postal_code}' of {address_name=} in Spain:\n{err}", "utils.get_export_category")
+            frappe.log_error(message=f"Got the following error when trying to delete non-numeric characters from postal code '{postal_code}' of {address_name=} in Spain:\n{err}", title="utils.get_export_category")
             return frappe.get_value('Country', country, 'export_code')
         if not numeric_postal_code:
-            frappe.log_error(f"Postal code '{postal_code}' for {address_name=} in Spain does not contain any numbers.", "utils.get_export_category")
+            frappe.log_error(message=f"Postal code '{postal_code}' for {address_name=} in Spain does not contain any numbers.", title="utils.get_export_category")
             return frappe.get_value('Country', country, 'export_code')
         if len(numeric_postal_code) != 5:
-            frappe.log_error(f"Postal code '{postal_code}' for {address_name=} in Spain does not contain five digits.", "utils.get_export_category")
+            frappe.log_error(message=f"Postal code '{postal_code}' for {address_name=} in Spain does not contain five digits.", title="utils.get_export_category")
             return frappe.get_value('Country', country, 'export_code')
         pc_prefix = int(numeric_postal_code[:2])
         if pc_prefix == 35 or pc_prefix == 38:
@@ -680,7 +680,7 @@ def get_margin_from_company(company):
     if len(margins) == 1:
         return margins[0]['margin']
     else:
-        frappe.log_error(f"There are {len(margins)} Companies '{company}' in the Intercompany Settings.", "utils.get_margin_from_company")
+        frappe.log_error(message=f"There are {len(margins)} Companies '{company}' in the Intercompany Settings.", title="utils.get_margin_from_company")
         return None
 
 
@@ -689,7 +689,7 @@ def get_margin_from_customer(customer):
     if len(margins) == 1:
         return margins[0]['margin']
     else:
-        frappe.log_error(f"There are {len(margins)} Customers '{customer}' in the Intercompany Settings.", "utils.get_margin_from_company")
+        frappe.log_error(message=f"There are {len(margins)} Customers '{customer}' in the Intercompany Settings.", title="utils.get_margin_from_company")
         return None
 
 
@@ -706,7 +706,7 @@ def get_supplier_for_product_type(company, product_type):
     )
     if len(suppliers) > 0:
         if len(suppliers) > 1:
-            frappe.log_error(f"Multiple suitable intercompany suppliers found for {company} and {product_type}", "utils.get_supplier_for_product_type")
+            frappe.log_error(message=f"Multiple suitable intercompany suppliers found for {company} and {product_type}", title="utils.get_supplier_for_product_type")
         return suppliers[0]
     else:
         return None
@@ -768,7 +768,7 @@ def validate_sales_order_status(sales_order):
     customer = get_customer_from_sales_order(sales_order)
 
     if customer.disabled:
-        frappe.log_error("Customer '{0}' of order '{1}' is disabled. Cannot create a delivery note.".format(customer.name, sales_order), "utils.validate_sales_order_status")
+        frappe.log_error(message="Customer '{0}' of order '{1}' is disabled. Cannot create a delivery note.".format(customer.name, sales_order), title="utils.validate_sales_order_status")
         return False
 
     so = frappe.get_doc("Sales Order", sales_order)
@@ -781,17 +781,17 @@ def validate_sales_order_status(sales_order):
             so_url_string = f"<a href={get_url_to_form('Sales Order', so.name)}>{so.name}</a>"
             rendered_content = frappe.render_template(email_template.response, {'sales_order_id': so_url_string, 'web_order_id': so.web_order_id, 'status': so.status})
             send_email_from_template(email_template, rendered_content, rendered_subject)
-            #frappe.log_error(f'Sales Order {so.name} with Web Order ID {so.web_order_id} is in status {so.status}. Cannot create a Delivery Note.\n\nSent an email to {email_template.recipients}.', 'utils.validate_sales_order_status')
+            #frappe.log_error(message=f'Sales Order {so.name} with Web Order ID {so.web_order_id} is in status {so.status}. Cannot create a Delivery Note.\n\nSent an email to {email_template.recipients}.', title='utils.validate_sales_order_status')
         else:
-            frappe.log_error(f'Sales Order {so.name} with Web Order ID {so.web_order_id} is in status {so.status}. Cannot create a Delivery Note.\n\n{user=}', 'utils.validate_sales_order_status')
+            frappe.log_error(message=f'Sales Order {so.name} with Web Order ID {so.web_order_id} is in status {so.status}. Cannot create a Delivery Note.\n\n{user=}', title='utils.validate_sales_order_status')
         return False
 
     if so.docstatus != 1:
-        frappe.log_error(f"Sales Order {so.name} is not submitted and has docstatus {so.docstatus}. Cannot create a delivery note.", "utils.validate_sales_order_status")
+        frappe.log_error(message=f"Sales Order {so.name} is not submitted and has docstatus {so.docstatus}. Cannot create a delivery note.", title="utils.validate_sales_order_status")
         return False
 
     if not so.taxes_and_charges or so.taxes_and_charges == "":
-        frappe.log_error(f"Sales Order {so.name} has no Sales Taxes and Charges Template. Cannot create a delivery note.", "utils.validate_sales_order_status")
+        frappe.log_error(message=f"Sales Order {so.name} has no Sales Taxes and Charges Template. Cannot create a delivery note.", title="utils.validate_sales_order_status")
         return False
 
     return True
@@ -818,7 +818,7 @@ def clean_up_delivery_notes(sales_order_id):
 
         if dn.docstatus == 1:
             if has_dn:
-                frappe.log_error("Sales Order '{0}' has delivery notes in submitted and draft mode".format(sales_order_id), "utils.clean_up_delivery_notes")
+                frappe.log_error(message="Sales Order '{0}' has delivery notes in submitted and draft mode".format(sales_order_id), title="utils.clean_up_delivery_notes")
             # delivery note is submitted. keep it.
             has_dn = True
 
@@ -832,7 +832,7 @@ def clean_up_delivery_notes(sales_order_id):
             dn.delete()
 
         else:
-            frappe.log_error("Delivery Note '{0}' is not in draft status. Cannot delete it. Status: {1}".format(dn.name, dn.docstatus), "utils.clean_up_delivery_notes")
+            frappe.log_error(message="Delivery Note '{0}' is not in draft status. Cannot delete it. Status: {1}".format(dn.name, dn.docstatus), title="utils.clean_up_delivery_notes")
 
     frappe.db.commit()
     return
@@ -998,11 +998,11 @@ def set_distributor(customer, distributor, product_type):
     """
     # validate input
     if customer == distributor:
-        frappe.log_error("The provided distributor '{0}' is the same as the customer. Cannot set distributor for Customer '{1}' and product type '{2}'.".format(distributor,customer,product_type),"utils.add_distributor")
+        frappe.log_error(message="The provided distributor '{0}' is the same as the customer. Cannot set distributor for Customer '{1}' and product type '{2}'.".format(distributor,customer,product_type), title="utils.add_distributor")
         return
 
     if not frappe.db.exists("Customer", distributor):
-        frappe.log_error("The provided distributor '{0}' does not exist. Processing Customer '{1}'.".format(distributor,customer),"utils.add_distributor")
+        frappe.log_error(message="The provided distributor '{0}' does not exist. Processing Customer '{1}'.".format(distributor,customer), title="utils.add_distributor")
         return
 
     customer = frappe.get_doc("Customer", customer)
@@ -1094,7 +1094,7 @@ def add_webshop_services_for_italy(customer_id):
     """
     shipping_address = get_first_shipping_address(customer_id)
     if shipping_address is None:
-        frappe.log_error(f"Customer '{customer_id}' has no shipping address.", "utils.add_webshop_services_for_italy")
+        frappe.log_error(message=f"Customer '{customer_id}' has no shipping address.", title="utils.add_webshop_services_for_italy")
         return
 
     country = frappe.get_value("Address", shipping_address, "Country")
@@ -1119,7 +1119,7 @@ def get_child_territories(territory):
             territory_range['rgt'] = d['rgt']
 
     if 'lft' not in territory_range or 'rgt' not in territory_range:
-        frappe.log_error("The provided territory does not exist:\n{0}".format(territory), "utils.get_all_child_territories")
+        frappe.log_error(message="The provided territory does not exist:\n{0}".format(territory), title="utils.get_all_child_territories")
         return []
 
     territories = []
@@ -1256,7 +1256,7 @@ def set_debtor_accounts(customer):
 
     if not address:
         if customer.name.isnumeric():
-            frappe.log_error(f"Customer {customer.name} has no Preferred Billing Address. Unable to set Accounts.", "utils.set_debtor_accounts")
+            frappe.log_error(message=f"Customer {customer.name} has no Preferred Billing Address. Unable to set Accounts.", title="utils.set_debtor_accounts")
         return
 
     for company in companies:
@@ -1301,7 +1301,7 @@ def set_default_language(customer):
     a = get_billing_address(customer)
 
     if not a:
-        frappe.log_error(f"Customer {customer.name} has no Preferred Billing Address. Unable to set default language.", "utils.set_default_language")
+        frappe.log_error(message=f"Customer {customer.name} has no Preferred Billing Address. Unable to set default language.", title="utils.set_default_language")
         return
 
     if a.country == "Switzerland":
@@ -1311,7 +1311,7 @@ def set_default_language(customer):
             else:
                 l = "de"
         except Exception:
-            frappe.log_error("Billing address '{0}' of customer '{1}' has the invalid pincode '{2}'.".format(a.name, customer.name, a.pincode), "utils.set_default_language")
+            frappe.log_error(message="Billing address '{0}' of customer '{1}' has the invalid pincode '{2}'.".format(a.name, customer.name, a.pincode), title="utils.set_default_language")
             l = "de"
     elif a.country in ("Germany", "Austria"):
         l = "de"
@@ -1524,7 +1524,7 @@ def set_default_company(customer_id):
 
     if len(countries) != 1:
         msg = "Cannot set default company for Customer '{0}': No or multiple countries found ({1})".format(customer.name, len(countries))
-        frappe.log_error(msg, "utils.set_default_company")
+        frappe.log_error(message=msg, title="utils.set_default_company")
         from frappe.desk.tags import add_tag
         add_tag(tag="check default company", dt="Customer", dn=customer.name)
         print(msg)
@@ -1652,8 +1652,8 @@ def set_territory_for_customers(customer_ids, new_territory, verbose=True, dry_r
         except Exception as err:
             summary['failed'] += 1
             frappe.log_error(
-                f"Could not set territory '{new_territory}' for customer '{customer_id}':\n{err}",
-                "utils.set_territory_for_customers"
+                title="utils.set_territory_for_customers",
+                message=f"Could not set territory '{new_territory}' for customer '{customer_id}':\n{err}"
             )
             print(f"  -> Failed to update Customer '{customer_id}': {err}")
 
@@ -1681,18 +1681,18 @@ def determine_territory(address_id):
         if address.country == "Switzerland":
             postal_code = address.pincode
             if postal_code == '':
-                #frappe.log_error(f"Empty postal_code for {address_id=} in Switzerland.", "utils.determine_territory")
+                #frappe.log_error(message=f"Empty postal_code for {address_id=} in Switzerland.", title="utils.determine_territory")
                 return frappe.get_doc("Territory", "Switzerland")
             try:
                 numeric_postal_code = re.sub('\D', '', postal_code)
             except Exception as err:
-                frappe.log_error(f"Got the following error when trying to delete non-numeric characters from postal code '{postal_code}' of {address_id=}:\n{err}", "utils.determine_territory")
+                frappe.log_error(message=f"Got the following error when trying to delete non-numeric characters from postal code '{postal_code}' of {address_id=}:\n{err}", title="utils.determine_territory")
                 return frappe.get_doc("Territory", "Switzerland")
             if not numeric_postal_code:
-                frappe.log_error(f"Postal Code '{postal_code}' for {address_id=} in Switzerland does not contain any numbers.", "utils.determine_territory")
+                frappe.log_error(message=f"Postal Code '{postal_code}' for {address_id=} in Switzerland does not contain any numbers.", title="utils.determine_territory")
                 return frappe.get_doc("Territory", "Switzerland")
             if len(numeric_postal_code) != 4:
-                frappe.log_error(f"Postal code '{postal_code}' for {address_id=} in Switzerland does not contain four digits.", "utils.determine_territory")
+                frappe.log_error(message=f"Postal code '{postal_code}' for {address_id=} in Switzerland does not contain four digits.", title="utils.determine_territory")
                 return frappe.get_doc("Territory", "Switzerland")
             pc_int = int(numeric_postal_code)
             if  pc_int < 4000 or \
@@ -1721,18 +1721,18 @@ def determine_territory(address_id):
         elif address.country == "Germany":
             postal_code = address.pincode
             if postal_code == '':
-                frappe.log_error(f"Empty postal_code for {address_id=} in Germany.", "utils.determine_territory")
+                frappe.log_error(message=f"Empty postal_code for {address_id=} in Germany.", title="utils.determine_territory")
                 return frappe.get_doc("Territory", "Germany")
             try:
                 numeric_postal_code = re.sub('\D', '', postal_code)
             except Exception as err:
-                frappe.log_error(f"Got the following error when trying to delete non-numeric characters from postal code '{postal_code}' of {address_id=}:\n{err}", "utils.determine_territory")
+                frappe.log_error(message=f"Got the following error when trying to delete non-numeric characters from postal code '{postal_code}' of {address_id=}:\n{err}", title="utils.determine_territory")
                 return frappe.get_doc("Territory", "Germany")
             if not numeric_postal_code:
-                frappe.log_error(f"Postal code '{postal_code}' for {address_id=} in Germany does not contain any numbers.", "utils.determine_territory")
+                frappe.log_error(message=f"Postal code '{postal_code}' for {address_id=} in Germany does not contain any numbers.", title="utils.determine_territory")
                 return frappe.get_doc("Territory", "Germany")
             if len(numeric_postal_code) != 5:
-                frappe.log_error(f"Postal code '{postal_code}' for {address_id=} in Germany does not contain five digits.", "utils.determine_territory")
+                frappe.log_error(message=f"Postal code '{postal_code}' for {address_id=} in Germany does not contain five digits.", title="utils.determine_territory")
                 return frappe.get_doc("Territory", "Germany")
             pc_prefix = int(numeric_postal_code[:2])
             if  26 <= pc_prefix <= 29 or \
@@ -1751,25 +1751,25 @@ def determine_territory(address_id):
                 70 <= pc_prefix <= 97:
                 return frappe.get_doc("Territory", "Germany (South)")
             else:
-                frappe.log_error(f"The postal code {postal_code} cannot be assigned to any specific German sales region. "
-                                f"Territory is set to Germany (parent Territory).", "utils.determine_territory")
+                frappe.log_error(message=f"The postal code {postal_code} cannot be assigned to any specific German sales region. "
+                                f"Territory is set to Germany (parent Territory).", title="utils.determine_territory")
                 return frappe.get_doc("Territory", "Germany")
 
         elif address.country == "France":
             postal_code = address.pincode
             if postal_code == '':
-                frappe.log_error(f"Empty postal_code for {address_id=} in France.", "utils.determine_territory")
+                frappe.log_error(message=f"Empty postal_code for {address_id=} in France.", title="utils.determine_territory")
                 return frappe.get_doc("Territory", "France")
             try:
                 numeric_postal_code = re.sub('\D', '', postal_code)
             except Exception as err:
-                frappe.log_error(f"Got the following error when trying to delete non-numeric characters from postal code '{postal_code}' of {address_id=}:\n{err}", "utils.determine_territory")
+                frappe.log_error(message=f"Got the following error when trying to delete non-numeric characters from postal code '{postal_code}' of {address_id=}:\n{err}", title="utils.determine_territory")
                 return frappe.get_doc("Territory", "France")
             if not numeric_postal_code:
-                frappe.log_error(f"Postal code '{postal_code}' for {address_id=} in France does not contain any numbers.", "utils.determine_territory")
+                frappe.log_error(message=f"Postal code '{postal_code}' for {address_id=} in France does not contain any numbers.", title="utils.determine_territory")
                 return frappe.get_doc("Territory", "France")
             if len(numeric_postal_code) != 5:
-                frappe.log_error(f"Postal code '{postal_code}' for {address_id=} in France does not contain five digits.", "utils.determine_territory")
+                frappe.log_error(message=f"Postal code '{postal_code}' for {address_id=} in France does not contain five digits.", title="utils.determine_territory")
                 return frappe.get_doc("Territory", "France")
             pc_prefix = numeric_postal_code[:2]
             if pc_prefix in ['01', '04', '05', '06', '07', '13', '26', '30', '34', '38', '42', '43', '69', '73', '74', '83', '84']:
@@ -1813,7 +1813,7 @@ def determine_territory(address_id):
     except Exception as err:
         msg = f"Could not determine territory from address '{address_id}': {err}"
         print(msg)
-        frappe.log_error(msg, "utils.determine_territory")
+        frappe.log_error(message=msg, title="utils.determine_territory")
         return None
 
 
@@ -1884,7 +1884,7 @@ def configure_territory(customer_id):
             customer_href = f"<a href={get_url_to_form('Customer', customer_id)}>{customer_id}</a>"
             rendered_subject = frappe.render_template(email_template.subject, {'customer_id': customer_id})
             rendered_content = frappe.render_template(email_template.response, {'first_name': first_name, 'customer_href': customer_href, 'reason': reason})
-            frappe.log_error(rendered_subject + f" Send an email to {recipient}.", "utils.configure_territory")
+            frappe.log_error(message=rendered_subject + f" Send an email to {recipient}.", title="utils.configure_territory")
             send_email_from_template(email_template, rendered_content, rendered_subject=rendered_subject, recipients=recipient)
             return
         territory = determine_territory(shipping_address)
@@ -1992,7 +1992,7 @@ def set_default_distributor(customer_id):
     """
     shipping_address = get_first_shipping_address(customer_id)
     if shipping_address is None:
-        frappe.log_error(f"Can't set distributor for Customer {customer_id} due to the lack of a shipping address.", "utils.set_default_distributor")
+        frappe.log_error(message=f"Can't set distributor for Customer {customer_id} due to the lack of a shipping address.", title="utils.set_default_distributor")
         return
 
     country = frappe.get_value("Address", shipping_address, "Country")
@@ -2472,7 +2472,7 @@ def check_new_customers_taxid(delta_days=7):
             continue
         address = get_first_shipping_address(nc['name']) or get_billing_address(nc['name'])  # second function is only called if first returns falsy value
         if address is None:
-            frappe.log_error(f"Customer '{nc['name']}' has no address. Unable to check Tax ID.", "utils.check_new_customers_taxid")
+            frappe.log_error(message=f"Customer '{nc['name']}' has no address. Unable to check Tax ID.", title="utils.check_new_customers_taxid")
             continue
         country = frappe.get_value("Address", address, "Country")
         if not country in ['Austria', 'Belgium', 'Bulgaria', 'Cyprus', 'Czech Republic', 'Germany', 'Denmark', 'Estonia', 'Greece',
@@ -2761,7 +2761,7 @@ def get_yearly_order_volume(customer_id):
                         GROUP BY `currency`
                     """, as_dict=True)
         if len(data) > 1:
-            frappe.log_error(f"There seem to be {len(data)} different currencies on Sales Orders of Customer '{customer_id}' from {year}.", "utils.get_yearly_order_volume")
+            frappe.log_error(message=f"There seem to be {len(data)} different currencies on Sales Orders of Customer '{customer_id}' from {year}.", title="utils.get_yearly_order_volume")
             yearly_order_volume.append({
                 'volume': sum((entry.total or 0) for entry in data),
                 'currency': 'different'
@@ -2888,7 +2888,7 @@ def force_cancel(dt, dn):
 
         frappe.db.commit()
     except Exception as err:
-        frappe.log_error(err, "Force cancel failed on {dt}:{dn}".format(dt=dt, dn=dn) )
+        frappe.log_error(message=err, title="Force cancel failed on {dt}:{dn}".format(dt=dt, dn=dn) )
     else:
         # TODO: If dn has not docstatus 0, it will not be set to docstatus 2, but will be commented:
         new_comment = frappe.get_doc({
@@ -3167,10 +3167,10 @@ def send_label_order_confirmation_email(sales_order):
         email_template = frappe.get_doc("Email Template", f"Barcode Label Order Confirmation {sales_order.company}")
         rendered_subject = frappe.render_template(email_template.subject, {'company': sales_order.company, 'web_order_id': sales_order.web_order_id})
         rendered_content = frappe.render_template(email_template.response, {'links': link_list})  # TODO: Footer with company address and contact info
-        #frappe.log_error(f"DEBUG: Going to send email to {sales_order.contact_email}\nSubject: {rendered_subject}\n\nContent:\n{rendered_content}", "send_label_order_confirmation_email")
+        #frappe.log_error(message=f"DEBUG: Going to send email to {sales_order.contact_email}\nSubject: {rendered_subject}\n\nContent:\n{rendered_content}", title="send_label_order_confirmation_email")
         send_email_from_template(email_template, rendered_content, rendered_subject=rendered_subject, recipients=sales_order.contact_email)
     except Exception as e:
-        frappe.log_error(f"Error in send_label_order_confirmation_email for Sales Order {sales_order.name}: {str(e)}", "send_label_order_confirmation_email")
+        frappe.log_error(message=f"Error in send_label_order_confirmation_email for Sales Order {sales_order.name}: {str(e)}", title="send_label_order_confirmation_email")
 
 
 def sales_order_on_submit(sales_order, event):
@@ -3215,7 +3215,7 @@ def validate_sales_order_items(sales_order_doc, event=None):
         <p><b>Please remove or replace these Items.</b></p>
         """
         if frappe.session.user == "webshop@microsynth.ch":
-            frappe.log_error(f"The Webshop tried to save Sales Order {sales_order_doc.name} with invalid items: {invalid_items}", "Invalid Items on Webshop Sales Order")
+            frappe.log_error(message=f"The Webshop tried to save Sales Order {sales_order_doc.name} with invalid items: {invalid_items}", title="Invalid Items on Webshop Sales Order")
             return
         frappe.throw(html, title="Invalid Items")
 
