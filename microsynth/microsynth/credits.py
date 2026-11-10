@@ -450,6 +450,7 @@ def reverse_credit(sales_invoice, net_amount):
         frappe.throw(f"Cannot reverse credit for Sales Invoice {sales_invoice}: Return Sales Invoice item has quantity different from -1", "credits.reverse_credit")
 
     credit_note_doc.items[0].rate = net_amount
+    credit_note_doc.update_outstanding_for_self = 0
     # TODO: check entries in customer credit table of the credit_note_doc
     credit_note_doc.invoice_sent_on = None
     credit_note_doc.insert()
