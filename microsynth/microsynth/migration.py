@@ -7310,7 +7310,7 @@ def set_open_document_sales_channels(verbose=False, dry_run=True):
     if verbose:
         print(f"Starting open-document sales channel sync. dry_run={dry_run} date={today}")
 
-    quotation_filters = [["docstatus", "=", 1], ["status", "=", "Open"], ["valid_till", ">=", today], ["sales_channel", "in", [None, ""]]]
+    quotation_filters = [["docstatus", "=", 1], ["status", "!=", "Lost"], ["valid_till", ">=", today], ["sales_channel", "in", [None, ""]]]
     quotations = frappe.db.get_all("Quotation", filters=quotation_filters, fields=["name", "sales_manager", "sales_channel"], order_by="creation desc")
     print(f"Found {len(quotations)} open valid Quotations.")
 
