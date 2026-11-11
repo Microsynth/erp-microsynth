@@ -18,6 +18,7 @@ class TestQMNonconformity(unittest.TestCase):
         doc.nc_type = "Deviation"
         doc.status = "Completed"
         doc.criticality_classification = "critical"
+        doc.regulatory_classification = "GMP"
         doc.created_by = "creator"
 
         with patch.object(nc_module.frappe, "get_doc", return_value=doc):
@@ -32,11 +33,43 @@ class TestQMNonconformity(unittest.TestCase):
         doc.nc_type = "Deviation"
         doc.status = "Completed"
         doc.criticality_classification = "non-critical"
+        doc.regulatory_classification = "GMP"
         doc.created_by = "creator"
 
         with patch.object(nc_module.frappe, "get_doc", return_value=doc):
             self.assertTrue(nc_module.can_close_completed_deviation("NC-1", "qau"))
             self.assertTrue(nc_module.can_close_completed_deviation("NC-1", "creator"))
+
+    @patch.object(nc_module, "has_open_actions", return_value=False)
+    @patch.object(nc_module, "user_has_role")
+    def test_completed_non_gmp_deviation_can_only_be_closed_by_qau(self, mock_user_has_role, mock_has_open_actions):
+        mock_user_has_role.side_effect = lambda user, role: user == "qau" and role == "QAU"
+        doc = Mock()
+        doc.nc_type = "Deviation"
+        doc.status = "Completed"
+        doc.criticality_classification = "non-critical"
+        doc.regulatory_classification = "ISO 9001"
+        doc.created_by = "creator"
+
+        with patch.object(nc_module.frappe, "get_doc", return_value=doc):
+            self.assertTrue(nc_module.can_close_completed_deviation("NC-1", "qau"))
+            self.assertFalse(nc_module.can_close_completed_deviation("NC-1", "creator"))
+
+    @patch.object(nc_module, "has_open_actions", return_value=False)
+    @patch.object(nc_module, "user_has_role", return_value=False)
+    def test_non_gmp_deviation_close_endpoint_rejects_creator_in_any_status(self, mock_user_has_role, mock_has_open_actions):
+        doc = Mock()
+        doc.name = "NC-1"
+        doc.nc_type = "Deviation"
+        doc.status = "Investigation"
+        doc.regulatory_classification = "ISO 9001"
+        doc.created_by = "creator"
+
+        with patch.object(nc_module.frappe, "session", Mock(user="creator")), patch.object(
+            nc_module.frappe, "get_doc", return_value=doc
+        ), patch.object(nc_module.frappe, "throw", side_effect=ValueError):
+            with self.assertRaises(ValueError):
+                nc_module.close("NC-1", "qau")
 
     @patch.object(nc_module, "has_open_actions", return_value=True)
     @patch.object(nc_module, "user_has_role")
