@@ -78,7 +78,7 @@ def disable_hot_config_in_dev():
 
         disable_notifications()
         disable_email_accounts()
-        # disable_ebics_connections()
+        disable_ebics_connections()
 
         print("Deactivating hot export path...")
         config = frappe.get_doc("Microsynth Settings", "Microsynth Settings")
