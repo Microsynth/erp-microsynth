@@ -272,6 +272,29 @@ def _sales_manager_is_contract_research(sales_manager, contract_research_sales_m
     return resolve_sales_channel_from_sales_manager(sales_manager, contract_research_sales_managers) == "Contract Research"
 
 
+def set_sales_order_sales_channel(sales_order_doc):
+    """Ensure linked CR quotations classify the order regardless of their stored channel."""
+    quotation_names = sorted({
+        item.prevdoc_docname for item in sales_order_doc.items if item.prevdoc_docname
+    })
+    if not quotation_names:
+        return
+
+    quotations = frappe.db.get_all(
+        "Quotation",
+        filters={"name": ["in", quotation_names]},
+        fields=["sales_manager"],
+    )
+    contract_research_sales_managers = get_contract_research_sales_managers()
+    if any(
+        resolve_sales_channel_from_sales_manager(
+            quotation.get("sales_manager"), contract_research_sales_managers
+        ) == "Contract Research"
+        for quotation in quotations
+    ):
+        sales_order_doc.sales_channel = "Contract Research"
+
+
 def quotation_on_submit(doc, event=None):
     """
     Check if the Sales Manager is part of QM Process "1.4 Contract Research" according to "QM User Process Assignment".

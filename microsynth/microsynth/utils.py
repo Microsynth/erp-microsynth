@@ -3247,8 +3247,12 @@ def validate_sales_order(sales_order_doc, event=None):
     Validate the Sales Order (server-side validation trigger).
     Validate that no Item on the Sales Order has Sales Status "In Preparation" or "Discontinued".
     """
+    # need to be imported here to avoid circular import issues
+    from microsynth.microsynth.quotation import set_sales_order_sales_channel
+
     validate_sales_order_items(sales_order_doc, event)
     validate_contact_customer_consistency(sales_order_doc, event)
+    set_sales_order_sales_channel(sales_order_doc)
 
 
 def report_therapeutic_oligo_sales(from_date=None, to_date=None):
