@@ -15,6 +15,7 @@ REFERENCE_PRICE_LIST_PREFIX = "Sales Prices"
 REFERENCE_PRICE_LIST_CURRENCIES = ('CHF', 'EUR', 'PLN', 'SEK', 'USD')
 
 
+@frappe.whitelist()
 def get_price_list_rate(price_list_name, item_code, qty):
     """
     Return the currently valid rate for the highest min_qty not exceeding qty.
@@ -27,15 +28,12 @@ def get_price_list_rate(price_list_name, item_code, qty):
     """
     prices = frappe.db.sql(
         """
-        SELECT `item_price`.`price_list_rate`
+        SELECT `item_price`.`price_list_rate`,
+               `item_price`.`currency`
         FROM `tabItem Price` AS `item_price`
-        INNER JOIN `tabPrice List` AS `price_list`
-            ON `price_list`.`name` = `item_price`.`price_list`
-        WHERE `price_list`.`name` = %s
-            AND `price_list`.`enabled` = 1
-            AND `item_price`.`currency` = `price_list`.`currency`
-            AND `item_price`.`item_code` = %s
-            AND `item_price`.`min_qty` <= %s
+        WHERE `item_price`.`price_list` = %(price_list_name)s
+            AND `item_price`.`item_code` = %(item_code)s
+            AND `item_price`.`min_qty` <= %(qty)s
             AND (`item_price`.`valid_from` IS NULL OR `item_price`.`valid_from` <= CURDATE())
             AND (`item_price`.`valid_upto` IS NULL OR `item_price`.`valid_upto` >= CURDATE())
         ORDER BY `item_price`.`min_qty` DESC,
@@ -45,11 +43,17 @@ def get_price_list_rate(price_list_name, item_code, qty):
             `item_price`.`name` DESC
         LIMIT 1
         """,
-        (price_list_name, item_code, qty),
+        {
+            "price_list_name": price_list_name,
+            "item_code": item_code,
+            "qty": qty
+        },
         as_dict=True,
     )
-    print(prices)
-    return prices[0]['price_list_rate'] if prices else None
+    if prices:
+        return { 'price_list_rate': prices[0]['price_list_rate'], 'currency': prices[0]['currency']}
+    else:
+        return None
 
 
 def _reference_price_list_name(currency):
