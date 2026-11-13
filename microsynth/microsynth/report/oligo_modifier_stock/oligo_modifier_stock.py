@@ -14,14 +14,17 @@ def get_columns():
 		{"label": _("Pack Size"), "fieldname": "pack_size", "fieldtype": "Float", "precision": 2, "width": 75},
 		{"label": _("Pack UOM"), "fieldname": "pack_uom", "fieldtype": "Link", "options": "UOM", "width": 80},
 		{"label": _("Substitute Status"), "fieldname": "substitute_status", "fieldtype": "Data", "width": 115, "align": "left"},
-		{"label": _("Stock Qty"), "fieldname": "stock_qty", "fieldtype": "Int", "width": 80},
-		{"label": _("Requested Qty"), "fieldname": "requested_qty", "fieldtype": "Int", "width": 100},
-		{"label": _("Ordered Qty"), "fieldname": "ordered_qty", "fieldtype": "Int", "width": 90},
-		{"label": _("Supplier Item Code"), "fieldname": "supplier_item_code", "fieldtype": "Data", "width": 150},
-		{"label": _("Supplier"), "fieldname": "supplier", "fieldtype": "Link", "options": "Supplier", "width": 70},
-		{"label": _("Supplier Name"), "fieldname": "supplier_name", "fieldtype": "Data", "width": 200},
+		{"label": _("Stock"), "fieldname": "stock_qty", "fieldtype": "Int", "width": 60},
+		{"label": _("Reqstd"), "fieldname": "requested_qty", "fieldtype": "Int", "width": 60},
+		{"label": _("Ordrd"), "fieldname": "ordered_qty", "fieldtype": "Int", "width": 60},
+		{"label": _("Stock Unit"), "fieldname": "stock_uom", "fieldtype": "Link", "options": "UOM", "width": 90},
+		{"label": _("Supplier Name"), "fieldname": "supplier_name", "fieldtype": "Data", "width": 140},
+		{"label": _("Stock Usage (3m)"), "fieldname": "stock_usage_3m", "fieldtype": "Int", "width": 100},
+		{"label": _("Safety Stock"), "fieldname": "safety_stock", "fieldtype": "Int", "width": 90},
+		{"label": _("Min. Order Qty"), "fieldname": "min_order_qty", "fieldtype": "Int", "width": 100},
 		{"label": _("Shelf Life (m)"), "fieldname": "shelf_life_in_months", "fieldtype": "Int", "width": 100},
-		{"label": _("Stock UOM"), "fieldname": "stock_uom", "fieldtype": "Link", "options": "UOM", "width": 90},
+		{"label": _("Supplier Item Code"), "fieldname": "supplier_item_code", "fieldtype": "Data", "width": 150},
+		{"label": _("Supplier"), "fieldname": "supplier", "fieldtype": "Link", "options": "Supplier", "width": 100},
 	]
 
 
@@ -86,10 +89,25 @@ def get_filled_locations():
 					)
 				LIMIT 1
 			) AS `supplier_name`,
+			`tabItem`.`safety_stock` AS `safety_stock`,
+			`tabItem`.`min_order_qty` AS `min_order_qty`,
 			`tabItem`.`item_name` AS `item_name`,
 			`tabItem`.`material_code` AS `material_code`,
 			IFNULL(FLOOR(`tabItem`.`shelf_life_in_days` * 12 / 365), 0) AS `shelf_life_in_months`,
 			CAST(ROUND(IFNULL(`tabItem Stock`.`actual_qty`, 0), 0) AS SIGNED) AS `stock_qty`,
+			CAST(ROUND((
+				SELECT IFNULL(SUM(ABS(`tabStock Entry Detail`.`transfer_qty`)), 0)
+				FROM `tabStock Entry Detail`
+				INNER JOIN `tabStock Entry`
+					ON `tabStock Entry`.`name` = `tabStock Entry Detail`.`parent`
+				WHERE
+					`tabStock Entry`.`docstatus` = 1
+					AND `tabStock Entry`.`stock_entry_type` = 'Material Issue'
+					AND IFNULL(`tabStock Entry`.`remarks`, '') NOT LIKE 'Stock correction via Correct Stock%'
+					AND `tabStock Entry`.`posting_date` >= DATE_SUB(CURDATE(), INTERVAL 89 DAY)
+					AND `tabStock Entry`.`posting_date` <= CURDATE()
+					AND `tabStock Entry Detail`.`item_code` = `tabItem`.`name`
+			), 0) AS SIGNED) AS `stock_usage_3m`,
 			CAST(ROUND((
 				SELECT IFNULL(SUM(
 					GREATEST(
@@ -196,9 +214,12 @@ def get_empty_locations():
 		row.setdefault("pack_uom", None)
 		row.setdefault("material_code", None)
 		row.setdefault("stock_qty", None)
+		row.setdefault("stock_usage_3m", None)
 		row.setdefault("requested_qty", None)
 		row.setdefault("ordered_qty", None)
 		row.setdefault("stock_uom", None)
+		row.setdefault("safety_stock", None)
+		row.setdefault("min_order_qty", None)
 		row.setdefault("shelf_life_in_months", None)
 		row.setdefault("supplier_item_code", None)
 		row.setdefault("supplier", None)
