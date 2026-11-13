@@ -80,6 +80,7 @@ def create_stock_entry(item, warehouse, rows, purpose):
             "s_warehouse": warehouse if purpose == "Material Issue" else None,
             "t_warehouse": warehouse if purpose == "Material Receipt" else None,
             "batch_no": r["batch_no"],
+            "use_serial_batch_fields": 1,
             "remarks": f"Stock correction for batch {r['batch_no']}"
         })
     doc.insert()
@@ -133,6 +134,31 @@ def get_internal_code(name):
     return ""
 
 
+def get_batch_stock_qty(item_code, warehouse, batch_no):
+    result = frappe.db.sql("""
+        SELECT COALESCE(SUM(movement.qty), 0)
+        FROM (
+            SELECT sle.actual_qty AS qty
+            FROM `tabStock Ledger Entry` sle
+            WHERE sle.item_code = %(item_code)s
+                AND sle.warehouse = %(warehouse)s
+                AND sle.batch_no = %(batch_no)s
+                AND sle.is_cancelled = 0
+                AND COALESCE(sle.serial_and_batch_bundle, '') = ''
+            UNION ALL
+            SELECT batch_entry.qty AS qty
+            FROM `tabStock Ledger Entry` sle
+            INNER JOIN `tabSerial and Batch Entry` batch_entry
+                ON batch_entry.parent = sle.serial_and_batch_bundle
+            WHERE sle.item_code = %(item_code)s
+                AND sle.warehouse = %(warehouse)s
+                AND batch_entry.batch_no = %(batch_no)s
+                AND sle.is_cancelled = 0
+        ) movement
+    """, {"item_code": item_code, "warehouse": warehouse, "batch_no": batch_no})
+    return flt(result[0][0])
+
+
 @frappe.whitelist()
 def get_batches_with_qty(item_code, warehouse):
     """
@@ -162,15 +188,7 @@ def get_batches_with_qty(item_code, warehouse):
 
     for batch_no, batch in batch_map.items():
 
-        qty = frappe.db.sql("""
-            SELECT IFNULL(SUM(actual_qty), 0)
-            FROM `tabStock Ledger Entry`
-            WHERE
-                item_code = %s
-                AND warehouse = %s
-                AND batch_no = %s
-                AND is_cancelled = 0
-        """, (item_code, warehouse, batch_no))[0][0]
+        qty = get_batch_stock_qty(item_code, warehouse, batch_no)
 
         result.append({
             "batch_no": batch_no,
@@ -216,21 +234,7 @@ def correct_stock(item_code, warehouse, rows):
         if not batch_no:
             frappe.throw("Batch number is required")
 
-        result = frappe.db.sql("""
-            SELECT IFNULL(SUM(`actual_qty`), 0) AS qty
-            FROM `tabStock Ledger Entry`
-            WHERE
-                `item_code` = %(item_code)s
-                AND `warehouse` = %(warehouse)s
-                AND `batch_no` = %(batch_no)s
-                AND `is_cancelled` = 0
-        """, {
-            "item_code": item_code,
-            "warehouse": warehouse,
-            "batch_no": batch_no
-        }, as_dict=True)
-
-        current_qty = result[0].qty if result else 0
+        current_qty = get_batch_stock_qty(item_code, warehouse, batch_no)
 
         if row.get("new_qty") in [None, ""]:
             frappe.throw(f"New quantity missing for batch {batch_no}")

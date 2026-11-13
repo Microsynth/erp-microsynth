@@ -844,14 +844,31 @@ async function open_correct_stock_dialog(frm) {
                         return;
                     }
                     d.hide();
-                    frappe.msgprint({
+                    const stock_entries = [
+                        r.message.issue_stock_entry,
+                        r.message.receipt_stock_entry
+                    ].filter(Boolean);
+                    const success_message = __(
+                        "{0} batch(es) corrected.",
+                        [r.message.changed_batches || 0]
+                    );
+                    const confirmation = new frappe.ui.Dialog({
                         title: __("Success"),
                         indicator: "green",
-                        message: __(
-                            "{0} batch(es) corrected.",
-                            [r.message.changed_batches || 0]
-                        )
+                        fields: [{
+                            fieldtype: "HTML",
+                            fieldname: "result",
+                            options: `<p>${frappe.utils.escape_html(success_message)}</p>` +
+                                stock_entries.map(name =>
+                                    `<p><a href="/app/stock-entry/${encodeURIComponent(name)}">${frappe.utils.escape_html(name)}</a></p>`
+                                ).join("")
+                        }],
+                        primary_action_label: __("Close"),
+                        primary_action() {
+                            confirmation.hide();
+                        }
                     });
+                    confirmation.show();
                     frm.reload_doc();
                 },
                 error: function() {

@@ -7,10 +7,11 @@ const requests = [];
 const messages = [];
 let dialog;
 const context = {
-    __: value => value,
+    __: (value, args = []) => value.replace(/\{(\d+)\}/g, (match, index) => args[index]),
     cint: value => parseInt(value, 10),
     flt: value => Number(value),
     frappe: {
+        utils: { escape_html: value => String(value).replace(/&/g, "&amp;").replace(/</g, "&lt;") },
         defaults: { get_default: () => 2 },
         call: options => requests.push(options),
         msgprint: message => messages.push(message),
@@ -51,7 +52,11 @@ const context = {
 
 vm.createContext(context);
 vm.runInContext(fs.readFileSync(path.join(__dirname, "../microsynth/public/js/item.js"), "utf8"), context);
-context.open_correct_stock_dialog({ doc: { name: "TEST", stock_uom: "Unit" } });
+let reloads = 0;
+context.open_correct_stock_dialog({
+    doc: { name: "TEST", stock_uom: "Unit" },
+    reload_doc() { reloads++; }
+});
 const warehouseField = dialog.options.fields.find(field => field.fieldname === "warehouse");
 const table = dialog.fields_dict.batch_table;
 warehouseField.onchange();
@@ -102,5 +107,14 @@ warehouseField.onchange();
 dialog.onhide();
 requests[7].callback({ message: [{ batch_no: "CLOSED", current_qty: 1 }] });
 assert.equal(table.df.data.length, 0, "closed dialogs must ignore pending responses");
+
+requests[2].callback({ message: {
+    success: true, changed_batches: 1, issue_stock_entry: "ENTRY/TEST", receipt_stock_entry: null
+} });
+assert.equal(dialog.options.title, "Success");
+assert.ok(dialog.options.fields[0].options.includes("1 batch(es) corrected."));
+assert.ok(dialog.options.fields[0].options.includes("/app/stock-entry/ENTRY%2FTEST"));
+assert.equal(reloads, 1);
+assert.equal(messages.length, 0, "success must not reuse the shared message dialog");
 
 console.log("PASS: stock dialog edit persistence, zero submission, warehouse reloads, stale responses, retry, empty results and close");
