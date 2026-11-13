@@ -610,6 +610,7 @@ function refresh_field_states(d) {
 
 async function open_correct_stock_dialog(frm) {
     var batch_request_seq = 0;
+    var batch_warehouse;
     const FLOAT_PRECISION = cint(frappe.defaults.get_default("float_precision")) || 2;
 
     var d = new frappe.ui.Dialog({
@@ -866,8 +867,12 @@ async function open_correct_stock_dialog(frm) {
     });
 
     function load_batches() {
-        var request_id = ++batch_request_seq;
         var warehouse = d.get_value("warehouse");
+        if (warehouse === batch_warehouse) {
+            return;
+        }
+        batch_warehouse = warehouse;
+        var request_id = ++batch_request_seq;
         if (!warehouse) {
             return;
         }
@@ -891,10 +896,25 @@ async function open_correct_stock_dialog(frm) {
                     };
                 });
                 var table_field = d.fields_dict.batch_table;
-                table_field.df.data = rows;
+                var existing_rows = table_field.df.data || [];
+                rows = rows.map(function(row, index) {
+                    var existing_row = existing_rows[index];
+                    if (!existing_row) {
+                        return row;
+                    }
+                    Object.assign(existing_row, row);
+                    return existing_row;
+                });
+                existing_rows.splice(0, existing_rows.length, ...rows);
+                table_field.df.data = existing_rows;
 
                 if (table_field.grid) {
                     table_field.grid.refresh();
+                }
+            },
+            error: function() {
+                if (request_id === batch_request_seq) {
+                    batch_warehouse = undefined;
                 }
             }
         });
