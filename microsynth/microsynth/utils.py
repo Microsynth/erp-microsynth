@@ -1983,6 +1983,14 @@ def set_distributor_allgene(customer_id):
     set_distributor_all_product_types(customer_id, distributor)
 
 
+def set_distributor_bioline(customer_id):
+    """
+    bench execute microsynth.microsynth.utils.set_distributor_bioline --kwargs "{'customer_id': '838469'}"
+    """
+    distributor = '837566'
+    set_distributor_all_product_types(customer_id, distributor)
+
+
 def set_default_distributor(customer_id):
     """
     Set the distributors if the Customer has none and its first shipping address is in a Country with a distributor agreement.
@@ -2016,6 +2024,9 @@ def set_default_distributor(customer_id):
 
     elif country == "Czech Republic":
         set_distributor_allgene(customer_id)
+
+    elif country == "Greece":
+        set_distributor_bioline(customer_id)
 
 
 def set_default_distributor_for_customers(customer_ids):
