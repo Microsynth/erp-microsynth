@@ -1181,6 +1181,9 @@ def get_quotation_detail(reference, client="webshop"):
 def get_item_prices(content, client="webshop"):
     """
     Returns the specific prices for a customer/items
+
+    run
+    bench execute microsynth.microsynth.webshop.get_item_prices --kwargs="{'content':{'customer':'841519','currency':'EUR','items':[{'item_code':'3000','qty':1000.0}]}}"
     """
     # make sure items are a json object
     if type(content) == str:
