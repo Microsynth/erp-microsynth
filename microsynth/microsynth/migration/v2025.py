@@ -61,6 +61,7 @@ def configure_system_settings():
     settings.backup_limit = 4
     settings.ignore_party_address_validation = True
     settings.disable_automatic_prepared_reports = True
+    settings.link_field_results_limit = 25
 
     settings.save()
 
