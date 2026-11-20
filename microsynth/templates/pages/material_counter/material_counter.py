@@ -19,14 +19,18 @@ def get_processes():
 @frappe.whitelist(allow_guest=True)
 def get_user_names_by_process(qm_process, company=None):
     if company:
-        company_condition = f"`tabQM User Process Assignment`.`company` = '{company}'"
+        if not frappe.db.exists("Company", company):
+            return []
+        company_condition = "`tabQM User Process Assignment`.`company` = %(company)s "
     else:
         company_condition = "TRUE"
 
+    if not frappe.db.exists("QM Process", qm_process):
+        return []
     qm_process_doc = frappe.get_doc("QM Process", qm_process)
-    qm_process_condition = f" AND `tabQM User Process Assignment`.`process_number` = '{qm_process_doc.process_number}' AND `tabQM User Process Assignment`.`subprocess_number` = '{qm_process_doc.subprocess_number}'"
+    qm_process_condition = f" AND `tabQM User Process Assignment`.`process_number` = %(process_number)s AND `tabQM User Process Assignment`.`subprocess_number` = %(subprocess_number)s "
     if qm_process_doc.chapter:
-        qm_process_condition += f" AND (`tabQM User Process Assignment`.`chapter` = '{qm_process_doc.chapter}' OR `tabQM User Process Assignment`.`all_chapters` = 1)"
+        qm_process_condition += f" AND (`tabQM User Process Assignment`.`chapter` = %(chapter)s OR `tabQM User Process Assignment`.`all_chapters` = 1)"
 
     query = f"""
         SELECT DISTINCT
@@ -39,7 +43,16 @@ def get_user_names_by_process(qm_process, company=None):
             {qm_process_condition}
             AND `tabUser Settings`.`disabled` = 0
         """
-    full_names = frappe.db.sql(query, as_dict=True)
+    full_names = frappe.db.sql(
+        query,
+        {
+            'company': company,
+            'process_number': qm_process_doc.process_number,
+            'subprocess_number': qm_process_doc.subprocess_number,
+            'chapter': qm_process_doc.chapter
+        },
+        as_dict=True
+    )
     return [''] + [fn['name'] for fn in full_names]
 
 
@@ -47,12 +60,19 @@ def get_user_names_by_process(qm_process, company=None):
 def get_item_details(item_code):
     if not item_code:
         return None
+    if not frappe.db.exists("Item", item_code):
+        return None
     item = frappe.get_value("Item", item_code, ["name", "item_name", "material_code"], as_dict=True)
     return item
 
 
 @frappe.whitelist(allow_guest=True)
 def create_stock_entry(items, warehouse, user):
+    """
+    ToDo: this should be secured to prevent mischief
+    
+    Consider a material counter preshared key
+    """
     if isinstance(items, str):
         items = json.loads(items)
 
