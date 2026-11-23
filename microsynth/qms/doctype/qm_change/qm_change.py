@@ -24,6 +24,7 @@ def _references(doc):
 
 class QMChange(Document):
     def validate(self):
+        self.validate_impact_answers()
         old_doc = self.get_doc_before_save()
         if old_doc and _references(self) == _references(old_doc):
             return
@@ -41,6 +42,26 @@ class QMChange(Document):
             )
         ):
             frappe.throw("Only the QM Change Creator or QAU can edit References before closure.", frappe.PermissionError)
+
+    def before_update_after_submit(self):
+        self.validate_impact_answers()
+
+    def validate_impact_answers(self):
+        old_doc = self.get_doc_before_save()
+        restricted_states = {"Assessment & Classification", "Planning", "Implementation"}
+        if self.status not in restricted_states and (
+            not old_doc or old_doc.status not in restricted_states
+        ):
+            return
+
+        def answers(doc):
+            return sorted(
+                (row.get("name") or "", row.get("qm_change_impact") or "", row.get("impact_answer"))
+                for row in (doc.get("impact") or []) if row.get("impact_answer")
+            ) if doc else []
+
+        if answers(self) != answers(old_doc) and not user_has_role(frappe.session.user, "QAU"):
+            frappe.throw("Only QAU can modify Impact Assessment Answers in Assessment & Classification, Planning or Implementation.", frappe.PermissionError)
 
     def on_submit(self):
         self.status = "Created"
