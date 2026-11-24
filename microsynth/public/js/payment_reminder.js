@@ -4,7 +4,7 @@ frappe.ui.form.on('Payment Reminder', {
         
         if (frm.doc.docstatus === 1) {
             if ((frm.doc.docstatus === 1) && (document.getElementsByClassName("fa-envelope-o").length === 0)) {
-                cur_frm.page.add_action_icon(__("fa fa-envelope-o"), function() {
+                cur_frm.page.add_action_icon(__("es-line-email"), function() {
                     custom_mail_dialog(frm);
                 });
             }
