@@ -141,13 +141,12 @@ frappe.ui.form.on('Contact', {
             frm.dashboard.add_comment('This Contact has a Webshop Account: Changes should be made there.', 'orange', true);
         }
 
-        var print_btns = document.getElementsByClassName("fa-print");
-        // remove default print buttons
-        for (var i = 0; i < print_btns.length; i++) {
-            print_btns[i].remove();
+        // remove print icon from toolbar and add custom print action
+        if (frm.toolbar.print_icon) {
+            frm.toolbar.print_icon.remove();
         }
-        // add custom print functionality
-        cur_frm.page.add_action_icon(__("fa fa-print"), function() {
+        frm.page.icon_group.find(".contact-print").remove();
+        frm.page.add_action_icon("printer", function() {
             const encodedContact = encodeURIComponent(frm.doc.name);
             const url = frappe.urllib.get_full_url(
                 "/api/method/microsynth.microsynth.portfolio.prepare_sales_portfolio_pdf_download?contact=" + encodedContact
@@ -157,7 +156,7 @@ frappe.ui.form.on('Contact', {
                 frappe.msgprint(__("Please enable pop-ups"));
                 return;
             }
-        });
+        }, "contact-print", __("Print"));
 
         // show a banner if source = Punchout
         if (frm.doc.contact_source && frm.doc.contact_source == "Punchout") {
