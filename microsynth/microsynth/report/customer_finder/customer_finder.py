@@ -14,24 +14,24 @@ def execute(filters=None):
 
 def get_columns(filters):
     return [
-        {"label": _("Customer ID"), "fieldname": "customer_id", "fieldtype": "Link", "options": "Customer", "width": 75},
+        {"label": _("Customer ID"), "fieldname": "customer_id", "fieldtype": "Link", "options": "Customer", "width": 90},
         {"label": _("Customer"), "fieldname": "customer", "fieldtype": "Data", "width": 125},
-        {"label": _("Type"), "fieldname": "address_type", "fieldtype": "Data", "width": 35},
-        {"label": _("Contact ID"), "fieldname": "contact_id", "fieldtype": "Link", "options":"Contact", "width": 75},
-        {"label": _("First Name"), "fieldname": "first_name", "fieldtype": "Data", "width": 75},
-        {"label": _("Last Name"), "fieldname": "last_name", "fieldtype": "Data", "width": 75},
+        {"label": _("Type"), "fieldname": "address_type", "fieldtype": "Data", "width": 25},
+        {"label": _("Contact ID"), "fieldname": "contact_id", "fieldtype": "Link", "options":"Contact", "width": 90},
+        {"label": _("First Name"), "fieldname": "first_name", "fieldtype": "Data", "width": 80},
+        {"label": _("Last Name"), "fieldname": "last_name", "fieldtype": "Data", "width": 80},
         {"label": _("Institute"), "fieldname": "institute", "fieldtype": "Data", "width": 100},
         {"label": _("Institute key"), "fieldname": "institute_key", "fieldtype": "Data", "width": 100},
         {"label": _("Department"), "fieldname": "department", "fieldtype": "Data", "width": 100},
         {"label": _("Group Leader"), "fieldname": "group_leader", "fieldtype": "Data", "width": 75},
         {"label": _("Country"), "fieldname": "country", "fieldtype": "Data", "width": 75},
         {"label": _("City"), "fieldname": "city", "fieldtype": "Data", "width": 75},
-        {"label": _("Street"), "fieldname": "street", "fieldtype": "Data", "width": 100},
-        {"label": _("Email"), "fieldname": "email_id", "fieldtype": "Data", "width": 120},
-        {"label": _("Sales Manager"), "fieldname": "account_manager", "fieldtype": "Data", "width": 70},
-        {"label": _("Price List"), "fieldname": "price_list", "fieldtype": "Link", "options":"Price List", "width": 120},
-        {"label": _("Tax ID"), "fieldname": "tax_id", "fieldtype": "Data", "width": 110},
-        {"label": _("Contact created"), "fieldname": "contact_created", "fieldtype": "Date", "width": 125},
+        {"label": _("Street"), "fieldname": "street", "fieldtype": "Data", "width": 75},
+        {"label": _("Email"), "fieldname": "email_id", "fieldtype": "Data", "width": 110},
+        {"label": _("Sales Manager"), "fieldname": "account_manager", "fieldtype": "Data", "width": 60},
+        {"label": _("Price List"), "fieldname": "price_list", "fieldtype": "Link", "options":"Price List", "width": 110},
+        {"label": _("Tax ID"), "fieldname": "tax_id", "fieldtype": "Data", "width": 120},
+        {"label": _("Contact created"), "fieldname": "contact_created", "fieldtype": "Date", "width": 100},
     ]
 
 
