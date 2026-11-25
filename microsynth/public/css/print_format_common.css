@@ -76,6 +76,12 @@
     font-family: nimbus-bold-italic;
 }
 
+/* wkhtmltopdf >= 0.12.6 no longer collapses table borders by default: <tr> borders vanish and cell backgrounds show gaps */
+.print-format table {
+    border-collapse: collapse !important;
+    border-spacing: 0 !important;
+}
+
 .print-format .justify {
     text-align: justify;
     text-justify: inter-word;  /* supported mainly by older IE, safe to include */
