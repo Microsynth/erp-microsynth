@@ -7,17 +7,17 @@ from frappe.utils import flt
 
 def get_columns():
     return [
-        {"label": "Item Code", "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 360},
+        {"label": "Item Code", "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 400},
         #{"label": "Item Name", "fieldname": "item_name", "fieldtype": "Data", "width": 350},
-        {"label": "Material Code", "fieldname": "material_code", "fieldtype": "Data", "width": 100},
-        {"label": "Stock UOM", "fieldname": "stock_uom", "fieldtype": "Link", "options": "UOM", "width": 95},
-        {"label": "Actual Qty", "fieldname": "actual_qty", "fieldtype": "Float", "precision": 2, "width": 85},
-        {"label": "Requested Qty", "fieldname": "requested_qty", "fieldtype": "Float", "precision": 2, "width": 105},
-        {"label": "Ordered Qty", "fieldname": "ordered_qty", "fieldtype": "Float", "precision": 2, "width": 90},
-        {"label": "Safety Stock", "fieldname": "safety_stock", "fieldtype": "Float", "precision": 2, "width": 95},
-        {"label": "Lead Time [d]", "fieldname": "lead_time_days", "fieldtype": "Int", "width": 100},
-        {"label": "Avg Consumption / month", "fieldname": "avg_consumption", "fieldtype": "Float", "precision": 2, "width": 170},
-        {"label": "To Order (3 months)", "fieldname": "to_order", "fieldtype": "Float", "precision": 2, "width": 140}
+        {"label": "Material Code", "fieldname": "material_code", "fieldtype": "Data", "width": 120},
+        {"label": "Stock UOM", "fieldname": "stock_uom", "fieldtype": "Link", "options": "UOM", "width": 105},
+        {"label": "Actual Qty", "fieldname": "actual_qty", "fieldtype": "Float", "precision": 2, "width": 100},
+        {"label": "Requested Qty", "fieldname": "requested_qty", "fieldtype": "Float", "precision": 2, "width": 125},
+        {"label": "Ordered Qty", "fieldname": "ordered_qty", "fieldtype": "Float", "precision": 2, "width": 110},
+        {"label": "Safety Stock", "fieldname": "safety_stock", "fieldtype": "Float", "precision": 2, "width": 110},
+        {"label": "Lead Time [d]", "fieldname": "lead_time_days", "fieldtype": "Int", "width": 120},
+        {"label": "Avg Consumption / month", "fieldname": "avg_consumption", "fieldtype": "Float", "precision": 2, "width": 200},
+        {"label": "To Order (3 months)", "fieldname": "to_order", "fieldtype": "Float", "precision": 2, "width": 160}
     ]
 
 

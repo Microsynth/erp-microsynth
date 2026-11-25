@@ -8,21 +8,21 @@ import frappe
 def get_columns():
     return [
         {"label": "DocType", "fieldname": "doctype", "fieldtype": "Data", "width": 90},
-        {"label": "Document ID", "fieldname": "name", "fieldtype": "Dynamic Link", "options": "doctype", "width": 130},
-        {"label": "Posting Date", "fieldname": "posting_date", "fieldtype": "Date", "width": 90},
+        {"label": "Document ID", "fieldname": "name", "fieldtype": "Dynamic Link", "options": "doctype", "width": 165},
+        {"label": "Posting Date", "fieldname": "posting_date", "fieldtype": "Date", "width": 100},
         {"label": "Web Order ID", "fieldname": "web_order_id", "fieldtype": "Data", "width": 90},
         {"label": "Status", "fieldname": "status", "fieldtype": "Data", "width": 90},
         {"label": "Company", "fieldname": "company", "fieldtype": "Link", "options": "Company", "width": 125},
-        {"label": "Customer", "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 75},
-        {"label": "Customer Name", "fieldname": "customer_name", "fieldtype": "Data", "width": 160},
+        {"label": "Customer", "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 90},
+        {"label": "Customer Name", "fieldname": "customer_name", "fieldtype": "Data", "width": 150},
         {"label": "Customer PO No", "fieldname": "po_no", "fieldtype": "Data", "width": 100},
-        {"label": "Contact", "fieldname": "contact_person", "fieldtype": "Link", "options": "Contact", "width": 65},
+        {"label": "Contact", "fieldname": "contact_person", "fieldtype": "Link", "options": "Contact", "width": 85},
         {"label": "Contact Name", "fieldname": "contact_display", "fieldtype": "Data", "width": 110},
-        {"label": "Grand Total", "fieldname": "grand_total", "fieldtype": "Currency", "options": "currency", "width": 95},
+        {"label": "Grand Total", "fieldname": "grand_total", "fieldtype": "Currency", "options": "currency", "width": 100},
         {"label": "Currency", "fieldname": "currency", "fieldtype": "Link", "options": "Currency", "width": 70},
-        {"label": "Comments", "fieldname": "comments", "fieldtype": "Int", "width": 80},
-        {"label": "Creator", "fieldname": "owner", "fieldtype": "Link", "options": "User", "width": 150},
-        {"label": "Creation Date", "fieldname": "creation", "fieldtype": "Date", "width": 125},
+        {"label": "Comments", "fieldname": "comments", "fieldtype": "Int", "width": 50},
+        {"label": "Creator", "fieldname": "owner", "fieldtype": "Link", "options": "User", "width": 120},
+        {"label": "Creation Date", "fieldname": "creation", "fieldtype": "Date", "width": 105},
     ]
 
 

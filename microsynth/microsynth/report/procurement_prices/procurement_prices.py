@@ -9,12 +9,12 @@ from frappe.utils import cint
 
 def get_columns():
 	return [
-		{"label": _("Date"), "fieldname": "posting_date", "fieldtype": "Date", "width": 80},
-		{"label": _("Item"), "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 300},
-		{"label": _("Supplier"), "fieldname": "supplier", "fieldtype": "Link", "options": "Supplier", "width": 70},
-		{"label": _("Supplier Name"), "fieldname": "supplier_name", "fieldtype": "Data", "width": 250},
-		{"label": _("Supplier Item Code"), "fieldname": "supplier_part_no", "fieldtype": "Data", "width": 125},
-		{"label": _("(Min.) Qty"), "fieldname": "qty", "fieldtype": "Float", "width": 80},
+		{"label": _("Date"), "fieldname": "posting_date", "fieldtype": "Date", "width": 100},
+		{"label": _("Item"), "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 280},
+		{"label": _("Supplier"), "fieldname": "supplier", "fieldtype": "Link", "options": "Supplier", "width": 85},
+		{"label": _("Supplier Name"), "fieldname": "supplier_name", "fieldtype": "Data", "width": 210},
+		{"label": _("Supplier Item Code"), "fieldname": "supplier_part_no", "fieldtype": "Data", "width": 140},
+		{"label": _("(Min.) Qty"), "fieldname": "qty", "fieldtype": "Float", "width": 95},
 		{"label": _("UOM"), "fieldname": "uom", "fieldtype": "Link", "options": "UOM", "width": 60},
 		{"label": _("Rate"), "fieldname": "rate", "fieldtype": "Currency", "options": "currency", "width": 100},
 		{"label": _("Amount"), "fieldname": "amount", "fieldtype": "Currency", "options": "currency", "width": 100},
@@ -24,7 +24,7 @@ def get_columns():
 		{"label": _("Stock UOM"), "fieldname": "stock_uom", "fieldtype": "Link", "options": "UOM", "width": 80},
 		{"label": _("Company"), "fieldname": "company", "fieldtype": "Link", "options": "Company", "width": 155},
 		{"label": _("Price List"), "fieldname": "price_list", "fieldtype": "Link", "options": "Price List", "width": 130},
-		{"label": _("Purchase Order"), "fieldname": "purchase_order", "fieldtype": "Link", "options": "Purchase Order", "width": 105},
+		{"label": _("Purchase Order"), "fieldname": "purchase_order", "fieldtype": "Link", "options": "Purchase Order", "width": 120},
 		{"label": _("Item Name"), "fieldname": "item_name", "fieldtype": "Data", "width": 300},
 	]
 

@@ -7,18 +7,18 @@ import frappe
 
 def get_columns():
     return [
-        {"label": "DocType", "fieldname": "doctype", "fieldtype": "Data", "width": 120},
-        {"label": "Document ID", "fieldname": "name", "fieldtype": "Dynamic Link", "options": "doctype", "width": 100},
-        {"label": "Posting Date", "fieldname": "posting_date", "fieldtype": "Date", "width": 90},
+        {"label": "DocType", "fieldname": "doctype", "fieldtype": "Data", "width": 135},
+        {"label": "Document ID", "fieldname": "name", "fieldtype": "Dynamic Link", "options": "doctype", "width": 125},
+        {"label": "Posting Date", "fieldname": "posting_date", "fieldtype": "Date", "width": 100},
         {"label": "Status", "fieldname": "status", "fieldtype": "Data", "width": 120},
         {"label": "Company", "fieldname": "company", "fieldtype": "Link", "options": "Company", "width": 160},
-        {"label": "Supplier", "fieldname": "supplier", "fieldtype": "Link", "options": "Supplier", "width": 75, "align": "left"},
-        {"label": "Supplier Name", "fieldname": "supplier_name", "fieldtype": "Data", "width": 250, "align": "left"},
-        {"label": "Grand Total", "fieldname": "grand_total", "fieldtype": "Currency", "options": "currency", "width": 95},
-        {"label": "Currency", "fieldname": "currency", "fieldtype": "Link", "options": "Currency", "width": 75},
+        {"label": "Supplier", "fieldname": "supplier", "fieldtype": "Link", "options": "Supplier", "width": 90, "align": "left"},
+        {"label": "Supplier Name", "fieldname": "supplier_name", "fieldtype": "Data", "width": 260, "align": "left"},
+        {"label": "Grand Total", "fieldname": "grand_total", "fieldtype": "Currency", "options": "currency", "width": 100},
+        {"label": "Currency", "fieldname": "currency", "fieldtype": "Link", "options": "Currency", "width": 85},
         {"label": "Comments", "fieldname": "comments", "fieldtype": "Int", "width": 80},
         {"label": "Creator", "fieldname": "owner", "fieldtype": "Link", "options": "User", "width": 200},
-        {"label": "Creation Date", "fieldname": "creation", "fieldtype": "Date", "width": 125},
+        {"label": "Creation Date", "fieldname": "creation", "fieldtype": "Date", "width": 105},
     ]
 
 
