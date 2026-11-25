@@ -118,6 +118,31 @@ def apply_sql_configurations():
     frappe.db.commit()
 
 
+def migrate_auto_email_report_urls():
+    """
+    Replace legacy /#desk/ URLs with /app/ in Auto Email Report descriptions.
+    Safe to run repeatedly; other text and URL parts remain unchanged.
+
+    run
+    bench execute microsynth.microsynth.migration.v2025.migrate_auto_email_report_urls
+    """
+    reports = frappe.get_all(
+        "Auto Email Report",
+        filters={"description": ["like", "%/desk#%"]},
+        fields=["name", "description"],
+    )
+    updated = 0
+    for report in reports:
+        description = report.description or ""
+        new_description = description.replace("/desk#", "/app/")
+        if new_description != description:
+            frappe.db.set_value("Auto Email Report", report.name, "description", new_description)
+            updated += 1
+
+    frappe.db.commit()
+    print(f"Updated URLs in {updated} Auto Email Report descriptions.")
+
+
 def migrate2025():
     """
     Perform the 2025 migration tasks.
@@ -130,3 +155,4 @@ def migrate2025():
     configure_accounts_settings()
     configure_stock_settings()
     apply_sql_configurations()
+    migrate_auto_email_report_urls()
