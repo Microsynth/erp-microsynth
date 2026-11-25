@@ -8,16 +8,16 @@ from frappe import _
 
 def get_columns(filters):
     return [
-        {"label": _("Delivery Note"), "fieldname": "delivery_note", "fieldtype": "Link", "options": "Delivery Note", "width": 125 },
+        {"label": _("Delivery Note"), "fieldname": "delivery_note", "fieldtype": "Link", "options": "Delivery Note", "width": 170 },
         {"label": _("Type"), "fieldname": "type", "fieldtype": "Data", "width": 70 },
-        {"label": _("Oligos"), "fieldname": "oligo_count", "fieldtype": "Integer", "width": 55 },
+        {"label": _("Oligos"), "fieldname": "oligo_count", "fieldtype": "Integer", "width": 75 },
         {"label": _("Envelope"), "fieldname": "envelope", "fieldtype": "Data", "width": 150 },
         #{"label": _("Customer"), "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 75 },
         {"label": _("Customer Name"), "fieldname": "customer_name", "fieldtype": "Data", "width": 300 },
         #{"label": _("Contact"), "fieldname": "contact", "fieldtype": "Link", "options": "Contact", "width": 65 },
-        {"label": _("Sales Order"), "fieldname": "sales_order", "fieldtype": "Link", "options": "Sales Order", "width": 125 },
-        {"label": _("Web Order ID"), "fieldname": "web_order_id", "fieldtype": "Data", "width": 90 },
-        {"label": _("Shipping Label printed on"), "fieldname": "label_printed_on", "fieldtype": "Date", "width": 160 }
+        {"label": _("Sales Order"), "fieldname": "sales_order", "fieldtype": "Link", "options": "Sales Order", "width": 170 },
+        {"label": _("Web Order ID"), "fieldname": "web_order_id", "fieldtype": "Data", "width": 115 },
+        {"label": _("Shipping Label printed on"), "fieldname": "label_printed_on", "fieldtype": "Date", "width": 200 }
     ]
 
 

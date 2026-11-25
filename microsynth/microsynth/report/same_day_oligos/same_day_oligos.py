@@ -9,14 +9,14 @@ from datetime import datetime
 
 def get_columns():
     return [
-        {"label": _("Sales Order"), "fieldname": "name", "fieldtype": "Link", "options": "Sales Order", "width": 125},
+        {"label": _("Sales Order"), "fieldname": "name", "fieldtype": "Link", "options": "Sales Order", "width": 170},
         {"label": _("Status"), "fieldname": "status", "fieldtype": "Data", "width": 120},
-        {"label": _("Web ID"), "fieldname": "web_order_id_html", "fieldtype": "Data", "width": 70},
-        {"label": _("Customer"), "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 80},
+        {"label": _("Web ID"), "fieldname": "web_order_id_html", "fieldtype": "Data", "width": 90},
+        {"label": _("Customer"), "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 100},
         {"label": _("Customer name"), "fieldname": "customer_name", "fieldtype": "Data", "width": 250},
         {"label": _("Order created"), "fieldname": "creation", "fieldtype": "Date", "width": 130},
-        {"label": _("Label printed on"), "fieldname": "label_printed_on", "fieldtype": "Date", "width": 130},
-        {"label": _("Same Day fulfilled"), "fieldname": "fulfilled", "fieldtype": "Check", "width": 120}
+        {"label": _("Label printed on"), "fieldname": "label_printed_on", "fieldtype": "Date", "width": 140},
+        {"label": _("Same Day fulfilled"), "fieldname": "fulfilled", "fieldtype": "Check", "width": 150}
     ]
 
 

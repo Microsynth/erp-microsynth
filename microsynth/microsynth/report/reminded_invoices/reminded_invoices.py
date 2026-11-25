@@ -8,22 +8,22 @@ from frappe.utils.data import today
 
 def get_columns():
     return [
-        {"label": "Sales Invoice", "fieldname": "sales_invoice", "fieldtype": "Link", "options": "Sales Invoice", "width": 120},
-        {"label": "Customer", "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 75},
+        {"label": "Sales Invoice", "fieldname": "sales_invoice", "fieldtype": "Link", "options": "Sales Invoice", "width": 170},
+        {"label": "Customer", "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 90},
         {"label": "Customer Name", "fieldname": "customer_name", "fieldtype": "Data", "width": 230},
-        {"label": "Posting Date", "fieldname": "posting_date", "fieldtype": "Date", "width": 90},
-        {"label": "Due Date", "fieldname": "due_date", "fieldtype": "Date", "width": 75},
-        {"label": "Exclude from Payment Reminder until", "fieldname": "exclude_from_payment_reminder_until", "fieldtype": "Date", "width": 75},
-        {"label": "Outstanding", "fieldname": "outstanding_amount", "fieldtype": "Currency", "options": "currency", "width": 95},
+        {"label": "Posting Date", "fieldname": "posting_date", "fieldtype": "Date", "width": 100},
+        {"label": "Due Date", "fieldname": "due_date", "fieldtype": "Date", "width": 100},
+        {"label": "Exclude from Payment Reminder until", "fieldname": "exclude_from_payment_reminder_until", "fieldtype": "Date", "width": 100},
+        {"label": "Outstanding", "fieldname": "outstanding_amount", "fieldtype": "Currency", "options": "currency", "width": 105},
         {"label": "Reminders", "fieldname": "reminder_count", "fieldtype": "Int", "width": 80},
-        {"label": "Phone Numbers", "fieldname": "phone_numbers", "fieldtype": "Data", "width": 230},
-        {"label": "Contact Person", "fieldname": "contact_person", "fieldtype": "Link", "options": "Contact", "width": 65},
+        {"label": "Phone Numbers", "fieldname": "phone_numbers", "fieldtype": "Data", "width": 175},
+        {"label": "Contact Person", "fieldname": "contact_person", "fieldtype": "Link", "options": "Contact", "width": 80},
         {"label": "Contact Person Name", "fieldname": "contact_display", "fieldtype": "Data", "width": 135},
         {"label": "Note", "fieldname": "note", "fieldtype": "Data", "width": 180},
         {"label": "Remarks", "fieldname": "remarks", "fieldtype": "Data", "width": 180},
         {"label": "Accounting Note ID", "fieldname": "accounting_note_id", "fieldtype": "Link", "options": "Accounting Note", "width": 130},
-        {"label": "Invoice to", "fieldname": "invoice_to", "fieldtype": "Link", "options": "Contact", "width": 75},
-        {"label": "Reminder to", "fieldname": "reminder_to", "fieldtype": "Link", "options": "Contact", "width": 85}
+        {"label": "Invoice to", "fieldname": "invoice_to", "fieldtype": "Link", "options": "Contact", "width": 90},
+        {"label": "Reminder to", "fieldname": "reminder_to", "fieldtype": "Link", "options": "Contact", "width": 100}
     ]
 
 

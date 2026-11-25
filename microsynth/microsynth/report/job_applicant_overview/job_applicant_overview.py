@@ -13,7 +13,7 @@ def get_columns(filters):
         {"label": _("Job Title"), "fieldname": "job_title", "fieldtype": "Data", "width": 220},
         # {"label": _("Job Subtitle"), "fieldname": "job_subtitle", "fieldtype": "Data", "width": 180},
         {"label": _("Company"), "fieldname": "company", "fieldtype": "Link", "options": "Company", "width": 160},
-        {"label": _("Job Applicant"), "fieldname": "job_applicant", "fieldtype": "Link", "options": "Job Applicant", "width": 95},
+        {"label": _("Job Applicant"), "fieldname": "job_applicant", "fieldtype": "Link", "options": "Job Applicant", "width": 100},
         {"label": _("Creation"), "fieldname": "creation", "fieldtype": "Date", "width": 125},
         #{"label": _("Salutation"), "fieldname": "salutation", "fieldtype": "Link", "options": "Salutation", "width": 1},
         {"label": _("Applicant Name"), "fieldname": "applicant_name", "fieldtype": "Data", "width": 160},

@@ -9,19 +9,19 @@ from datetime import date, timedelta
 
 def get_columns():
     return [
-        {"label": _("Quotation ID"), "fieldname": "name", "fieldtype": "Link", "options": "Quotation", "width": 100},
-        {"label": _("Title"), "fieldname": "title", "fieldtype": "Data", "width": 250},
+        {"label": _("Quotation ID"), "fieldname": "name", "fieldtype": "Link", "options": "Quotation", "width": 120},
+        {"label": _("Title"), "fieldname": "title", "fieldtype": "Data", "width": 220},
         {"label": _("Status"), "fieldname": "status", "fieldtype": "Data", "width": 80},
-        {"label": _("Date"), "fieldname": "transaction_date", "fieldtype": "Date", "width": 80},
-        {"label": _("Valid till"), "fieldname": "valid_till", "fieldtype": "Date", "width": 80},
-        {"label": _("Quotation Type"), "fieldname": "quotation_type", "fieldtype": "Data", "width": 118},
-        {"label": _("Net Total"), "fieldname": "net_total", "fieldtype": "Currency", "options": "currency", "width": 100},
-        {"label": _("Last Follow Up"), "fieldname": "last_follow_up", "fieldtype": "Link", "options": "Contact Note", "width": 100},
-        {"label": _("Last Followed Up"), "fieldname": "last_follow_up_date", "fieldtype": "Date", "width": 115},
+        {"label": _("Date"), "fieldname": "transaction_date", "fieldtype": "Date", "width": 100},
+        {"label": _("Valid till"), "fieldname": "valid_till", "fieldtype": "Date", "width": 100},
+        {"label": _("Quotation Type"), "fieldname": "quotation_type", "fieldtype": "Data", "width": 120},
+        {"label": _("Net Total"), "fieldname": "net_total", "fieldtype": "Currency", "options": "currency", "width": 110},
+        {"label": _("Last Follow Up"), "fieldname": "last_follow_up", "fieldtype": "Link", "options": "Contact Note", "width": 125},
+        {"label": _("Last Followed Up"), "fieldname": "last_follow_up_date", "fieldtype": "Date", "width": 140},
         {"label": _("Customer"), "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 100},
         {"label": _("Contact Person"), "fieldname": "contact_person", "fieldtype": "Link", "options": "Contact", "width": 105},
         {"label": _("Contact Person Name"), "fieldname": "contact_display", "fieldtype": "Data", "width": 160 },
-        {"label": _("Sales Manager"), "fieldname": "sales_manager", "fieldtype": "Data", "width": 245 }
+        {"label": _("Sales Manager"), "fieldname": "sales_manager", "fieldtype": "Data", "width": 140 }
     ]
 
 

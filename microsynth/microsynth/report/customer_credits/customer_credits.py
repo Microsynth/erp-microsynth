@@ -17,17 +17,17 @@ def execute(filters=None):
 
 def get_columns():
     columns = [
-        {"label": _("Date"), "fieldname": "date", "fieldtype": "Date", "width": 80},
+        {"label": _("Date"), "fieldname": "date", "fieldtype": "Date", "width": 100},
         {"label": _("Customer"), "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 80},
         {"label": _("Customer name"), "fieldname": "customer_name", "fieldtype": "Data", "width": 200},
-        {"label": _("Sales Invoice"), "fieldname": "sales_invoice", "fieldtype": "Link", "options": "Sales Invoice", "width": 120},
+        {"label": _("Sales Invoice"), "fieldname": "sales_invoice", "fieldtype": "Link", "options": "Sales Invoice", "width": 150},
         {"label": _("Currency"), "fieldname": "currency", "fieldtype": "Link", "options": "Currency", "width": 70},
-        {"label": _("Net Amount"), "fieldname": "net_amount", "fieldtype": "Currency", "width": 105, 'options': 'currency'},
+        {"label": _("Net Amount"), "fieldname": "net_amount", "fieldtype": "Currency", "width": 120, 'options': 'currency'},
         #{"label": _("Type"), "fieldname": "type", "fieldtype": "Data", "width": 100},
-        {"label": _("Outstanding"), "fieldname": "outstanding", "fieldtype": "Currency", "width": 105, 'options': 'currency'},
+        {"label": _("Outstanding"), "fieldname": "outstanding", "fieldtype": "Currency", "width": 120, 'options': 'currency'},
         {"label": _("Product Type"), "fieldname": "product_type", "fieldtype": "Data", "width": 100},
         {"label": _("Status"), "fieldname": "status", "fieldtype": "Data", "width": 100},
-        {"label": _("Reference"), "fieldname": "reference", "fieldtype": "Link", "options": "Sales Invoice", "width": 120},
+        {"label": _("Reference"), "fieldname": "reference", "fieldtype": "Link", "options": "Sales Invoice", "width": 150},
         {"label": _("Credit Account"), "fieldname": "credit_account", "fieldtype": "Link", "options": "Credit Account", "width": 100},
         {"label": _("Account Type"), "fieldname": "account_type", "fieldtype": "Data", "width": 95},
         {"label": _("Territory"), "fieldname": "territory", "fieldtype": "Link", "options": "Territory", "width": 200},

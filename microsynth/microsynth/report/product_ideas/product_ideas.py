@@ -8,15 +8,15 @@ from frappe import _
 
 def get_columns(filters):
     return [
-        {"label": _("Name"), "fieldname": "name", "fieldtype": "Link", "options": "Product Idea", "width": 80 },
+        {"label": _("Name"), "fieldname": "name", "fieldtype": "Link", "options": "Product Idea", "width": 100 },
         {"label": _("Last Modified"), "fieldname": "modified", "fieldtype": "Date", "width": 125 },
-        {"label": _("Item Group"), "fieldname": "item_group", "fieldtype": "Link", "options": "Item Group", "width": 150 },
+        {"label": _("Item Group"), "fieldname": "item_group", "fieldtype": "Link", "options": "Item Group", "width": 170 },
         {"label": _("Territory"), "fieldname": "territory", "fieldtype": "Link", "options": "Territory", "width": 200 },
         {"label": _("Product"), "fieldname": "product", "fieldtype": "Data", "width": 300 },
-        {"label": _("Item"), "fieldname": "item", "fieldtype": "Link", "options": "Item", "width": 50 },
-        {"label": _("Rating"), "fieldname": "rating", "fieldtype": "Int", "width": 60 },
+        {"label": _("Item"), "fieldname": "item", "fieldtype": "Link", "options": "Item", "width": 80 },
+        {"label": _("Rating"), "fieldname": "rating", "fieldtype": "Int", "width": 80 },
         {"label": _("Notes"), "fieldname": "notes", "fieldtype": "Data", "width": 350 },
-        {"label": _("Has Attachment"), "fieldname": "has_attachment", "fieldtype": "Data", "width": 110},
+        {"label": _("Has Attachment"), "fieldname": "has_attachment", "fieldtype": "Data", "width": 140},
     ]
 
 

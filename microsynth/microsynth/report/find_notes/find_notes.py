@@ -8,15 +8,15 @@ from frappe import _
 
 def get_columns(filters):
     return [
-        {"label": _("Note ID"), "fieldname": "name", "fieldtype": "Link", "options": "Contact Note", "width": 100 },
-        {"label": _("Date"), "fieldname": "date", "fieldtype": "Date", "width": 75 },
-        {"label": _("Contact"), "fieldname": "contact_person", "fieldtype": "Link", "options": "Contact", "width": 65 },
+        {"label": _("Note ID"), "fieldname": "name", "fieldtype": "Link", "options": "Contact Note", "width": 120 },
+        {"label": _("Date"), "fieldname": "date", "fieldtype": "Date", "width": 100 },
+        {"label": _("Contact"), "fieldname": "contact_person", "fieldtype": "Link", "options": "Contact", "width": 90 },
         {"label": _("First Name"), "fieldname": "first_name", "fieldtype": "Data", "width": 80 },
         {"label": _("Last Name"), "fieldname": "last_name", "fieldtype": "Data", "width": 100 },
         {"label": _("Customer Name"), "fieldname": "customer_name", "fieldtype": "Data", "width": 130 },
-        {"label": _("Customer ID"), "fieldname": "customer_id", "fieldtype": "Link", "options": "Customer", "width": 90 },
-        {"label": _("Sales Manager"), "fieldname": "sales_manager", "fieldtype": "Data", "options": "User", "width": 100 },
-        {"label": _("Territory"), "fieldname": "territory", "fieldtype": "Link", "options": "Territory", "width": 135 },
+        {"label": _("Customer ID"), "fieldname": "customer_id", "fieldtype": "Link", "options": "Customer", "width": 100 },
+        {"label": _("Sales Manager"), "fieldname": "sales_manager", "fieldtype": "Data", "options": "User", "width": 90 },
+        {"label": _("Territory"), "fieldname": "territory", "fieldtype": "Link", "options": "Territory", "width": 110 },
         {"label": _("Country"), "fieldname": "country", "fieldtype": "Data", "width": 75 },
         {"label": _("City"), "fieldname": "city", "fieldtype": "Data", "width": 100 },
         #{"label": _("Institute"), "fieldname": "institute", "fieldtype": "Data", "width": 175 },

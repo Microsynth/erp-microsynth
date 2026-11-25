@@ -14,13 +14,13 @@ def execute(filters=None):
 
 def get_columns():
     columns = [
-        {"label": _("Date"), "fieldname": "date", "fieldtype": "Date", "width": 80},
-        {"label": _("ID"), "fieldname": "link", "fieldtype": "Link", "options": "Accounting Note", "width": 80},
-        {"label": _("Reference"), "fieldname": "reference_name", "fieldtype": "Dynamic Link", "options": "reference_doctype", "width": 125},
+        {"label": _("Date"), "fieldname": "date", "fieldtype": "Date", "width": 100},
+        {"label": _("ID"), "fieldname": "link", "fieldtype": "Link", "options": "Accounting Note", "width": 100},
+        {"label": _("Reference"), "fieldname": "reference_name", "fieldtype": "Dynamic Link", "options": "reference_doctype", "width": 170},
         {"label": _("SI Customer Name"), "fieldname": "reference_customer", "fieldtype": "Data", "width": 200},
         {"label": _("Note"), "fieldname": "note", "fieldtype": "Data", "width": 250, 'options': 'currency'},
-        {"label": _("Amount"), "fieldname": "amount", "fieldtype": "Currency", "options": "currency", "width": 90},
-        {"label": _("Status"), "fieldname": "status", "fieldtype": "Data", "width": 60},
+        {"label": _("Amount"), "fieldname": "amount", "fieldtype": "Currency", "options": "currency", "width": 110},
+        {"label": _("Status"), "fieldname": "status", "fieldtype": "Data", "width": 70},
         {"label": _("Related"), "fieldname": "related", "fieldtype": "data", "width": 200},
         {"label": _("Remarks"), "fieldname": "remarks", "fieldtype": "Data", "width": 550}
     ]

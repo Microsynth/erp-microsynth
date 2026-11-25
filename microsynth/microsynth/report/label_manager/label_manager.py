@@ -11,19 +11,19 @@ from microsynth.microsynth.seqblatt import set_status
 
 def get_columns(filters):
     return [
-        {"label": _("Label Barcode"), "fieldname": "label_id", "fieldtype": "Data", "width": 100 },
+        {"label": _("Label Barcode"), "fieldname": "label_id", "fieldtype": "Data", "width": 120 },
         {"label": _("Status"), "fieldname": "status", "fieldtype": "Data", "width": 75 },
-        {"label": _("Customer"), "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 75 },
+        {"label": _("Customer"), "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 90 },
         {"label": _("Customer Name"), "fieldname": "customer_name", "fieldtype": "Data", "width": 175 },
-        {"label": _("Contact"), "fieldname": "contact", "fieldtype": "Link", "options": "Contact", "width": 70 },
-        {"label": _("Sales Order"), "fieldname": "sales_order", "fieldtype": "Link", "options": "Sales Order", "width": 125 },
-        {"label": _("Web Order ID"), "fieldname": "web_order_id_html", "fieldtype": "Data", "width": 95 },
-        {"label": _("Item"), "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 250 },
+        {"label": _("Contact"), "fieldname": "contact", "fieldtype": "Link", "options": "Contact", "width": 90 },
+        {"label": _("Sales Order"), "fieldname": "sales_order", "fieldtype": "Link", "options": "Sales Order", "width": 170 },
+        {"label": _("Web Order ID"), "fieldname": "web_order_id_html", "fieldtype": "Data", "width": 115 },
+        {"label": _("Item"), "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 280 },
         #{"label": _("Item Name"), "fieldname": "item_name", "fieldtype": "Data", "width": 200 },  # not necessary, gets automatically pulled into Item Code
-        {"label": _("Registered"), "fieldname": "registered", "fieldtype": "Check", "width": 80 },
-        {"label": _("Registered To"), "fieldname": "registered_to", "fieldtype": "Link", "options": "Contact", "width": 100 },
-        {"label": _("Sequencing Label"), "fieldname": "name", "fieldtype": "Link", "options": "Sequencing Label", "width": 115 },
-        {"label": _("Created on"), "fieldname": "creation", "fieldtype": "Date", "width": 125 },
+        {"label": _("Registered"), "fieldname": "registered", "fieldtype": "Check", "width": 100 },
+        {"label": _("Registered To"), "fieldname": "registered_to", "fieldtype": "Link", "options": "Contact", "width": 120 },
+        {"label": _("Sequencing Label"), "fieldname": "name", "fieldtype": "Link", "options": "Sequencing Label", "width": 150 },
+        {"label": _("Created on"), "fieldname": "creation", "fieldtype": "Date", "width": 105 },
     ]
 
 

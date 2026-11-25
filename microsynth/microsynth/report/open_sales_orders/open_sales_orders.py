@@ -8,23 +8,23 @@ from frappe import _
 
 def get_columns():
     return [
-        {"label": _("Sales Order"), "fieldname": "name", "fieldtype": "Link", "options": "Sales Order", "width": 125},
-        {"label": _("Date"), "fieldname": "date", "fieldtype": "Date", "width": 80},
-        {"label": _("Total"), "fieldname": "total", "fieldtype": "Currency", "options": "currency", "width": 95},
-        {"label": _("Customer"), "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 80},
+        {"label": _("Sales Order"), "fieldname": "name", "fieldtype": "Link", "options": "Sales Order", "width": 175},
+        {"label": _("Date"), "fieldname": "date", "fieldtype": "Date", "width": 100},
+        {"label": _("Total"), "fieldname": "total", "fieldtype": "Currency", "options": "currency", "width": 110},
+        {"label": _("Customer"), "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 90},
         {"label": _("Customer Name"), "fieldname": "customer_name", "fieldtype": "Data", "width": 180},
         {"label": _("Invoicing Method"), "fieldname": "inv_method_customer", "fieldtype": "Data", "width": 115},
         {"label": _("Web Order ID"), "fieldname": "web_order_id_html", "fieldtype": "HTML", "width": 90},
         {"label": _("DNs"), "fieldname": "dns", "fieldtype": "Integer", "width": 45},
-        {"label": _("Product Type"), "fieldname": "product_type", "fieldtype": "Data", "width": 100},
+        {"label": _("Product Type"), "fieldname": "product_type", "fieldtype": "Data", "width": 120},
         {"label": _("Pending Samples"), "fieldname": "pending_samples", "fieldtype": "Data", "width": 45},
         {"label": _("Open Oligos"), "fieldname": "open_oligos", "fieldtype": "Data", "width": 45},
         {"label": _("Status"), "fieldname": "status", "fieldtype": "Data", "width": 90},
         {"label": _("Comments"), "fieldname": "comments", "fieldtype": "Int", "width": 80},
-        {"label": _("Company"), "fieldname": "company", "fieldtype": "Data", "width": 155},
-        {"label": _("Punchout"), "fieldname": "is_punchout", "fieldtype": "Check", "width": 75},
-        {"label": _("Hold Order"), "fieldname": "hold_order", "fieldtype": "Check", "width": 80},
-        {"label": _("Hold Inv."), "fieldname": "hold_invoice", "fieldtype": "Check", "width": 70},
+        {"label": _("Company"), "fieldname": "company", "fieldtype": "Data", "width": 140},
+        {"label": _("Punchout"), "fieldname": "is_punchout", "fieldtype": "Check", "width": 40},
+        {"label": _("Hold Order"), "fieldname": "hold_order", "fieldtype": "Check", "width": 40},
+        {"label": _("Hold Inv."), "fieldname": "hold_invoice", "fieldtype": "Check", "width": 40},
         {"label": _("Creator"), "fieldname": "owner", "fieldtype": "Link", "options": "User", "width": 220},
         {"label": _("Items"), "fieldname": "items", "fieldtype": "Data", "width": 500}
     ]

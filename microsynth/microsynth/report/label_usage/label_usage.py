@@ -9,24 +9,24 @@ import re
 
 def get_columns():
     return [
-        {"label": _("Sales Order"), "fieldname": "name", "fieldtype": "Link", "options": "Sales Order", "width": 125},
-        {"label": _("Date"), "fieldname": "date", "fieldtype": "Date", "width": 75},
+        {"label": _("Sales Order"), "fieldname": "name", "fieldtype": "Link", "options": "Sales Order", "width": 170},
+        {"label": _("Date"), "fieldname": "date", "fieldtype": "Date", "width": 100},
         {"label": _("Label Barcode"), "fieldname": "sequencing_label_id", "fieldtype": "Data", "width": 100},
-        {"label": _("Contact"), "fieldname": "contact_person", "fieldtype": "Link", "options": "Contact", "width": 70},
-        {"label": _("Customer"), "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 80},
-        {"label": _("Customer name"), "fieldname": "customer_name", "fieldtype": "Data", "width": 250},
-        {"label": _("Web Order ID"), "fieldname": "web_order_id_html", "fieldtype": "Data", "width": 95},
-        {"label": _("Sample count"), "fieldname": "sample_count", "fieldtype": "Integer", "width": 100},
+        {"label": _("Contact"), "fieldname": "contact_person", "fieldtype": "Link", "options": "Contact", "width": 90},
+        {"label": _("Customer"), "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 90},
+        {"label": _("Customer name"), "fieldname": "customer_name", "fieldtype": "Data", "width": 200},
+        {"label": _("Web Order ID"), "fieldname": "web_order_id_html", "fieldtype": "Data", "width": 115},
+        {"label": _("Sample count"), "fieldname": "sample_count", "fieldtype": "Integer", "width": 120},
         # control fields:
         {"label": _("Total"), "fieldname": "total", "fieldtype": "Currency", "options": "currency", "width": 95},
         {"label": _("Status"), "fieldname": "status", "fieldtype": "Data", "width": 120},
-        {"label": _("Product Type"), "fieldname": "product_type", "fieldtype": "Data", "width": 110},
-        {"label": _("Company"), "fieldname": "company", "fieldtype": "Data", "width": 155},
+        {"label": _("Product Type"), "fieldname": "product_type", "fieldtype": "Data", "width": 115},
+        {"label": _("Company"), "fieldname": "company", "fieldtype": "Data", "width": 140},
         #{"label": _("Punchout"), "fieldname": "is_punchout", "fieldtype": "Check", "width": 75},
         #{"label": _("Hold Order"), "fieldname": "hold_order", "fieldtype": "Check", "width": 80},
         #{"label": _("Hold Inv."), "fieldname": "hold_invoice", "fieldtype": "Check", "width": 70},
-        {"label": _("Creator"), "fieldname": "owner", "fieldtype": "Link", "options": "User", "width": 200},
-        {"label": _("Item"), "fieldname": "item", "fieldtype": "Link", "options": "Item", "width": 50}
+        {"label": _("Creator"), "fieldname": "owner", "fieldtype": "Link", "options": "User", "width": 120},
+        {"label": _("Item"), "fieldname": "item", "fieldtype": "Link", "options": "Item", "width": 70}
     ]
 
 

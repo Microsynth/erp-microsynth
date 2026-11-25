@@ -12,17 +12,17 @@ def execute(filters=None):
 
 def get_columns():
     return [
-        {"label": _("Sales Order"), "fieldname": "sales_order", "fieldtype": "Link", "options": "Sales Order", "width": 125},
-        {"label": _("Web Order ID"), "fieldname": "web_order_id_html", "fieldtype": "Data", "width": 90},
+        {"label": _("Sales Order"), "fieldname": "sales_order", "fieldtype": "Link", "options": "Sales Order", "width": 170},
+        {"label": _("Web Order ID"), "fieldname": "web_order_id_html", "fieldtype": "Data", "width": 115},
         {"label": _("Punchout"), "fieldname": "is_punchout", "fieldtype": "Check", "width": 55},
         {"label": _("Customer"), "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 75},
         {"label": _("Customer name"), "fieldname": "customer_name", "fieldtype": "Data", "width": 200},
         {"label": _("Invoicing Method"), "fieldname": "invoicing_method", "fieldtype": "Data", "width": 120},
         {"label": _("Contact"), "fieldname": "contact", "fieldtype": "Link", "options": "Contact", "width": 70},
         {"label": _("Contact name"), "fieldname": "contact_name", "fieldtype": "Data", "width": 150},
-        {"label": _("Date"), "fieldname": "date", "fieldtype": "Date", "width": 80},
+        {"label": _("Date"), "fieldname": "date", "fieldtype": "Date", "width": 100},
         {"label": _("Product Type"), "fieldname": "product_type", "fieldtype": "Data", "width": 100},
-        {"label": _("Comment"), "fieldname": "comment", "fieldtype": "Data", "width": 585}
+        {"label": _("Comment"), "fieldname": "comment", "fieldtype": "Data", "width": 550}
     ]
 
 @frappe.whitelist()

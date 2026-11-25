@@ -13,7 +13,7 @@ def get_columns():
             "fieldname": "customer",
             "fieldtype": "Link",
             "options": "Customer",
-            "width": 80,
+            "width": 100,
         },
         {
             "label": "Customer Name",
@@ -33,14 +33,14 @@ def get_columns():
             "fieldname": "account_manager",
             "fieldtype": "Link",
             "options": "User",
-            "width": 240,
+            "width": 250,
         },
         {
             "label": "Territory Sales Manager",
             "fieldname": "sales_manager",
             "fieldtype": "Link",
             "options": "User",
-            "width": 240,
+            "width": 250,
             "align": "left",
         },
     ]

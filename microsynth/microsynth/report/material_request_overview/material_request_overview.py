@@ -10,20 +10,20 @@ from microsynth.qms.report.users_by_process.users_by_process import get_users
 
 def get_columns(mode=None):
     columns = [
-        {"label": _("Request"), "fieldname": "material_request", "fieldtype": "Dynamic Link", "options": "request_type", "width": 95},
-        {"label": _("Request Date"), "fieldname": "transaction_date", "fieldtype": "Date", "width": 75}
+        {"label": _("Request"), "fieldname": "material_request", "fieldtype": "Dynamic Link", "options": "request_type", "width": 115},
+        {"label": _("Request Date"), "fieldname": "transaction_date", "fieldtype": "Date", "width": 100}
     ]
     if mode == "All Material Requests":
         columns += [
-            {"label": _("Receipt Date"), "fieldname": "receipt_date", "fieldtype": "Date", "width": 90},
-            {"label": _("TAT (d)"), "fieldname": "turnaround_time", "fieldtype": "Int", "width": 60},
+            {"label": _("Receipt Date"), "fieldname": "receipt_date", "fieldtype": "Date", "width": 100},
+            {"label": _("TAT (d)"), "fieldname": "turnaround_time", "fieldtype": "Int", "width": 75},
         ]
     else:
         columns += [
-            {"label": _("Required By"), "fieldname": "schedule_date", "fieldtype": "Date", "width": 75}
+            {"label": _("Required By"), "fieldname": "schedule_date", "fieldtype": "Date", "width": 100}
         ]
     columns += [
-        {"label": _("Item"), "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 275},
+        {"label": _("Item"), "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 250},
         #{"label": _("Item Name"), "fieldname": "item_name", "fieldtype": "Data", "width": 200},
         {"label": _("Qty"), "fieldname": "qty", "fieldtype": "Int", "width": 45},
         {"label": _("Unit"), "fieldname": "uom", "fieldtype": "Data", "width": 60},
@@ -31,16 +31,16 @@ def get_columns(mode=None):
     if mode != "To Order":
         columns += [
             {"label": _("Ordered Qty"), "fieldname": "ordered_qty", "fieldtype": "Int", "width": 50},
-            {"label": _("Purchase Order"), "fieldname": "purchase_order", "fieldtype": "Link", "options": "Purchase Order", "width": 105},
+            {"label": _("Purchase Order"), "fieldname": "purchase_order", "fieldtype": "Link", "options": "Purchase Order", "width": 110},
             {"label": _("Received Qty"), "fieldname": "received_qty", "fieldtype": "Int", "width": 50},
-            {"label": _("Pur. Receipt"), "fieldname": "receipt", "fieldtype": "Link", "options": "Purchase Receipt", "width": 90},
+            {"label": _("Pur. Receipt"), "fieldname": "receipt", "fieldtype": "Link", "options": "Purchase Receipt", "width": 110},
         ]
     columns += [
-        {"label": _("Amount"), "fieldname": "amount", "fieldtype": "Currency", "options": "currency", "width": 90},
-        {"label": _("Supplier"), "fieldname": "supplier", "fieldtype": "Link", "options": "Supplier", "width": 65},
-        {"label": _("Supplier Name"), "fieldname": "supplier_name", "fieldtype": "Data", "width": 190},
-        {"label": _("Supplier Item Code"), "fieldname": "supplier_part_no", "fieldtype": "Data", "width": 110},
-        {"label": _("Requested By"), "fieldname": "requested_by", "fieldtype": "Link", "options": "User", "width": 100},
+        {"label": _("Amount"), "fieldname": "amount", "fieldtype": "Currency", "options": "currency", "width": 110},
+        {"label": _("Supplier"), "fieldname": "supplier", "fieldtype": "Link", "options": "Supplier", "width": 85},
+        {"label": _("Supplier Name"), "fieldname": "supplier_name", "fieldtype": "Data", "width": 150},
+        {"label": _("Supplier Item Code"), "fieldname": "supplier_part_no", "fieldtype": "Data", "width": 120},
+        {"label": _("Requested By"), "fieldname": "requested_by", "fieldtype": "Link", "options": "User", "width": 90},
         {"label": _("Comment"), "fieldname": "comment", "fieldtype": "Data", "width": 500, "align": "left"},
         {"label": _("QM Process"), "fieldname": "qm_processes", "fieldtype": "Data", "width": 400, "align": "left"}
     ]

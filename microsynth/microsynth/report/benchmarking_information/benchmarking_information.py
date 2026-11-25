@@ -8,17 +8,17 @@ from frappe import _
 
 def get_columns(filters):
     return [
-        {"label": _("Name"), "fieldname": "name", "fieldtype": "Link", "options": "Benchmark", "width": 85 },
-        {"label": _("Last Modified"), "fieldname": "modified", "fieldtype": "Date", "width": 125 },
-        {"label": _("Item Group"), "fieldname": "item_group", "fieldtype": "Link", "options": "Item Group", "width": 140 },
-        {"label": _("Territory"), "fieldname": "territory", "fieldtype": "Link", "options": "Territory", "width": 185 },
-        {"label": _("Product"), "fieldname": "product", "fieldtype": "Data", "width": 240 },
-        {"label": _("Rate"), "fieldname": "rate", "fieldtype": "Currency", "width": 95, 'options': 'currency'},
-        {"label": _("Currency"), "fieldname": "currency", "fieldtype": "Link", "options": "Currency", "width": 40 },
-        {"label": _("Item"), "fieldname": "item", "fieldtype": "Link", "options": "Item", "width": 50 },
-        {"label": _("Competitor"), "fieldname": "competitor", "fieldtype": "Data", "width": 180 },
-        {"label": _("Notes"), "fieldname": "notes", "fieldtype": "Data", "width": 300 },
-        {"label": _("Has Attachment"), "fieldname": "has_attachment", "fieldtype": "Data", "width": 110 },
+        {"label": _("Name"), "fieldname": "name", "fieldtype": "Link", "options": "Benchmark", "width": 120 },
+        {"label": _("Last Modified"), "fieldname": "modified", "fieldtype": "Date", "width": 115 },
+        {"label": _("Item Group"), "fieldname": "item_group", "fieldtype": "Link", "options": "Item Group", "width": 150 },
+        {"label": _("Territory"), "fieldname": "territory", "fieldtype": "Link", "options": "Territory", "width": 170 },
+        {"label": _("Product"), "fieldname": "product", "fieldtype": "Data", "width": 230 },
+        {"label": _("Rate"), "fieldname": "rate", "fieldtype": "Currency", "width": 110, 'options': 'currency'},
+        {"label": _("Currency"), "fieldname": "currency", "fieldtype": "Link", "options": "Currency", "width": 55 },
+        {"label": _("Item"), "fieldname": "item", "fieldtype": "Link", "options": "Item", "width": 70 },
+        {"label": _("Competitor"), "fieldname": "competitor", "fieldtype": "Data", "width": 175 },
+        {"label": _("Notes"), "fieldname": "notes", "fieldtype": "Data", "width": 260 },
+        {"label": _("Has Attachment"), "fieldname": "has_attachment", "fieldtype": "Data", "width": 70 },
         {"label": _("Created By"), "fieldname": "owner", "fieldtype": "Link", "options": "User", "width": 100 }
     ]
 

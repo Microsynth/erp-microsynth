@@ -12,12 +12,12 @@ from microsynth.microsynth.utils import user_has_role
 
 def get_columns():
     return [
-        {"label": _("Supplier Item Code"), "fieldname": "supplier_part_no", "fieldtype": "Data", "width": 125, "align": "left"},
-        {"label": _("Item"), "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 315, "align": "left"},
-        {"label": _("Pack Size"), "fieldname": "pack_size", "fieldtype": "Float", "precision": 2, "width": 75},
-        {"label": _("Pack unit"), "fieldname": "pack_uom", "fieldtype": "Data", "width": 75},
-        {"label": _("Material Code"), "fieldname": "material_code", "fieldtype": "Data", "width": 95},
-        {"label": _("Supplier"), "fieldname": "supplier", "fieldtype": "Link", "options": "Supplier", "width": 65},
+        {"label": _("Supplier Item Code"), "fieldname": "supplier_part_no", "fieldtype": "Data", "width": 140, "align": "left"},
+        {"label": _("Item"), "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 320, "align": "left"},
+        {"label": _("Pack Size"), "fieldname": "pack_size", "fieldtype": "Float", "precision": 2, "width": 90},
+        {"label": _("Pack unit"), "fieldname": "pack_uom", "fieldtype": "Data", "width": 90},
+        {"label": _("Material Code"), "fieldname": "material_code", "fieldtype": "Data", "width": 110},
+        {"label": _("Supplier"), "fieldname": "supplier", "fieldtype": "Link", "options": "Supplier", "width": 90},
         {"label": _("Supplier Name"), "fieldname": "supplier_name", "fieldtype": "Data", "width": 210},
         {"label": _("Price"), "fieldname": "price_list_rate", "fieldtype": "Currency", "options": "currency", "width": 95},
         {"label": _("Purchase unit"), "fieldname": "purchase_uom", "fieldtype": "Data", "width": 100},
