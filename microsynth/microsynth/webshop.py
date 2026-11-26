@@ -955,15 +955,25 @@ def request_quote(content, client="webshop"):
             else:
                 shipping_contact = content['contact']
             shipping_items = get_contact_shipping_items(shipping_contact)
-            for item in shipping_items:
+            for item in shipping_items.get('shipping_items', []):
                 if item.get('preferred_express'):
                     express_shipping = item
                     break
+            if not express_shipping:
+                lookup_message = (shipping_items.get('internal_message') if not shipping_items.get('success')
+                                  else 'no preferred express item found')
+                frappe.throw(
+                    f"No preferred express shipping item found for Customer '{content['customer']}', "
+                    f"shipping Contact '{shipping_contact}', delivery Country '{shipping_address.country}' "
+                    f"and currency '{customer_doc.default_currency}'. Configure a preferred express "
+                    f"shipping item for the customer or an applicable country. "
+                    f"Contact shipping lookup: {lookup_message or 'no preferred express item found'}."
+                )
         qtn_doc.append('items', {
-            'item_code': express_shipping.item,
-            'item_name': express_shipping.item_name,
+            'item_code': express_shipping.get('item'),
+            'item_name': express_shipping.get('item_name'),
             'qty': 1,
-            'rate': express_shipping.rate
+            'rate': express_shipping.get('rate')
         })
     # append taxes
     category = "Service"
