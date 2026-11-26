@@ -1795,10 +1795,11 @@ def transmit_sales_invoice(sales_invoice_id):
 
         settings = frappe.get_doc("Microsynth Settings", "Microsynth Settings")
 
-        punchout_billing_contact_id = frappe.get_value("Punchout Shop", sales_invoice.punchout_shop, "billing_contact") if sales_invoice.is_punchout else None
+        punchout_billing_contact_id = None
+        if sales_invoice.is_punchout and frappe.get_value("Punchout Shop", sales_invoice.punchout_shop, "has_static_billing_address"):
+            punchout_billing_contact_id = frappe.get_value("Punchout Shop", sales_invoice.punchout_shop, "billing_contact")
 
-        # TODO: Use punchout shop contact only, if the flag "has_static_billing_address" is activated
-        if sales_invoice.is_punchout and punchout_billing_contact_id:
+        if punchout_billing_contact_id:
             invoice_contact = frappe.get_doc("Contact", punchout_billing_contact_id)
         elif sales_invoice.invoice_to:
             invoice_contact = frappe.get_doc("Contact", sales_invoice.invoice_to)
