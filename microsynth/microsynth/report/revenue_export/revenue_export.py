@@ -116,7 +116,7 @@ def get_item_revenue(filters, month, item_groups, debug=False):
                     0
                 ) AS `base_net_amount`,
                 `tabSales Invoice Item`.`item_code` AS `item_code`,
-                `tabSales Invoice Item`.`item_name` AS `item_name`,
+                `tabItem`.`item_name` AS `item_name`,
                 `tabSales Invoice Item`.`item_group` AS `item_group`,
                 `tabSales Invoice Item`.`qty` AS `qty`,
                 `tabSales Invoice`.`currency` AS `currency`,
@@ -137,6 +137,7 @@ def get_item_revenue(filters, month, item_groups, debug=False):
                 `tabContact`.`institute_key` AS `institute_key`
             FROM `tabSales Invoice Item`
             LEFT JOIN `tabSales Invoice` ON `tabSales Invoice Item`.`parent` = `tabSales Invoice`.`name`
+            LEFT JOIN `tabItem` ON `tabItem`.`name` = `tabSales Invoice Item`.`item_code`
             LEFT JOIN `tabContact` ON `tabContact`.`name` = `tabSales Invoice`.`contact_person`
             LEFT JOIN `tabAddress` ON `tabAddress`.`name` = `tabSales Invoice`.`shipping_address_name`
             WHERE
