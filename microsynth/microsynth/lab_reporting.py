@@ -20,6 +20,8 @@ from microsynth.microsynth.utils import (
     send_email_from_template
 )
 
+GENETIC_ANALYSIS_AUTOCOMPLETION_ITEMS = ('6032', '6033', '6200', '6201', '6202', '6210', '6211', '6212')
+
 
 def get_sales_order_samples(sales_order_id):
     """
@@ -487,15 +489,23 @@ def set_sample_labels_processed(samples):
 
 def check_mycoplasma_sales_order_completion(verbose=False):
     """
-    Find Mycoplasma Sales Orders that have no Delivery Note and are not Closed or Cancelled.
+    Wrapper for check_genetic_analysis_sales_order_completion
+    (can be deleted once cronjob is updated to call the new function)
+    """
+    check_genetic_analysis_sales_order_completion(verbose=verbose)
+
+
+def check_genetic_analysis_sales_order_completion(verbose=False):
+    """
+    Find Genetic Analysis/FLA Sales Orders that have no Delivery Note and are not Closed or Cancelled.
     Check if all their Samples are Processed. If yes, create a Delivery Note in Draft status.
     Should be run by a daily cronjob:
-    # check mycoplasma sales orders for completion
-    40 1 * * * cd /home/frappe/frappe-bench && /usr/local/bin/bench --site erp.microsynth.local execute microsynth.microsynth.lab_reporting.check_mycoplasma_sales_order_completion
+    # check genetic analysis/FLA sales orders for completion
+    40 1 * * * cd /home/frappe/frappe-bench && /usr/local/bin/bench --site erp.microsynth.local execute microsynth.microsynth.lab_reporting.check_genetic_analysis_sales_order_completion
 
-    bench execute microsynth.microsynth.lab_reporting.check_mycoplasma_sales_order_completion --kwargs "{'verbose': True}"
+    bench execute microsynth.microsynth.lab_reporting.check_genetic_analysis_sales_order_completion --kwargs "{'verbose': True}"
     """
-    open_mycoplasma_sales_orders = frappe.db.sql("""
+    open_genetic_analysis_sales_orders = frappe.db.sql("""
             SELECT `tabSales Order`.`name`,
                 `tabSales Order`.`web_order_id`
             FROM `tabSales Order`
@@ -506,9 +516,15 @@ def check_mycoplasma_sales_order_completion(verbose=False):
                                             AND `tabDelivery Note`.`docstatus` < 2
             WHERE `tabSales Order`.`docstatus` = 1
                 AND `tabSales Order`.`status` NOT IN ("Closed", "Completed")
-                AND `tabSales Order`.`product_type` = "Genetic Analysis"
+                AND `tabSales Order`.`product_type` IN ("Genetic Analysis", "FLA")
                 AND `tabSales Order`.`per_delivered` < 100
-                AND `tabSales Order Item`.`item_code` IN ('6032', '6033')
+                AND `tabSales Order Item`.`item_code` IN %s
+                AND NOT EXISTS (
+                    SELECT 1
+                    FROM `tabSales Order Item` AS `order_item`
+                    WHERE `order_item`.`parent` = `tabSales Order`.`name`
+                        AND (`order_item`.`item_code` IS NULL OR `order_item`.`item_code` NOT IN %s)
+                )
                 AND (
                     `tabSales Order`.`web_order_id` IS NULL
                     OR NOT EXISTS (
@@ -520,12 +536,12 @@ def check_mycoplasma_sales_order_completion(verbose=False):
                 )
             GROUP BY `tabSales Order`.`name`
             HAVING COUNT(`tabDelivery Note Item`.`parent`) = 0;
-        """, as_dict=True)
+        """, (GENETIC_ANALYSIS_AUTOCOMPLETION_ITEMS, GENETIC_ANALYSIS_AUTOCOMPLETION_ITEMS), as_dict=True)
     if verbose:
-        print(f"Found {len(open_mycoplasma_sales_orders)} open Mycoplasma Sales Orders.")
+        print(f"Found {len(open_genetic_analysis_sales_orders)} open Genetic Analysis Sales Orders.")
 
     # check completion of each Mycoplasma Sales Order: Sequencing Labels of this order on processed
-    for sales_order in open_mycoplasma_sales_orders:
+    for sales_order in open_genetic_analysis_sales_orders:
         if not validate_sales_order_status(sales_order['name']):
             # validate_sales_order_status writes to the error log in case of an issue
             if verbose:
@@ -578,12 +594,12 @@ def check_mycoplasma_sales_order_completion(verbose=False):
                 print(msg)
 
 
-def check_submit_mycoplasma_delivery_note(delivery_note, verbose=False):
+def check_submit_genetic_analysis_delivery_note(delivery_note, verbose=False):
     """
     Check if the delivery note is eligible for autocompletion and submit it.
     If the Delivery Note Grand Total is 0 and it has exactly one item, close the related Sales Order since the Delivery Note won't be invoiced.
 
-    bench execute microsynth.microsynth.lab_reporting.check_submit_mycoplasma_delivery_note --kwargs "{'delivery_note': 'DN-BAL-24050508', 'verbose': True}"
+    bench execute microsynth.microsynth.lab_reporting.check_submit_genetic_analysis_delivery_note --kwargs "{'delivery_note': 'DN-BAL-24050508', 'verbose': True}"
     """
     try:
         delivery_note = frappe.get_doc("Delivery Note", delivery_note)
@@ -592,12 +608,12 @@ def check_submit_mycoplasma_delivery_note(delivery_note, verbose=False):
             msg = f"Delivery Note '{delivery_note.name}' is not in Draft. docstatus: {delivery_note.docstatus}"
             if verbose:
                 print(msg)
-            frappe.log_error(message=msg, title="lab_reporting.check_submit_mycoplasma_delivery_note")
+            frappe.log_error(message=msg, title="lab_reporting.check_submit_genetic_analysis_delivery_note")
             return
 
         sales_orders = []
         for i in delivery_note.items:
-            if i.item_code not in ['6032', '6033']:
+            if i.item_code not in GENETIC_ANALYSIS_AUTOCOMPLETION_ITEMS:
                 if verbose:
                     print(f"Delivery Note '{delivery_note.name}': Item '{i.item_code}' is not allowed for autocompletion")
                 return
@@ -608,7 +624,7 @@ def check_submit_mycoplasma_delivery_note(delivery_note, verbose=False):
             msg = f"Delivery Note '{delivery_note.name}' is derived from {len(sales_orders)} Sales Orders. Not going to submit it."
             if verbose:
                 print(msg)
-            frappe.log_error(message=msg, title="lab_reporting.check_submit_mycoplasma_delivery_note")
+            frappe.log_error(message=msg, title="lab_reporting.check_submit_genetic_analysis_delivery_note")
             return
 
         # Check that the delivery note was created at least 7 days ago
@@ -616,6 +632,7 @@ def check_submit_mycoplasma_delivery_note(delivery_note, verbose=False):
         if time_between_insertion.days <= 7:
             if verbose:
                 print(f"Delivery Note '{delivery_note.name}' is not older than 7 days and was created on {delivery_note.creation}. Not going to submit it.")
+            frappe.log_error(message=f"Delivery Note '{delivery_note.name}' is not older than 7 days.", title="lab_reporting.check_submit_genetic_analysis_delivery_note")
             return
 
         # Check that the Delivery Note does not contain a Sample with a Barcode Label associated with more than one Sample
@@ -687,25 +704,33 @@ def check_submit_mycoplasma_delivery_note(delivery_note, verbose=False):
 
 def submit_mycoplasma_delivery_notes(verbose=False):
     """
+    Wrapper for submit_genetic_analysis_delivery_notes
+    (can be deleted once cronjob is updated to call the new function)
+    """
+    submit_genetic_analysis_delivery_notes(verbose)
+
+
+def submit_genetic_analysis_delivery_notes(verbose=False):
+    """
     Checks all delivery note drafts of product type sequencing and submits them if eligible.
     Should be run by a daily cronjob:
-    # submit mycoplasma delivery notes with defined items
-    35 1 * * * cd /home/frappe/frappe-bench && /usr/local/bin/bench --site erp.microsynth.local execute microsynth.microsynth.lab_reporting.submit_mycoplasma_delivery_notes
+    # submit genetic analysis/FLA delivery notes with defined items
+    35 1 * * * cd /home/frappe/frappe-bench && /usr/local/bin/bench --site erp.microsynth.local execute microsynth.microsynth.lab_reporting.submit_genetic_analysis_delivery_notes
 
-    bench execute microsynth.microsynth.lab_reporting.submit_mycoplasma_delivery_notes --kwargs "{'verbose': True}"
+    bench execute microsynth.microsynth.lab_reporting.submit_genetic_analysis_delivery_notes --kwargs "{'verbose': True}"
     """
-    delivery_notes = frappe.db.sql(f"""
+    delivery_notes = frappe.db.sql("""
         SELECT `tabDelivery Note`.`name`
         FROM `tabDelivery Note`
         LEFT JOIN `tabDelivery Note Item` ON `tabDelivery Note Item`.`parent` = `tabDelivery Note`.`name`
         WHERE `tabDelivery Note`.`docstatus` = 0
-            AND `tabDelivery Note`.`product_type` = "Genetic Analysis"
-            AND `tabDelivery Note Item`.`item_code` IN ('6032', '6033')
+            AND `tabDelivery Note`.`product_type`IN ("Genetic Analysis", "FLA")
+            AND `tabDelivery Note Item`.`item_code` IN %s
         GROUP BY `tabDelivery Note`.`name`
-    ;""", as_dict=True)
+    ;""", (GENETIC_ANALYSIS_AUTOCOMPLETION_ITEMS,), as_dict=True)
     if verbose:
-        print(f"Found {len(delivery_notes)} Mycoplasma Delivery Note Drafts: {[dn['name'] for dn in delivery_notes]}")
+        print(f"Found {len(delivery_notes)} Genetic Analysis/FLA Delivery Note Drafts: {[dn['name'] for dn in delivery_notes]}")
 
     for dn in delivery_notes:
-        check_submit_mycoplasma_delivery_note(dn.get('name'), verbose)
+        check_submit_genetic_analysis_delivery_note(dn.get('name'), verbose)
         frappe.db.commit()
