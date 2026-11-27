@@ -289,73 +289,82 @@ frappe.invoice_entry = {
         });
     },
     save_document: function(purchase_invoice_name, edit_mode=false) {
-        let net_total_inputs = document.querySelectorAll("input[data-fieldname='net_total_" + purchase_invoice_name + "']");
-        let net_total = null;
-        if ((net_total_inputs) && (net_total_inputs.length > 0)) {
-            net_total = net_total_inputs[0].value;
-        }
-        let doc = {
-            'name': purchase_invoice_name,
-            'supplier': document.querySelectorAll("input[data-fieldname='supplier_" + purchase_invoice_name + "']")[0].value,
-            'bill_date': document.querySelectorAll("input[data-fieldname='bill_date_" + purchase_invoice_name + "']")[0].value,
-            'posting_date': document.querySelectorAll("input[data-fieldname='posting_date_" + purchase_invoice_name + "']")[0].value,
-            'due_date': document.querySelectorAll("input[data-fieldname='due_date_" + purchase_invoice_name + "']")[0].value,
-            'bill_no': document.querySelectorAll("input[data-fieldname='bill_no_" + purchase_invoice_name + "']")[0].value,
-            'approver': document.querySelectorAll("input[data-fieldname='approver_" + purchase_invoice_name + "']")[0].value,
-            'remarks': document.querySelectorAll("input[data-fieldname='remarks_" + purchase_invoice_name + "']")[0].value,
-            'net_total': net_total
-        };
-        frappe.call({
-            'method': 'microsynth.microsynth.page.invoice_entry.invoice_entry.save_document',
-            'args': {
-                'doc': doc
-            },
-            'freeze': true,
-            'freeze_message': __("Saving..."),
-            'callback': function(response) {
-                if (response.message.success) {
-                    if (edit_mode===true) {
-                        frappe.invoice_entry.open_edit_form(purchase_invoice_name);
-                    } else {
-                        //location.reload();
-                        frappe.invoice_entry.fetch_purchase_invoice(purchase_invoice_name);
-                    }
-                } else {
-                    frappe.show_alert(response.message.message);
-                }
+        return new Promise((resolve, reject) => {
+            let net_total_inputs = document.querySelectorAll("input[data-fieldname='net_total_" + purchase_invoice_name + "']");
+            let net_total = null;
+            if ((net_total_inputs) && (net_total_inputs.length > 0)) {
+                net_total = net_total_inputs[0].value;
             }
+            let doc = {
+                'name': purchase_invoice_name,
+                'supplier': document.querySelectorAll("input[data-fieldname='supplier_" + purchase_invoice_name + "']")[0].value,
+                'bill_date': document.querySelectorAll("input[data-fieldname='bill_date_" + purchase_invoice_name + "']")[0].value,
+                'posting_date': document.querySelectorAll("input[data-fieldname='posting_date_" + purchase_invoice_name + "']")[0].value,
+                'due_date': document.querySelectorAll("input[data-fieldname='due_date_" + purchase_invoice_name + "']")[0].value,
+                'bill_no': document.querySelectorAll("input[data-fieldname='bill_no_" + purchase_invoice_name + "']")[0].value,
+                'approver': document.querySelectorAll("input[data-fieldname='approver_" + purchase_invoice_name + "']")[0].value,
+                'remarks': document.querySelectorAll("input[data-fieldname='remarks_" + purchase_invoice_name + "']")[0].value,
+                'net_total': net_total
+            };
+            frappe.call({
+                'method': 'microsynth.microsynth.page.invoice_entry.invoice_entry.save_document',
+                'args': {
+                    'doc': doc
+                },
+                'freeze': true,
+                'freeze_message': __("Saving..."),
+                'callback': function(response) {
+                    if (response.message && response.message.success) {
+                        if (edit_mode===true) {
+                            frappe.invoice_entry.open_edit_form(purchase_invoice_name);
+                        } else {
+                            //location.reload();
+                            frappe.invoice_entry.fetch_purchase_invoice(purchase_invoice_name);
+                        }
+                        resolve();
+                    } else {
+                        frappe.show_alert(response.message ? response.message.message : __("Saving failed"));
+                        reject();
+                    }
+                },
+                'error': reject
+            });
         });
     },
     assign_document: function(purchase_invoice_name) {
-        this.save_document(purchase_invoice_name);
-        const approver_field = document.querySelector("input[data-fieldname='approver_" + purchase_invoice_name + "']");
-        const approver = approver_field ? approver_field.value : "";
+        this.save_document(purchase_invoice_name).then(() => {
+            const approver_field = document.querySelector("input[data-fieldname='approver_" + purchase_invoice_name + "']");
+            const approver = approver_field ? approver_field.value : "";
 
-        if (!approver) {
-            frappe.msgprint({
-                title: __('Missing Approver'),
-                message: __('Please set an Approver before sending the Purchase Invoice for approval.'),
-                indicator: 'red'
-            });
-            return;
-        }
-        frappe.call({
-            'method': 'microsynth.microsynth.purchasing.create_approval_request',
-            'args': {
-                'assign_to': approver,
-                'dt': 'Purchase Invoice',
-                'dn': purchase_invoice_name
-            },
-            'freeze': true,
-            'freeze_message': __("Assigning ..."),
-            'callback': function(response) {
-                if (response.message) {
-                    frappe.show_alert("Sucessfully assigned");
-                    document.getElementById("row_" + purchase_invoice_name).style.display = "None";
-                } else {
-                    frappe.show_alert("Failed assigning");
-                }
+            if (!approver) {
+                frappe.msgprint({
+                    title: __('Missing Approver'),
+                    message: __('Please set an Approver before sending the Purchase Invoice for approval.'),
+                    indicator: 'red'
+                });
+                return;
             }
+            frappe.call({
+                'method': 'microsynth.microsynth.purchasing.create_approval_request',
+                'args': {
+                    'assign_to': approver,
+                    'dt': 'Purchase Invoice',
+                    'dn': purchase_invoice_name
+                },
+                'freeze': true,
+                'freeze_message': __("Assigning ..."),
+                'callback': function(response) {
+                    if (response.message) {
+                        frappe.show_alert("Sucessfully assigned");
+                        document.getElementById("row_" + purchase_invoice_name).style.display = "None";
+                    } else {
+                        frappe.show_alert("Failed assigning");
+                    }
+                }
+            });
+        }).catch(() => {
+            // save failed; error already shown to the user
+            frappe.show_alert(__('Saving failed'));
         });
     },
     edit_document: function(purchase_invoice_name) {
