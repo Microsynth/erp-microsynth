@@ -438,11 +438,20 @@ def login(usr, pwd):
     """
     Create a user session
     """
-    from frappe.auth import LoginManager
-    lm = LoginManager()
-    lm.authenticate(usr, pwd)
-    lm.login()
-    return frappe.local.session
+    from frappe.exceptions import QueryDeadlockError
+
+    for attempt in range(3):
+        try:
+            from frappe.auth import LoginManager
+            lm = LoginManager()
+            lm.authenticate(usr, pwd)
+            lm.login()
+            return frappe.local.session
+        except QueryDeadlockError:
+            if attempt == 2:
+                raise
+            frappe.db.rollback()                # important: reset the transaction state
+            time.sleep(0.1 * (attempt + 1))     # brief backoff
 
 
 def replace_none(inpt):
