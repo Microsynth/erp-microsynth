@@ -236,6 +236,7 @@ def pick_labels(sales_order, from_barcode, to_barcode, number_length, user=None)
     dn = frappe.get_doc(dn_content)
     dn.naming_series = get_naming_series("Delivery Note", company)
     dn.insert()
+    frappe.db.commit()
     dn.submit()
     frappe.db.commit()
 
