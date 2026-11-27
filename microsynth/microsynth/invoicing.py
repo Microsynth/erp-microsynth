@@ -24,7 +24,6 @@ from frappe import _
 from frappe.utils.pdf import get_pdf
 from frappe.utils.background_jobs import enqueue
 from frappe.utils import cint, get_url_to_form, flt, getdate
-from frappe.core.doctype.communication.email import make
 from frappe.desk.form.load import get_attachments
 
 from erpnext.selling.doctype.sales_order.sales_order import make_sales_invoice as make_sales_invoice_from_so
@@ -1930,17 +1929,15 @@ Should you have any further questions or uncertainties, please do not hesitate t
 Kind regards<br>\
 Your administration team<br><br>{footer}"
 
-            make(
+            frappe.sendmail(
                 recipients = recipient,
                 sender = "info@microsynth.ch",
-                sender_full_name = "Microsynth",
                 cc = "info@microsynth.ch",
                 subject = subject,
-                content = message,
-                doctype = "Sales Invoice",
-                name = sales_invoice.name,
-                attachments = [{'fid': fid}],
-                send_email = True
+                message = message,
+                reference_doctype = "Sales Invoice",
+                reference_name = sales_invoice.name,
+                attachments = [{'fid': fid}]
             )
 
         elif mode == "Post":
