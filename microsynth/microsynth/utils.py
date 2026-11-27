@@ -3471,16 +3471,14 @@ def send_email_from_template(email_template, rendered_content, rendered_subject=
     Takes an Email Template object, the rendered content (message) and optionally a rendered subjects
     and triggers the sending of the corresponding email.
     """
-    make(
+    frappe.sendmail(
             recipients = recipients if recipients else email_template.recipients,
             cc = email_template.cc_recipients,
             bcc = email_template.bcc_recipients,
             sender = email_template.sender,
-            sender_full_name = email_template.sender_full_name,
             subject = rendered_subject if rendered_subject else email_template.subject,
-            content = rendered_content,
-            attachments = attachments,
-            send_email = True
+            message = rendered_content,
+            attachments = attachments
         )
 
 

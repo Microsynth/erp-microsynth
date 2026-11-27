@@ -4,7 +4,6 @@
 
 import frappe
 from frappe import _
-from frappe.core.doctype.communication.email import make
 from erpnextswiss.erpnextswiss.attach_pdf import save_and_attach, create_folder
 from frappe.desk.form.load import get_attachments
 from erpnextswiss.erpnextswiss.doctype.payment_reminder.payment_reminder import enqueue_create_payment_reminders
@@ -141,17 +140,15 @@ def send_prm_email(prm):
         fid = a['name']
     frappe.db.commit()
 
-    make(
+    frappe.sendmail(
         recipients = prm.email,
         sender = "info@microsynth.ch",
-        sender_full_name = "Microsynth",
         cc = "info@microsynth.ch",
         subject = get_email_subject(prm),
-        content = get_html_message(prm),
-        doctype = "Payment Reminder",
-        name = prm.name,
-        attachments = [{'fid': fid}],
-        send_email = True
+        message = get_html_message(prm),
+        reference_doctype = "Payment Reminder",
+        reference_name = prm.name,
+        attachments = [{'fid': fid}]
     )
 
 
