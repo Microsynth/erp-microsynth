@@ -98,6 +98,7 @@ def issue_material(company, user, items):
             }
             if batch_no:
                 row["batch_no"] = batch_no
+                row["use_serial_batch_fields"] = 1
 
             stock_entry.append("items", row)
 
