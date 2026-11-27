@@ -12,6 +12,7 @@ from microsynth.microsynth.invoicing import get_microsynth_zugferd_xml as create
 from microsynth.microsynth.invoicing import create_pdf_attachment
 import re
 import html
+import shutil
 
 DATEV_CHARACTER_PATTERNS = {
     'p10040': "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789$%*+-",        # dropped & to prevent xml encing issues
@@ -250,6 +251,8 @@ def _get_prioritized_attachment(attachments, dt, dn):
     for attachment in attachments:
         file_name = (attachment.get("file_name") or "").lower()
         file_url = (attachment.get("file_url") or "").lower()
+        if dt == "Sales Invoice" and not file_url:
+            continue
         if not file_name and file_url:
             file_name = os.path.basename(file_url).lower()
 
@@ -259,10 +262,14 @@ def _get_prioritized_attachment(attachments, dt, dn):
         if not file_name.endswith(".pdf"):
             continue
 
+        if dt == "Sales Invoice":
+            expected_name = document_name.replace(" ", "-").replace("/", "-") + ".pdf"
+            if document_name and file_name == expected_name:
+                return attachment
+            continue
+
         # Prefer actual invoice file names and reject unrelated attachments like PO PDFs.
         if document_name in file_name:
-            pdf_attachments.append(attachment)
-        elif file_name.startswith("si-") and dt == "Sales Invoice":
             pdf_attachments.append(attachment)
         elif file_name.startswith("pi-") and dt == "Purchase Invoice":
             pdf_attachments.append(attachment)
@@ -270,6 +277,8 @@ def _get_prioritized_attachment(attachments, dt, dn):
     if pdf_attachments:
         return pdf_attachments[0]
 
+    if dt == "Sales Invoice":
+        return None
     return attachments[0] if attachments else None
 
 
@@ -283,8 +292,8 @@ def download_pdf(path, dt, dn, allow_attachment_repair=True):
         fields=['name', 'file_url', 'file_name'],
         order_by='creation DESC'
     )
-    if attachments and len(attachments) > 0:
-        source_attachment = _get_prioritized_attachment(attachments, dt, dn)
+    source_attachment = _get_prioritized_attachment(attachments, dt, dn)
+    if source_attachment:
         source_path = source_attachment.get('file_url') if source_attachment else None
 
         if source_path is None:
@@ -293,14 +302,16 @@ def download_pdf(path, dt, dn, allow_attachment_repair=True):
         source_file = os.path.join(frappe.utils.get_bench_path(), "sites", frappe.utils.get_site_path()[2:], source_path[1:])
         if "\"" in source_file:
             frappe.log_error(message=f"This file name is less than suboptimal: {dt} {dn}: {source_file}", title="datev_export.download_pdf file issue")
-        os.system("""cp "{0}" "{1}" """.format(source_file, content_file_name))
+        shutil.copyfile(source_file, content_file_name)
     else:
         # no attachment found - in case of a sales invoice, this can be created and then iterated (if allowed - prevent loop)
         if dt == "Sales Invoice" and allow_attachment_repair:
             # create the attachment
             create_pdf_attachment(sales_invoice=dn)
             # iterate this function and prevent loop
-            download_pdf(path, dt, dn, allow_attachment_repair=False)
+            return download_pdf(path, dt, dn, allow_attachment_repair=False)
+        elif dt == "Sales Invoice":
+            frappe.throw(_("No matching PDF attachment found for Sales Invoice {0}").format(dn))
     return file_name
 
 
