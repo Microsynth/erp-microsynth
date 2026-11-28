@@ -438,6 +438,7 @@ def login(usr, pwd):
     """
     Create a user session
     """
+    import time
     from frappe.exceptions import QueryDeadlockError
 
     for attempt in range(3):
